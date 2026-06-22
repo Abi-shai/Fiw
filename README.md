@@ -47,28 +47,3 @@ docs/
   adr/                  Décisions de design avec contexte et alternatives considérées
 ```
 
----
-
-## État actuel
-
-Couche **structure d'interaction** en cours.
-
-| Couche | État |
-|---|---|
-| Comportements observés | Solide — 9 entretiens, 14 apprentissages |
-| Domaine | Solide — glossaire finalisé |
-| Besoins utilisateurs | Partiel |
-| Stratégie produit | Partiel — décision prise d'avancer |
-| Modèle conceptuel | Solide — quelques décisions ouvertes |
-| Structure d'interaction | En cours — flux Transport détaillé |
-| Surface | Non démarré |
-
-Prochain jalon : compléter les flux Livraison, Yobanté, Assistance et Location, puis user story map.
-
----
-
-## Modèle économique
-
-- Commission de **14 %** prélevée sur le wallet du Prestataire à chaque course terminée
-- Paiement via Mobile Money (Wave, Orange Money, Free Money)
-- Affiliation : **2 %** pour les Affiliés Réseau, **4 %** pour les Affiliés Partenaire
