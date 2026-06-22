@@ -1,6 +1,6 @@
 # Fiw
 
-Application mobile multi-services de mobilité urbaine et de livraison, basée à Dakar, Sénégal. Principal concurrent : Yango.
+Application mobile multi-services de mobilité urbaine et de livraison, basée à Dakar, Sénégal.
 
 Deux applications :
 - **Fiw** — côté Client (passager ou expéditeur de colis)
