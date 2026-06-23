@@ -25,7 +25,7 @@ Entité centrale du produit. Une demande émise par un Client pour un service, a
 | `moto_livraison` | colis[], livraison_groupée (bool) |
 | `yobante` | tracking_number (YOB-AAAAMMJJ-XXX), legs[], colis[], prestataires[] |
 | `assistance` | type_problème (Dépanneuse / Batterie / Pneu / Carburant / Mécanique) |
-| `covoiturage` | offre_id, passagers[] |
+| `covoiturage` | origin, destination, nombre_passagers |
 
 **Note :** `yobante` (multi-Prestataires, multi-legs, tracking propre) casse partiellement le schéma commun. Voir décisions ouvertes.
 
@@ -55,7 +55,7 @@ Personne physique inscrite sur Fiw Pro pour fournir un ou plusieurs services.
 
 **Relations :** possède un Wallet, a des Activations (une par service), enregistre des Véhicules
 
-**Actions :** S'inscrire, Demander une Activation, Basculer En ligne / Hors ligne, Accepter / Refuser une Commande, Confirmer arrivée, Confirmer départ, Terminer mission, Évaluer Client (privé), Recharger Wallet, Publier Offre covoiturage, Définir Direction programmée, Recruter (si AffiliéRéseau)
+**Actions :** S'inscrire, Demander une Activation, Basculer En ligne / Hors ligne, Accepter / Refuser une Commande, Confirmer arrivée, Confirmer départ, Terminer mission, Évaluer Client (privé), Recharger Wallet, Définir Direction programmée, Recruter (si AffiliéRéseau)
 
 ---
 
@@ -138,17 +138,6 @@ Demande de location longue durée d'une ressource (Véhicule ou Parking) apparte
 
 ---
 
-### Offre Covoiturage
-Trajet publié par un Prestataire (voiture) avant qu'un Client ne le demande. Génère des Commandes covoiturage au fil des acceptations.
-
-**Attributs :** origine, destination, sièges_disponibles, sièges_total, heure_départ, type (Ponctuel / Régulier / Favoris), interurbain (bool)
-
-**Cardinalité :** 1 Prestataire → N Offres ; 1 Offre → N Commandes covoiturage
-
-**Actions :** Publier, Accepter passager, Refuser passager, Annuler, Clôturer
-
----
-
 ### AffiliéRéseau
 Rôle activé par un Client ou un Prestataire depuis leur application respective. Permet de recruter d'autres clients et prestataires, et de percevoir 2 % de commission sur les Commandes générées.
 
@@ -177,11 +166,8 @@ erDiagram
     PRESTATAIRE ||--o{ COMMANDE : "réalise"
     PRESTATAIRE ||--o{ AVIS : "reçoit"
     PRESTATAIRE ||--o{ VEHICULE : "enregistre"
-    PRESTATAIRE ||--o{ OFFRE_COVOITURAGE : "publie"
-
     COMMANDE ||--o{ COLIS : "contient"
     COMMANDE |o--o| AVIS : "génère"
-    OFFRE_COVOITURAGE ||--o{ COMMANDE : "génère"
 
     CLIENT ||--o{ RESERVATION : "demande"
     VEHICULE ||--o{ RESERVATION : "est réservé via"
@@ -291,22 +277,6 @@ stateDiagram-v2
 
 ---
 
-### Offre Covoiturage
-
-```mermaid
-stateDiagram-v2
-    [*] --> Ouverte : Prestataire publie
-    Ouverte --> Complète : Tous les sièges occupés
-    Ouverte --> Annulée : Prestataire annule
-    Complète --> En_cours : Départ confirmé
-    Ouverte --> En_cours : Départ confirmé (avec sièges libres)
-    En_cours --> Terminée : Fin de trajet
-    Terminée --> [*]
-    Annulée --> [*]
-```
-
----
-
 ## Inventaire d'actions (CTA)
 
 | Action | Objet cible | Acteur | Remarques |
@@ -323,7 +293,6 @@ stateDiagram-v2
 | Évaluer (privé) | ÉvaluationClient | Prestataire | Interne, non exposée côté Client |
 | Recharger | Wallet | Prestataire | Via Mobile Money |
 | Demander activation | Activation | Prestataire | Par service, cumulable |
-| Publier offre | Offre Covoiturage | Prestataire | Covoiturage voiture uniquement |
 | Ajouter contact | Contact de confiance | Client | |
 | Déclencher SOS | — | Client, Prestataire | GPS envoyé aux contacts + urgences |
 | Partager trajet | — | Client | Lien vers position live du Prestataire |

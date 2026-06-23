@@ -1,7 +1,7 @@
 # ADR 0002 — AffiliéPartenaire : sélecteur de compte dans l'app Fiw
 
 **Date :** 2026-06-16
-**Statut :** Décidé
+**Statut :** Superseded par ADR 0003
 
 ## Contexte
 
