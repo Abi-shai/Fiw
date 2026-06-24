@@ -7,8 +7,16 @@ import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { SUGGESTIONS } from '@/constants/data';
 
+type Field = 'departure' | 'destination';
+
 export default function DestinationScreen() {
-  const [query, setQuery] = useState('');
+  const [activeField, setActiveField] = useState<Field>('destination');
+  const [departureQuery, setDepartureQuery] = useState('');
+  const [departureName, setDepartureName] = useState('Ma position actuelle');
+  const [destinationQuery, setDestinationQuery] = useState('');
+
+  const query = activeField === 'departure' ? departureQuery : destinationQuery;
+  const setQuery = activeField === 'departure' ? setDepartureQuery : setDestinationQuery;
 
   const filtered = query.length > 0
     ? SUGGESTIONS.filter(s =>
@@ -17,16 +25,23 @@ export default function DestinationScreen() {
       )
     : SUGGESTIONS;
 
-  const selectDestination = (item: typeof SUGGESTIONS[0]) => {
-    router.push({
-      pathname: '/transport/select-type',
-      params: {
-        destName: item.name,
-        destDetail: item.detail,
-        destLat: item.lat,
-        destLng: item.lng,
-      },
-    });
+  const handleSelect = (item: typeof SUGGESTIONS[0]) => {
+    if (activeField === 'departure') {
+      setDepartureName(item.name);
+      setDepartureQuery('');
+      setActiveField('destination');
+    } else {
+      router.push({
+        pathname: '/transport/configure',
+        params: {
+          departureName,
+          destName: item.name,
+          destDetail: item.detail,
+          destLat: item.lat,
+          destLng: item.lng,
+        },
+      });
+    }
   };
 
   return (
@@ -39,41 +54,72 @@ export default function DestinationScreen() {
       </View>
 
       <View style={styles.inputs}>
-        <View style={styles.inputRow}>
+        <TouchableOpacity
+          style={styles.inputRow}
+          onPress={() => setActiveField('departure')}
+          activeOpacity={0.7}
+        >
           <View style={[styles.dot, { backgroundColor: Colors.primary }]} />
           <View style={styles.inputBox}>
             <Text style={styles.inputLabel}>Départ</Text>
-            <Text style={styles.inputValue}>Ma position actuelle</Text>
+            {activeField === 'departure' ? (
+              <TextInput
+                style={styles.inputField}
+                value={departureQuery}
+                onChangeText={setDepartureQuery}
+                placeholder="Saisir un point de départ…"
+                placeholderTextColor={Colors.textTertiary}
+                autoFocus
+              />
+            ) : (
+              <Text style={styles.inputValue}>{departureName}</Text>
+            )}
           </View>
-        </View>
+        </TouchableOpacity>
+
         <View style={styles.dividerLine} />
-        <View style={styles.inputRow}>
+
+        <TouchableOpacity
+          style={styles.inputRow}
+          onPress={() => setActiveField('destination')}
+          activeOpacity={0.7}
+        >
           <View style={[styles.dot, { backgroundColor: Colors.error }]} />
-          <View style={[styles.inputBox, styles.inputBoxActive]}>
+          <View style={styles.inputBox}>
             <Text style={styles.inputLabel}>Destination</Text>
-            <TextInput
-              style={styles.inputField}
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Plateau, Almadies, Yoff…"
-              placeholderTextColor={Colors.textTertiary}
-              autoFocus
-            />
+            {activeField === 'destination' ? (
+              <TextInput
+                style={styles.inputField}
+                value={destinationQuery}
+                onChangeText={setDestinationQuery}
+                placeholder="Plateau, Almadies, Yoff…"
+                placeholderTextColor={Colors.textTertiary}
+                autoFocus={activeField === 'destination'}
+              />
+            ) : (
+              <Text style={styles.inputValue}>
+                {destinationQuery || 'Saisir une destination…'}
+              </Text>
+            )}
           </View>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <Text style={styles.sectionTitle}>
-        {query ? `Résultats pour "${query}"` : 'Destinations populaires'}
+        {query.length > 0
+          ? `Résultats pour "${query}"`
+          : activeField === 'departure' ? 'Choisir un départ' : 'Destinations populaires'}
       </Text>
 
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.suggestion} onPress={() => selectDestination(item)}>
+          <TouchableOpacity style={styles.suggestion} onPress={() => handleSelect(item)}>
             <View style={styles.suggestionIcon}>
-              <Text style={styles.suggestionEmoji}>📍</Text>
+              <Text style={styles.suggestionEmoji}>
+                {activeField === 'departure' ? '🟢' : '📍'}
+              </Text>
             </View>
             <View style={styles.suggestionText}>
               <Text style={styles.suggestionName}>{item.name}</Text>
@@ -89,7 +135,7 @@ export default function DestinationScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
+  container: { flex: 1, backgroundColor: Colors.surface },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -99,11 +145,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   back: { padding: 4 },
-  backIcon: { fontSize: 22, color: Colors.black },
-  title: { fontSize: 18, fontWeight: '700', color: Colors.black },
+  backIcon: { fontSize: 22, color: Colors.textPrimary },
+  title: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
   inputs: {
     marginHorizontal: 16,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.bg,
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
@@ -113,10 +159,12 @@ const styles = StyleSheet.create({
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   dot: { width: 10, height: 10, borderRadius: 5, marginTop: 2 },
   inputBox: { flex: 1 },
-  inputBoxActive: {},
-  inputLabel: { fontSize: 11, color: Colors.textTertiary, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  inputLabel: {
+    fontSize: 11, color: Colors.textTertiary, fontWeight: '600',
+    textTransform: 'uppercase', letterSpacing: 0.5,
+  },
   inputValue: { fontSize: 15, color: Colors.textSecondary, paddingVertical: 4 },
-  inputField: { fontSize: 15, color: Colors.black, paddingVertical: 4 },
+  inputField: { fontSize: 15, color: Colors.textPrimary, paddingVertical: 4 },
   dividerLine: {
     height: 1,
     backgroundColor: Colors.border,
@@ -142,13 +190,13 @@ const styles = StyleSheet.create({
   suggestionIcon: {
     width: 40, height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: Colors.primarySubtle,
     justifyContent: 'center',
     alignItems: 'center',
   },
   suggestionEmoji: { fontSize: 18 },
   suggestionText: { flex: 1 },
-  suggestionName: { fontSize: 15, fontWeight: '600', color: Colors.black },
+  suggestionName: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
   suggestionDetail: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
-  separator: { height: 1, backgroundColor: Colors.borderLight, marginLeft: 70 },
+  separator: { height: 1, backgroundColor: Colors.borderSubtle, marginLeft: 70 },
 });

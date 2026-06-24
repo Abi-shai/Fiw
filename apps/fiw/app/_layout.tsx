@@ -11,13 +11,10 @@ export default function RootLayout() {
         <Stack.Screen name="otp" />
         <Stack.Screen name="home" />
         <Stack.Screen name="transport/destination" />
-        <Stack.Screen name="transport/select-type" />
-        <Stack.Screen name="transport/rapprochement" />
+        <Stack.Screen name="transport/configure" />
         <Stack.Screen name="transport/searching" />
-        <Stack.Screen name="transport/driver-found" />
-        <Stack.Screen name="transport/active-ride" />
-        <Stack.Screen name="transport/receipt" />
-        <Stack.Screen name="transport/rating" />
+        <Stack.Screen name="transport/course-active" />
+        <Stack.Screen name="transport/cloture" />
       </Stack>
     </GestureHandlerRootView>
   );

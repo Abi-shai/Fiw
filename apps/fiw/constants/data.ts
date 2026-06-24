@@ -24,6 +24,17 @@ export const DRIVER = {
   emoji: '👨🏾',
 };
 
+export const MOTO_DRIVER = {
+  name: 'Ibrahima Sy',
+  vehicle: 'Yamaha FZ',
+  color: 'Rouge',
+  plate: 'DK-7734-B',
+  rating: 4.9,
+  trips: 892,
+  id: 'MOT-2241',
+  emoji: '👨🏾‍🦱',
+};
+
 export const GAMMES = [
   {
     id: 'moto',
@@ -32,7 +43,6 @@ export const GAMMES = [
     icon: '🛵',
     basePrice: 800,
     eta: '3 min',
-    color: '#0EA5E9',
   },
   {
     id: 'simple',
@@ -41,7 +51,6 @@ export const GAMMES = [
     icon: '🚗',
     basePrice: 1500,
     eta: '5 min',
-    color: '#0F6B3D',
   },
   {
     id: 'confort',
@@ -50,7 +59,6 @@ export const GAMMES = [
     icon: '🚙',
     basePrice: 2200,
     eta: '7 min',
-    color: '#0F6B3D',
   },
   {
     id: 'prestige',
@@ -59,16 +67,6 @@ export const GAMMES = [
     icon: '🚘',
     basePrice: 3500,
     eta: '10 min',
-    color: '#374151',
-  },
-  {
-    id: 'covoiturage',
-    label: 'Covoiturage',
-    description: 'Partagez le trajet, économisez',
-    icon: '👥',
-    basePrice: 900,
-    eta: '6 min',
-    color: '#8B5CF6',
   },
 ];
 

@@ -57,13 +57,13 @@ export default function OTPScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white, paddingHorizontal: 24 },
+  container: { flex: 1, backgroundColor: Colors.surface, paddingHorizontal: 24 },
   back: { paddingTop: 60, paddingBottom: 16 },
-  backIcon: { fontSize: 24, color: Colors.black },
+  backIcon: { fontSize: 24, color: Colors.textPrimary },
   content: { flex: 1, paddingTop: 24 },
-  title: { fontSize: 28, fontWeight: '700', color: Colors.black, marginBottom: 12 },
+  title: { fontSize: 28, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12 },
   subtitle: { fontSize: 15, color: Colors.textSecondary, lineHeight: 22, marginBottom: 40 },
-  phone: { fontWeight: '600', color: Colors.black },
+  phone: { fontWeight: '600', color: Colors.textPrimary },
   codeRow: {
     flexDirection: 'row',
     gap: 12,
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 64,
     borderRadius: 14,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: Colors.primarySubtle,
     borderWidth: 2,
     borderColor: Colors.primary,
     justifyContent: 'center',

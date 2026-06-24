@@ -21,7 +21,7 @@ export default function Button({ label, onPress, variant = 'primary', loading, d
       disabled={isDisabled}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? Colors.white : Colors.primary} size="small" />
+        <ActivityIndicator color={variant === 'primary' ? Colors.surface : Colors.primary} size="small" />
       ) : (
         <Text style={[styles.label, variant !== 'primary' && styles.labelAlt]}>{label}</Text>
       )}
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.white,
+    color: Colors.surface,
   },
   labelAlt: {
     color: Colors.primary,

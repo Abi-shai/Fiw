@@ -35,7 +35,7 @@ export default function SearchingScreen() {
     animateRing(ring2, 900);
 
     const timer = setTimeout(() => {
-      router.replace({ pathname: '/transport/driver-found', params });
+      router.replace({ pathname: '/transport/course-active', params });
     }, 3000);
 
     return () => clearTimeout(timer);
@@ -86,7 +86,7 @@ export default function SearchingScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, backgroundColor: Colors.white,
+    flex: 1, backgroundColor: Colors.surface,
     justifyContent: 'space-between',
     paddingHorizontal: 24, paddingBottom: 40,
   },
@@ -117,11 +117,11 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   centerEmoji: { fontSize: 36 },
-  title: { fontSize: 24, fontWeight: '700', color: Colors.black, marginBottom: 12, textAlign: 'center' },
+  title: { fontSize: 24, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12, textAlign: 'center' },
   subtitle: { fontSize: 15, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 40 },
   infoRow: {
     flexDirection: 'row',
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.bg,
     borderRadius: 16,
     padding: 16,
     width: '100%',
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   infoItem: { flex: 1, alignItems: 'center', gap: 4 },
   infoEmoji: { fontSize: 20 },
   infoLabel: { fontSize: 11, color: Colors.textTertiary, fontWeight: '600', textTransform: 'uppercase' },
-  infoValue: { fontSize: 14, fontWeight: '600', color: Colors.black },
+  infoValue: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
   infoDivider: { width: 1, backgroundColor: Colors.border, marginHorizontal: 16 },
   cancelBtn: { alignItems: 'center', paddingVertical: 14 },
   cancelText: { fontSize: 15, color: Colors.error, fontWeight: '600' },
