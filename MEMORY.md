@@ -1,6 +1,6 @@
 ## Contexte actuel
 
-Sitemaps Fiw (Client) et Fiw Pro (Prestataire) complétés depuis la user story map FigJam (juin 2026). Modèle conceptuel mis à jour : Offre Covoiturage supprimée (covoiturage = type de Commande standard, mission entrante). ADR 0003 décidé : AffiliéPartenaire dans Fiw Pro uniquement. Prochain jalon : breadboard des flux prioritaires (Transport côté Client, Mission active côté Prestataire).
+Sitemaps Fiw (Client) et Fiw Pro (Prestataire) complétés. ADR 0003 décidé : AffiliéPartenaire dans Fiw Pro uniquement. **Deux prototypes Expo opérationnels** : `apps/fiw/` (flux Transport Client, complet) et `apps/fiw-pro/` (flux Mission active Transport Prestataire, complet — Dashboard → Mission entrante avec timer → Navigation → Arrivée + frais d'attente → En cours → Clôture + ÉvaluationClient). Architecture : deux projets Expo indépendants, pas de code partagé. Couleur Pro : `#073D23` (vert plus foncé que Fiw client `#0F6B3D`). Prochain jalon : installer les dépendances (`npm install` dans `apps/fiw-pro/`) et valider le handshake Client ↔ Prestataire sur le flux Transport.
 
 ---
 
@@ -15,3 +15,4 @@ Sitemaps Fiw (Client) et Fiw Pro (Prestataire) complétés depuis la user story 
 - [ADR 0001 : Priorité Transport sur l'accueil](docs/adr/0001-transport-priority-on-home.md) — l'écran d'accueil Fiw donne à Transport une tuile plus grande + barre de recherche, basé sur une inférence marché et non sur une recherche validée.
 - [ADR 0002 : Sélecteur de compte AffiliéPartenaire dans Fiw](docs/adr/0002-affiliepartenaire-account-switcher-in-fiw-app.md) — **SUPERSEDED par ADR 0003.**
 - [ADR 0003 : AffiliéPartenaire dans Fiw Pro](docs/adr/0003-affiliepartenaire-dans-fiw-pro.md) — AffiliéPartenaire accessible uniquement depuis Fiw Pro, pas depuis l'app Fiw Client.
+- [Style Guide](docs/style-guide.md) — tokens de design validés : couleurs (blue #0066FF Fiw / #084EC5 Pro), Poppins 5 graisses, espacement base 4px, rayons sm/md/lg, ombres teintées bleu, boutons 4 variantes.
