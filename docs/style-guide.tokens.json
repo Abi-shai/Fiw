@@ -1,0 +1,189 @@
+{
+  "color": {
+    "blue": {
+      "50":  "#EDF7FF",
+      "100": "#D6EDFF",
+      "200": "#B5E0FF",
+      "300": "#83CFFF",
+      "400": "#48B3FF",
+      "500": "#1E92FF",
+      "600": "#0676FF",
+      "700": "#0066FF",
+      "800": "#084EC5",
+      "900": "#0D459B",
+      "950": "#0E2B5D"
+    },
+    "neutral": {
+      "bg":              "#F9FAFB",
+      "surface":         "#FFFFFF",
+      "border":          "#E5E7EB",
+      "border-subtle":   "#F3F4F6",
+      "text-primary":    "#1A1A1A",
+      "text-secondary":  "#6B7280",
+      "text-tertiary":   "#9CA3AF",
+      "text-disabled":   "#D1D5DB",
+      "text-on-primary": "#FFFFFF"
+    },
+    "functional": {
+      "error":           "#EF4444",
+      "error-subtle":    "#FEE2E2",
+      "warning":         "#F59E0B",
+      "warning-subtle":  "#FEF3C7",
+      "success":         "#10B981",
+      "success-subtle":  "#D1FAE5"
+    },
+    "app": {
+      "fiw": {
+        "primary":         "#0066FF",
+        "primary-hover":   "#0676FF",
+        "primary-pressed": "#0D459B",
+        "primary-subtle":  "#EDF7FF",
+        "primary-on":      "#FFFFFF"
+      },
+      "fiw-pro": {
+        "primary":         "#084EC5",
+        "primary-hover":   "#0D459B",
+        "primary-pressed": "#0E2B5D",
+        "primary-subtle":  "#D6EDFF",
+        "primary-on":      "#FFFFFF"
+      }
+    }
+  },
+
+  "typography": {
+    "font-family": "Poppins",
+    "font-weight": {
+      "light":     300,
+      "regular":   400,
+      "medium":    500,
+      "semibold":  600,
+      "bold":      700
+    },
+    "scale": {
+      "display": {
+        "size":        28,
+        "weight":      700,
+        "line-height": 1.3
+      },
+      "heading1": {
+        "size":        22,
+        "weight":      600,
+        "line-height": 1.3
+      },
+      "heading2": {
+        "size":        18,
+        "weight":      600,
+        "line-height": 1.3
+      },
+      "body": {
+        "size":        15,
+        "weight":      400,
+        "line-height": 1.6
+      },
+      "body-small": {
+        "size":        13,
+        "weight":      400,
+        "line-height": 1.6
+      },
+      "label": {
+        "size":        13,
+        "weight":      500,
+        "line-height": 1.4
+      },
+      "caption": {
+        "size":        11,
+        "weight":      400,
+        "line-height": 1.4
+      }
+    }
+  },
+
+  "spacing": {
+    "1":  4,
+    "2":  8,
+    "3":  12,
+    "4":  16,
+    "6":  24,
+    "8":  32,
+    "12": 48,
+    "16": 64
+  },
+
+  "radius": {
+    "sm": 8,
+    "md": 12,
+    "lg": 16
+  },
+
+  "shadow": {
+    "sm": {
+      "offset-x":    0,
+      "offset-y":    1,
+      "blur":        3,
+      "spread":      0,
+      "color":       "rgba(0, 102, 255, 0.08)"
+    },
+    "md": {
+      "offset-x":    0,
+      "offset-y":    4,
+      "blur":        12,
+      "spread":      0,
+      "color":       "rgba(0, 102, 255, 0.12)"
+    },
+    "lg": {
+      "offset-x":    0,
+      "offset-y":    8,
+      "blur":        24,
+      "spread":      0,
+      "color":       "rgba(0, 102, 255, 0.16)"
+    }
+  },
+
+  "button": {
+    "radius": 12,
+    "variant": {
+      "primary": {
+        "background":    "color.app.fiw.primary",
+        "text":          "color.neutral.text-on-primary",
+        "border":        null
+      },
+      "secondary": {
+        "background":    "color.app.fiw.primary-subtle",
+        "text":          "color.app.fiw.primary",
+        "border":        null
+      },
+      "ghost": {
+        "background":    "transparent",
+        "text":          "color.app.fiw.primary",
+        "border":        "color.app.fiw.primary"
+      },
+      "destructive": {
+        "background":    "color.functional.error",
+        "text":          "color.neutral.text-on-primary",
+        "border":        null
+      }
+    },
+    "size": {
+      "lg": {
+        "height":        52,
+        "font-size":     15,
+        "font-weight":   600
+      },
+      "md": {
+        "height":        44,
+        "font-size":     13,
+        "font-weight":   500
+      }
+    }
+  },
+
+  "icon": {
+    "library":        "lucide-react-native",
+    "stroke-width":   1.5,
+    "size": {
+      "sm":  16,
+      "md":  18,
+      "lg":  24
+    }
+  }
+}
