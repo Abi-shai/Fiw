@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Fiw Pro",
+    "slug": "fiw-pro",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "fiwpro",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#073D23"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.fiw.pro"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#073D23"
+      },
+      "package": "com.fiw.pro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ]
+  }
+}
