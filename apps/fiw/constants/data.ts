@@ -94,7 +94,6 @@ export const GAMMES: {
 export const PAYMENT_METHODS = [
   { id: 'wave', label: 'Wave', icon: '🌊', color: '#1EADFF' },
   { id: 'orange', label: 'Orange Money', icon: '🟠', color: '#FF6200' },
-  { id: 'free', label: 'Free Money', icon: '🔴', color: '#E02020' },
   { id: 'cash', label: 'Espèces', icon: '💵', color: '#6B7280' },
 ];
 

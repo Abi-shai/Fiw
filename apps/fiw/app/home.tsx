@@ -13,7 +13,7 @@ import Button from '@/components/Button';
 import Scrim from '@/components/Scrim';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
-import { Handle, sheetSurface } from '@/components/Sheet';
+import { Handle, SheetHeader, sheetSurface } from '@/components/Sheet';
 import { Colors, Radii, Poppins, Shadows } from '@/constants/tokens';
 import { DAKAR_CENTER, SUGGESTIONS, SAVED_PLACES, RECENT_PLACES } from '@/constants/data';
 
@@ -439,10 +439,7 @@ export default function HomeScreen() {
               <Handle />
             </View>
 
-            <View style={styles.searchHeader}>
-              <Text variant="heading1" style={styles.searchTitle}>Indiquer votre itinéraire</Text>
-              <IconButton name="close" variant="flat" color={Colors.textPrimary} onPress={closeSearch} />
-            </View>
+            <SheetHeader title="Indiquer votre itinéraire" onClose={closeSearch} />
 
             {/* Champ « De » — icône personne (le passager) + géoloc si actif */}
             <TouchableOpacity
@@ -685,14 +682,6 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     alignItems: 'center',
   },
-  searchHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 18,
-  },
-  searchTitle: { flex: 1, letterSpacing: -0.4 },
-
   // Champs De / À — coins arrondis (registre bouton, sans aller jusqu'au pill).
   field: {
     flexDirection: 'row',

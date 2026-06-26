@@ -29,6 +29,9 @@ interface Props {
   searchingCars?: boolean;
   mapStyle?: string;
   tintWater?: boolean;
+  /** Allège la basemap (masque verdure/landuse, POIs, bâtiments, transports) pour
+   *  dégager la lecture du trajet (façon Yango). */
+  declutter?: boolean;
   /** Émis (throttlé) pendant que l'utilisateur déplace la carte — sert au
    *  choix d'un point « sur la carte » (pin fixe, carte mobile dessous). */
   onCenterChange?: (c: { lat: number; lng: number }) => void;
@@ -42,7 +45,8 @@ const getMapHTML = (
   route?: RouteConfig,
   searchingCars = false,
   mapStyle = 'mapbox://styles/mapbox/navigation-day-v1',
-  tintWater = false
+  tintWater = false,
+  declutter = false
 ) => {
   const markersJSON = JSON.stringify(markers);
   const routeJSON = route ? JSON.stringify(route) : 'null';
@@ -58,15 +62,12 @@ const getMapHTML = (
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body, #map { width: 100%; height: 100%; overflow: hidden; }
     .mapboxgl-ctrl-logo, .mapboxgl-ctrl-attrib { display: none !important; }
-    .dot-origin {
-      width: 16px; height: 16px;
-      background: #0F6B3D; border: 3px solid white; border-radius: 50%;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.35);
-    }
-    .dot-destination {
-      width: 16px; height: 16px;
-      background: #EF4444; border: 3px solid white; border-radius: 50%;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    /* Cercles « donut » (façon Yango) : anneau fin bleu marque foncé (blue-900),
+       centre blanc — mêmes pour le départ et l'arrivée. */
+    .dot-origin, .dot-destination {
+      width: 18px; height: 18px;
+      background: #FFFFFF; border: 3px solid #0D459B; border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.30);
     }
     .driver-icon {
       font-size: 26px; line-height: 1;
@@ -188,6 +189,15 @@ const getMapHTML = (
             try { map.setPaintProperty(id, 'fill-color', '#AFCBEF'); } catch(e) {}
           });
         }
+        if (${declutter}) {
+          // Dégage la carte : masque verdure/landuse, POIs, bâtiments, transports
+          // et labels naturels — on garde routes, eau et noms de lieux. Le trajet
+          // (vert) ressort ainsi nettement.
+          var KILL = /landuse|landcover|national-park|park|pitch|golf|poi|transit|building|natural-|aeroway/i;
+          (map.getStyle().layers || []).forEach(function(ly) {
+            if (KILL.test(ly.id)) { try { map.setLayoutProperty(ly.id, 'visibility', 'none'); } catch(e) {} }
+          });
+        }
         if (routeConfig) fetchAndAnimateRoute(routeConfig);
       });
 
@@ -208,7 +218,7 @@ const getMapHTML = (
             map.addLayer({
               id: 'route', type: 'line', source: 'route',
               layout: { 'line-join': 'round', 'line-cap': 'round' },
-              paint: { 'line-color': '#0F6B3D', 'line-width': 5, 'line-opacity': 0.85 }
+              paint: { 'line-color': '#0066FF', 'line-width': 5, 'line-opacity': 0.95 }
             });
             var bounds = coords.reduce(function(b, c) {
               return b.extend(c);
@@ -264,7 +274,7 @@ const getMapHTML = (
 };
 
 const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMap(
-  { center, zoom = 14, markers = [], route, searchingCars = false, mapStyle, tintWater = false, onCenterChange, style },
+  { center, zoom = 14, markers = [], route, searchingCars = false, mapStyle, tintWater = false, declutter = false, onCenterChange, style },
   ref
 ) {
   const webRef = useRef<WebView>(null);
@@ -278,7 +288,7 @@ const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMap(
   return (
     <WebView
       ref={webRef}
-      source={{ html: getMapHTML(center, zoom, markers, route, searchingCars, mapStyle, tintWater) }}
+      source={{ html: getMapHTML(center, zoom, markers, route, searchingCars, mapStyle, tintWater, declutter) }}
       style={[styles.map, style]}
       scrollEnabled={false}
       javaScriptEnabled
