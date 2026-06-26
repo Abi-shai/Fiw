@@ -1,136 +1,125 @@
 import React, { useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, Animated, TouchableOpacity, SafeAreaView
+  View, StyleSheet, Animated, TouchableOpacity, SafeAreaView
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Colors } from '@/constants/colors';
+import LeafletMap from '@/components/LeafletMap';
+import Text from '@/components/Text';
+import { Handle, sheetSurface } from '@/components/Sheet';
+import { Colors, Poppins } from '@/constants/tokens';
+import { DAKAR_CENTER } from '@/constants/data';
 
 export default function SearchingScreen() {
-  const params = useLocalSearchParams();
-  const pulse = useRef(new Animated.Value(1)).current;
-  const ring1 = useRef(new Animated.Value(0)).current;
-  const ring2 = useRef(new Animated.Value(0)).current;
+  const params = useLocalSearchParams<{
+    destName: string; finalPrice: string; gammeId: string; gammeLabel: string;
+    selectedOption: string; paymentId: string; destLat: string; destLng: string;
+  }>();
+
+  const dotOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.1, duration: 600, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.timing(dotOpacity, { toValue: 0.25, duration: 700, useNativeDriver: true }),
+        Animated.timing(dotOpacity, { toValue: 1, duration: 700, useNativeDriver: true }),
       ])
     ).start();
 
-    const animateRing = (anim: Animated.Value, delay: number) => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.parallel([
-            Animated.timing(anim, { toValue: 1, duration: 1800, useNativeDriver: true }),
-          ]),
-          Animated.timing(anim, { toValue: 0, duration: 0, useNativeDriver: true }),
-        ])
-      ).start();
-    };
-
-    animateRing(ring1, 0);
-    animateRing(ring2, 900);
-
+    const delay = Math.floor(Math.random() * 4000) + 11000;
     const timer = setTimeout(() => {
       router.replace({ pathname: '/transport/course-active', params });
-    }, 3000);
+    }, delay);
 
     return () => clearTimeout(timer);
   }, []);
 
-  const ringStyle = (anim: Animated.Value) => ({
-    transform: [{ scale: Animated.add(1, Animated.multiply(anim, 1.5)) }],
-    opacity: Animated.subtract(0.4, Animated.multiply(anim, 0.4)),
-  });
+  const price = parseInt(params.finalPrice || '0').toLocaleString();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.pulseContainer}>
-          <Animated.View style={[styles.ring, ringStyle(ring1)]} />
-          <Animated.View style={[styles.ring, ringStyle(ring2)]} />
-          <Animated.View style={[styles.centerIcon, { transform: [{ scale: pulse }] }]}>
-            <Text style={styles.centerEmoji}>🚗</Text>
-          </Animated.View>
-        </View>
+    <View style={styles.container}>
+      <LeafletMap
+        center={DAKAR_CENTER}
+        zoom={14}
+        markers={[{ lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'origin' }]}
+        searchingCars
+        style={StyleSheet.absoluteFillObject}
+      />
 
-        <Text style={styles.title}>Recherche en cours…</Text>
-        <Text style={styles.subtitle}>
-          Nous cherchons le meilleur prestataire{'\n'}près de vous à Dakar
-        </Text>
+      <SafeAreaView style={styles.overlay} pointerEvents="box-none">
+        <View style={[sheetSurface, styles.bottomCard]} pointerEvents="box-none">
+          <Handle style={styles.handle} />
 
-        <View style={styles.infoRow}>
-          <View style={styles.infoItem}>
-            <Text style={styles.infoEmoji}>📍</Text>
-            <Text style={styles.infoLabel}>Votre position</Text>
-            <Text style={styles.infoValue}>Détectée</Text>
+          <View style={styles.statusRow}>
+            <Animated.View style={[styles.dot, { opacity: dotOpacity }]} />
+            <Text variant="heading2">Recherche en cours…</Text>
           </View>
-          <View style={styles.infoDivider} />
-          <View style={styles.infoItem}>
-            <Text style={styles.infoEmoji}>🏁</Text>
-            <Text style={styles.infoLabel}>Destination</Text>
-            <Text style={styles.infoValue} numberOfLines={1}>{params.destName as string}</Text>
-          </View>
-        </View>
-      </View>
 
-      <TouchableOpacity style={styles.cancelBtn} onPress={() => router.replace('/home')}>
-        <Text style={styles.cancelText}>Annuler la recherche</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+          <View style={styles.divider} />
+
+          <View style={styles.tripRow}>
+            <View style={styles.destDot} />
+            <Text variant="body" style={styles.destName} numberOfLines={1}>{params.destName}</Text>
+            <Text variant="body" style={styles.price}>{price} F</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.cancelBtn}
+            onPress={() => router.replace('/home')}
+            activeOpacity={0.7}
+          >
+            <Text variant="label" color={Colors.error}>Annuler</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1, backgroundColor: Colors.surface,
-    justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingBottom: 40,
+  container: { flex: 1 },
+  overlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
   },
-  content: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  pulseContainer: {
-    width: 120, height: 120,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 40,
+  bottomCard: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    paddingTop: 12,
   },
-  ring: {
-    position: 'absolute',
-    width: 120, height: 120,
-    borderRadius: 60,
-    borderWidth: 2,
-    borderColor: Colors.primary,
+  handle: {
+    marginBottom: 20,
   },
-  centerIcon: {
-    width: 80, height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  centerEmoji: { fontSize: 36 },
-  title: { fontSize: 24, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12, textAlign: 'center' },
-  subtitle: { fontSize: 15, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 40 },
-  infoRow: {
+  statusRow: {
     flexDirection: 'row',
-    backgroundColor: Colors.bg,
-    borderRadius: 16,
-    padding: 16,
-    width: '100%',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
   },
-  infoItem: { flex: 1, alignItems: 'center', gap: 4 },
-  infoEmoji: { fontSize: 20 },
-  infoLabel: { fontSize: 11, color: Colors.textTertiary, fontWeight: '600', textTransform: 'uppercase' },
-  infoValue: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
-  infoDivider: { width: 1, backgroundColor: Colors.border, marginHorizontal: 16 },
-  cancelBtn: { alignItems: 'center', paddingVertical: 14 },
-  cancelText: { fontSize: 15, color: Colors.error, fontWeight: '600' },
+  dot: {
+    width: 10, height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.primary,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginBottom: 16,
+  },
+  tripRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 20,
+  },
+  destDot: {
+    width: 10, height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.error,
+  },
+  destName: { flex: 1 },
+  price: { fontFamily: Poppins.semibold },
+  cancelBtn: {
+    alignItems: 'center',
+    paddingVertical: 14,
+  },
 });

@@ -19,10 +19,17 @@ export const Colors = {
   blue900: '#0D459B',
   blue950: '#0E2B5D',
 
-  // Neutrals
-  bg:            '#F9FAFB',
+  // Neutrals — dérivés de l'échelle de gris Tailwind (gray-50 → gray-900).
+  // Paliers nommés sémantiquement ; gray600/700 exposés pour les cas plus
+  // foncés (ex. icônes neutres) où textSecondary (gray-500) est trop clair.
+  bg:            '#F9FAFB', // gray-50
   surface:       '#FFFFFF',
-  border:        '#E5E7EB',
+  border:        '#E5E7EB', // gray-200
+  gray600:       '#4B5563',
+  gray700:       '#374151',
+  // Liseré universel des éléments flottant sur la carte : détache l'élément
+  // du fond carto quel que soit son contraste (translucide, neutre).
+  hairline:      'rgba(17, 24, 39, 0.08)',
   borderSubtle:  '#F3F4F6',
   textPrimary:   '#1A1A1A',
   textSecondary: '#6B7280',
@@ -32,6 +39,7 @@ export const Colors = {
 
   // Functional
   error:          '#EF4444',
+  errorPressed:   '#DC2626',
   errorSubtle:    '#FEE2E2',
   warning:        '#F59E0B',
   warningSubtle:  '#FEF3C7',

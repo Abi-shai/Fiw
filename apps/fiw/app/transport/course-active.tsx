@@ -1,77 +1,143 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Animated, SafeAreaView, ScrollView
+  View, StyleSheet, TouchableOpacity, Animated,
+  SafeAreaView, ScrollView, PanResponder
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import LeafletMap from '@/components/LeafletMap';
-import { Colors } from '@/constants/colors';
+import { Handle, sheetSurface } from '@/components/Sheet';
+import Text from '@/components/Text';
+import Icon, { type IconName } from '@/components/Icon';
+import Avatar from '@/components/Avatar';
+import { Colors, Radii, Poppins } from '@/constants/tokens';
 import { DRIVER, MOTO_DRIVER, DAKAR_CENTER } from '@/constants/data';
 
 type StepKey = 'en_route' | 'arrived' | 'in_progress' | 'finished';
 
-const STEPS: { key: StepKey; label: string; emoji: string; duration: number }[] = [
-  { key: 'en_route', label: 'En route vers vous', emoji: '🚗', duration: 5000 },
-  { key: 'arrived', label: 'Prestataire arrivé', emoji: '📍', duration: 6000 },
-  { key: 'in_progress', label: 'Course en cours', emoji: '🏁', duration: 5000 },
-  { key: 'finished', label: 'Arrivée à destination', emoji: '✅', duration: 0 },
+const STEPS: { key: StepKey; label: string; duration: number }[] = [
+  { key: 'en_route', label: 'En route vers vous', duration: 55000 },
+  { key: 'arrived', label: 'Prestataire arrivé', duration: 12000 },
+  { key: 'in_progress', label: 'Course en cours', duration: 60000 },
+  { key: 'finished', label: 'Arrivée à destination', duration: 0 },
 ];
 
-const DRIVER_PATH = [
-  { lat: 14.7100, lng: -17.4500 },
-  { lat: 14.7050, lng: -17.4470 },
-  { lat: 14.7010, lng: -17.4450 },
-  { lat: 14.6980, lng: -17.4430 },
-  { lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng },
-];
-
+const DRIVER_START = { lat: 14.7100, lng: -17.4500 };
 const GRACE_SECONDS = 3;
+
+const SHEET_EXPANDED = 420;
+const SHEET_PEEK = 160;
+const SNAP_DOWN = SHEET_EXPANDED - SHEET_PEEK;
+
+function getMapConfig(stepKey: StepKey, destLat: number, destLng: number) {
+  switch (stepKey) {
+    case 'en_route':
+      return {
+        center: {
+          lat: (DRIVER_START.lat + DAKAR_CENTER.lat) / 2,
+          lng: (DRIVER_START.lng + DAKAR_CENTER.lng) / 2,
+        },
+        zoom: 13,
+        markers: [
+          { lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'origin' as const },
+          { lat: DRIVER_START.lat, lng: DRIVER_START.lng, type: 'driver' as const },
+        ],
+        route: { from: DRIVER_START, to: DAKAR_CENTER, animateDuration: 54000 },
+      };
+    case 'arrived':
+      return {
+        center: DAKAR_CENTER,
+        zoom: 16,
+        markers: [
+          { lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'driver' as const },
+        ],
+        route: undefined,
+      };
+    case 'in_progress':
+      return {
+        center: {
+          lat: (DAKAR_CENTER.lat + destLat) / 2,
+          lng: (DAKAR_CENTER.lng + destLng) / 2,
+        },
+        zoom: 13,
+        markers: [
+          { lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'driver' as const },
+          { lat: destLat, lng: destLng, type: 'destination' as const },
+        ],
+        route: { from: DAKAR_CENTER, to: { lat: destLat, lng: destLng }, animateDuration: 59000 },
+      };
+    default:
+      return {
+        center: DAKAR_CENTER,
+        zoom: 14,
+        markers: [],
+        route: undefined,
+      };
+  }
+}
 
 export default function CourseActiveScreen() {
   const params = useLocalSearchParams<{
     destName: string; gammeLabel: string; gammeId: string;
     finalPrice: string; paymentId: string; selectedOption: string;
+    destLat: string; destLng: string;
   }>();
 
   const driver = params.gammeId === 'moto' ? MOTO_DRIVER : DRIVER;
   const basePrice = parseInt(params.finalPrice || '1500');
+  const destLat = parseFloat(params.destLat || String(DAKAR_CENTER.lat));
+  const destLng = parseFloat(params.destLng || String(DAKAR_CENTER.lng));
 
   const [stepIndex, setStepIndex] = useState(0);
   const [waitSeconds, setWaitSeconds] = useState(0);
-  const [driverPos, setDriverPos] = useState(DRIVER_PATH[0]);
-  const slideUp = useRef(new Animated.Value(400)).current;
-  const barAnim = useRef(new Animated.Value(0)).current;
+
+  const slideUp = useRef(new Animated.Value(SHEET_EXPANDED)).current;
+  const dragY = useRef(new Animated.Value(0)).current;
+  const dragYValue = useRef(0);
+  const dragOffset = useRef(0);
 
   const step = STEPS[stepIndex];
   const waitFrais = waitSeconds > GRACE_SECONDS ? (waitSeconds - GRACE_SECONDS) * 100 : 0;
   const currentPrice = basePrice + waitFrais;
 
+  const mapConfig = getMapConfig(step.key, destLat, destLng);
+
+  useEffect(() => {
+    const id = dragY.addListener(({ value }) => { dragYValue.current = value; });
+    return () => dragY.removeListener(id);
+  }, []);
+
+  const panResponder = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onPanResponderGrant: () => {
+      dragOffset.current = dragYValue.current;
+    },
+    onPanResponderMove: (_, g) => {
+      const newVal = Math.max(0, Math.min(SNAP_DOWN, dragOffset.current + g.dy));
+      dragY.setValue(newVal);
+    },
+    onPanResponderRelease: (_, g) => {
+      const current = dragYValue.current;
+      const snapToExpanded = current < SNAP_DOWN / 2 || g.vy < -0.5;
+      Animated.spring(dragY, {
+        toValue: snapToExpanded ? 0 : SNAP_DOWN,
+        tension: 65,
+        friction: 11,
+        useNativeDriver: false,
+      }).start();
+    },
+  })).current;
+
   useEffect(() => {
     Animated.spring(slideUp, {
-      toValue: 0, tension: 65, friction: 11, useNativeDriver: true,
+      toValue: 0, tension: 65, friction: 11, useNativeDriver: false,
     }).start();
   }, []);
 
   useEffect(() => {
-    let pathIndex = 0;
-    const moveDriver = setInterval(() => {
-      if (pathIndex < DRIVER_PATH.length - 1) {
-        pathIndex++;
-        setDriverPos(DRIVER_PATH[pathIndex]);
-      }
-    }, 1200);
-    return () => clearInterval(moveDriver);
-  }, []);
-
-  useEffect(() => {
     if (step.duration === 0) return;
-
-    Animated.timing(barAnim, { toValue: 0, duration: 0, useNativeDriver: false }).start();
-    Animated.timing(barAnim, { toValue: 1, duration: step.duration, useNativeDriver: false }).start();
-
     const timer = setTimeout(() => {
       setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
     }, step.duration);
-
     return () => clearTimeout(timer);
   }, [stepIndex]);
 
@@ -104,46 +170,25 @@ export default function CourseActiveScreen() {
     }
   }, [stepIndex]);
 
-  const skipStep = () => {
-    setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
-  };
+  const sheetTranslate = Animated.add(slideUp, dragY);
 
   return (
     <View style={styles.container}>
       <LeafletMap
-        center={DAKAR_CENTER}
-        zoom={14}
-        markers={[
-          { lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'origin' },
-          { lat: driverPos.lat, lng: driverPos.lng, type: 'driver' },
-        ]}
+        key={`map-${step.key}`}
+        center={mapConfig.center}
+        zoom={mapConfig.zoom}
+        markers={mapConfig.markers}
+        route={mapConfig.route}
         style={StyleSheet.absoluteFillObject}
       />
 
       <SafeAreaView style={styles.overlay} pointerEvents="box-none">
-        <View style={styles.topCard}>
-          <View style={styles.statusRow}>
-            <Text style={styles.statusEmoji}>{step.emoji}</Text>
-            <Text style={styles.statusLabel}>{step.label}</Text>
+        <Animated.View style={[sheetSurface, styles.bottomSheet, { transform: [{ translateY: sheetTranslate }] }]}>
+          <View style={styles.handleArea} {...panResponder.panHandlers}>
+            <Handle />
           </View>
-          {step.duration > 0 && (
-            <View style={styles.progressBar}>
-              <Animated.View
-                style={[styles.progressFill, {
-                  width: barAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
-                }]}
-              />
-            </View>
-          )}
-        </View>
 
-        {step.key !== 'finished' && (
-          <TouchableOpacity style={styles.skipBtn} onPress={skipStep}>
-            <Text style={styles.skipText}>⏭ Étape suivante (facilitateur)</Text>
-          </TouchableOpacity>
-        )}
-
-        <Animated.View style={[styles.bottomSheet, { transform: [{ translateY: slideUp }] }]}>
           {step.key === 'en_route' && (
             <EnRouteSheet driver={driver} onCancel={() => router.replace('/home')} />
           )}
@@ -163,58 +208,56 @@ function EnRouteSheet({ driver, onCancel }: { driver: typeof DRIVER; onCancel: (
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
       <View style={styles.eta}>
-        <Text style={styles.etaTime}>4 min</Text>
-        <Text style={styles.etaLabel}>avant l'arrivée</Text>
+        <Text color={Colors.primary} style={styles.etaTime}>4 min</Text>
+        <Text variant="body" color={Colors.textSecondary}>avant l'arrivée</Text>
       </View>
 
       <View style={styles.driverRow}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarEmoji}>{driver.emoji}</Text>
-        </View>
-        <View style={styles.driverInfo}>
-          <Text style={styles.driverName}>{driver.name}</Text>
+        <Avatar name={driver.name} size={56} bordered />
+        <View style={styles.flex1}>
+          <Text variant="heading2">{driver.name}</Text>
           <View style={styles.ratingRow}>
-            <Text style={styles.star}>★</Text>
-            <Text style={styles.ratingVal}>{driver.rating}</Text>
-            <Text style={styles.tripCount}>· {driver.trips} courses</Text>
+            <Icon name="star" size={14} weight="fill" color={Colors.warning} />
+            <Text variant="bodySmall" style={styles.ratingVal}>{driver.rating}</Text>
+            <Text variant="bodySmall" color={Colors.textSecondary}>· {driver.trips} courses</Text>
           </View>
         </View>
         <View style={styles.contactActions}>
           <TouchableOpacity style={styles.actionBtn}>
-            <Text style={styles.actionIcon}>📞</Text>
+            <Icon name="phone" size={18} color={Colors.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionBtn}>
-            <Text style={styles.actionIcon}>💬</Text>
+            <Icon name="chat" size={18} color={Colors.primary} />
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.vehicleRow}>
-        <View style={styles.vehicleItem}>
-          <Text style={styles.vehicleLabel}>Véhicule</Text>
-          <Text style={styles.vehicleValue}>{driver.vehicle} {driver.color}</Text>
-        </View>
+        <VehicleItem label="Véhicule" value={`${driver.vehicle} ${driver.color}`} />
         <View style={styles.vehicleDivider} />
-        <View style={styles.vehicleItem}>
-          <Text style={styles.vehicleLabel}>Plaque</Text>
-          <Text style={styles.vehicleValue}>{driver.plate}</Text>
-        </View>
+        <VehicleItem label="Plaque" value={driver.plate} />
         <View style={styles.vehicleDivider} />
-        <View style={styles.vehicleItem}>
-          <Text style={styles.vehicleLabel}>ID</Text>
-          <Text style={styles.vehicleValue}>{driver.id}</Text>
-        </View>
+        <VehicleItem label="ID" value={driver.id} />
       </View>
 
       <TouchableOpacity style={styles.shareBtn}>
-        <Text style={styles.shareIcon}>📤</Text>
-        <Text style={styles.shareBtnText}>Partager la course</Text>
+        <Icon name="share" size={16} color={Colors.textPrimary} />
+        <Text variant="label">Partager la course</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.cancelLink} onPress={onCancel}>
-        <Text style={styles.cancelText}>Annuler (gratuit)</Text>
+        <Text variant="bodySmall" color={Colors.error} style={styles.cancelText}>Annuler (gratuit)</Text>
       </TouchableOpacity>
     </ScrollView>
+  );
+}
+
+function VehicleItem({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.vehicleItem}>
+      <Text variant="caption" color={Colors.textTertiary} style={styles.vehicleLabel}>{label}</Text>
+      <Text variant="bodySmall" align="center" style={styles.vehicleValue}>{value}</Text>
+    </View>
   );
 }
 
@@ -225,31 +268,33 @@ function ArrivedSheet({ driver, waitSeconds, waitFrais }: {
   return (
     <View>
       <View style={styles.arrivedHeader}>
-        <Text style={styles.arrivedEmoji}>📍</Text>
+        <View style={styles.arrivedIcon}>
+          <Icon name="pin" size={24} weight="fill" color={Colors.primary} />
+        </View>
         <View>
-          <Text style={styles.arrivedTitle}>Prestataire arrivé</Text>
-          <Text style={styles.arrivedSub}>{driver.name} vous attend</Text>
+          <Text variant="heading2">Prestataire arrivé</Text>
+          <Text variant="bodySmall" color={Colors.textSecondary}>{driver.name} vous attend</Text>
         </View>
       </View>
 
       {inGrace ? (
         <View style={styles.graceCard}>
-          <Text style={styles.graceText}>Gratuit encore {GRACE_SECONDS - waitSeconds} s</Text>
+          <Text variant="label" color={Colors.primaryPressed}>Gratuit encore {GRACE_SECONDS - waitSeconds} s</Text>
         </View>
       ) : (
         <View style={styles.waitCard}>
-          <Text style={styles.waitTitle}>Frais d'attente</Text>
-          <Text style={styles.waitAmount}>{waitFrais.toLocaleString()} F CFA</Text>
-          <Text style={styles.waitSub}>100 F/min · {waitSeconds - GRACE_SECONDS}s écoulées</Text>
+          <Text variant="caption" color={Colors.warning} style={styles.waitTitle}>Frais d'attente</Text>
+          <Text color={Colors.textPrimary} style={styles.waitAmount}>{waitFrais.toLocaleString()} F CFA</Text>
+          <Text variant="caption" color={Colors.textSecondary}>100 F/min · {waitSeconds - GRACE_SECONDS}s écoulées</Text>
         </View>
       )}
 
       <View style={styles.driverMini}>
-        <View style={styles.avatarSmall}>
-          <Text style={styles.avatarSmallEmoji}>{driver.emoji}</Text>
+        <Avatar name={driver.name} size={40} />
+        <View>
+          <Text variant="bodySmall" style={styles.driverMiniName}>{driver.name}</Text>
+          <Text variant="caption" color={Colors.textSecondary}>{driver.vehicle} · {driver.plate}</Text>
         </View>
-        <Text style={styles.driverMiniName}>{driver.name}</Text>
-        <Text style={styles.driverMiniVehicle}>{driver.vehicle} · {driver.plate}</Text>
       </View>
     </View>
   );
@@ -259,101 +304,55 @@ function InProgressSheet({ driver, currentPrice }: { driver: typeof DRIVER; curr
   return (
     <View>
       <View style={styles.driverMiniRow}>
-        <View style={styles.avatarSmall}>
-          <Text style={styles.avatarSmallEmoji}>{driver.emoji}</Text>
+        <Avatar name={driver.name} size={40} />
+        <View style={styles.flex1}>
+          <Text variant="bodySmall" style={styles.driverMiniName}>{driver.name}</Text>
+          <Text variant="caption" color={Colors.textSecondary}>{driver.vehicle} · {driver.plate}</Text>
         </View>
-        <View style={styles.driverMiniInfo}>
-          <Text style={styles.driverMiniName}>{driver.name}</Text>
-          <Text style={styles.driverMiniVehicleInline}>{driver.vehicle} · {driver.plate}</Text>
-        </View>
-        <Text style={styles.driverMiniPrice}>{currentPrice.toLocaleString()} F</Text>
+        <Text variant="heading2" color={Colors.primary}>{currentPrice.toLocaleString()} F</Text>
       </View>
 
       <View style={styles.actionsRow}>
-        <TouchableOpacity style={styles.iconBtn}>
-          <Text style={styles.iconBtnEmoji}>📞</Text>
-          <Text style={styles.iconBtnLabel}>Appeler</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconBtn}>
-          <Text style={styles.iconBtnEmoji}>💬</Text>
-          <Text style={styles.iconBtnLabel}>Chat</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconBtn}>
-          <Text style={styles.iconBtnEmoji}>📤</Text>
-          <Text style={styles.iconBtnLabel}>Partager</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.iconBtn, styles.sosBtn]}>
-          <Text style={styles.iconBtnEmoji}>🆘</Text>
-          <Text style={[styles.iconBtnLabel, { color: Colors.error }]}>SOS</Text>
-        </TouchableOpacity>
+        <ActionTile icon="phone" label="Appeler" />
+        <ActionTile icon="chat" label="Chat" />
+        <ActionTile icon="share" label="Partager" />
+        <ActionTile icon="sos" label="SOS" danger />
       </View>
     </View>
+  );
+}
+
+function ActionTile({ icon, label, danger }: { icon: IconName; label: string; danger?: boolean }) {
+  const color = danger ? Colors.error : Colors.primary;
+  return (
+    <TouchableOpacity style={[styles.iconBtn, danger && styles.sosBtn]}>
+      <Icon name={icon} size={20} color={color} weight={danger ? 'fill' : 'bold'} />
+      <Text variant="caption" color={danger ? Colors.error : Colors.textPrimary}>{label}</Text>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   overlay: { flex: 1 },
-  topCard: {
-    margin: 12,
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  statusEmoji: { fontSize: 22 },
-  statusLabel: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, flex: 1 },
-  progressBar: { height: 4, borderRadius: 2, backgroundColor: Colors.border, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: Colors.primary, borderRadius: 2 },
-  skipBtn: {
-    position: 'absolute',
-    top: 80, right: 12,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  skipText: { color: Colors.surface, fontSize: 12, fontWeight: '600' },
+  flex1: { flex: 1 },
   bottomSheet: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    padding: 24,
+    height: SHEET_EXPANDED,
+    paddingHorizontal: 24,
     paddingBottom: 40,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 12,
-    maxHeight: '60%',
+  },
+  handleArea: {
+    paddingTop: 12,
+    paddingBottom: 16,
+    alignItems: 'center',
   },
   eta: { alignItems: 'center', marginBottom: 20 },
-  etaTime: { fontSize: 40, fontWeight: '800', color: Colors.primary },
-  etaLabel: { fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
+  etaTime: { fontFamily: Poppins.bold, fontSize: 40, lineHeight: 48 },
   driverRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 12 },
-  avatar: {
-    width: 56, height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.primarySubtle,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: Colors.primary,
-  },
-  avatarEmoji: { fontSize: 28 },
-  driverInfo: { flex: 1 },
-  driverName: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
-  star: { color: Colors.warning, fontSize: 14 },
-  ratingVal: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
-  tripCount: { fontSize: 13, color: Colors.textSecondary },
+  ratingVal: { fontFamily: Poppins.semibold },
   contactActions: { flexDirection: 'row', gap: 8 },
   actionBtn: {
     width: 44, height: 44,
@@ -364,17 +363,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  actionIcon: { fontSize: 18 },
   vehicleRow: {
     flexDirection: 'row',
     backgroundColor: Colors.bg,
-    borderRadius: 14,
+    borderRadius: Radii.md,
     padding: 14,
     marginBottom: 14,
   },
   vehicleItem: { flex: 1, alignItems: 'center' },
-  vehicleLabel: { fontSize: 11, color: Colors.textTertiary, fontWeight: '600', textTransform: 'uppercase', marginBottom: 4 },
-  vehicleValue: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary, textAlign: 'center' },
+  vehicleLabel: { textTransform: 'uppercase', marginBottom: 4 },
+  vehicleValue: { fontFamily: Poppins.medium },
   vehicleDivider: { width: 1, backgroundColor: Colors.border },
   shareBtn: {
     flexDirection: 'row',
@@ -382,55 +380,46 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     padding: 12,
-    borderRadius: 12,
+    borderRadius: Radii.md,
     borderWidth: 1,
     borderColor: Colors.border,
     marginBottom: 14,
   },
-  shareIcon: { fontSize: 16 },
-  shareBtnText: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
   cancelLink: { alignItems: 'center', paddingVertical: 8 },
-  cancelText: { fontSize: 14, color: Colors.error, fontWeight: '600' },
+  cancelText: { fontFamily: Poppins.medium },
   arrivedHeader: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 },
-  arrivedEmoji: { fontSize: 36 },
-  arrivedTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
-  arrivedSub: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+  arrivedIcon: {
+    width: 48, height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.primarySubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   graceCard: {
     backgroundColor: Colors.primarySubtle,
-    borderRadius: 12,
+    borderRadius: Radii.md,
     padding: 12,
     alignItems: 'center',
     marginBottom: 16,
   },
-  graceText: { fontSize: 14, fontWeight: '600', color: Colors.primaryPressed },
   waitCard: {
     backgroundColor: Colors.warningSubtle,
-    borderRadius: 12,
+    borderRadius: Radii.md,
     padding: 14,
     alignItems: 'center',
     marginBottom: 16,
   },
-  waitTitle: { fontSize: 12, fontWeight: '600', color: Colors.warning },
-  waitAmount: { fontSize: 26, fontWeight: '800', color: Colors.textPrimary, marginTop: 2 },
-  waitSub: { fontSize: 12, color: Colors.textSecondary, marginTop: 4 },
+  waitTitle: { textTransform: 'uppercase' },
+  waitAmount: { fontFamily: Poppins.bold, fontSize: 26, lineHeight: 32, marginTop: 2 },
   driverMini: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     backgroundColor: Colors.bg,
-    borderRadius: 12,
+    borderRadius: Radii.md,
     padding: 12,
   },
-  avatarSmall: {
-    width: 40, height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.primarySubtle,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarSmallEmoji: { fontSize: 20 },
-  driverMiniName: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-  driverMiniVehicle: { fontSize: 12, color: Colors.textSecondary },
+  driverMiniName: { fontFamily: Poppins.semibold },
   driverMiniRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -440,9 +429,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  driverMiniInfo: { flex: 1 },
-  driverMiniVehicleInline: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
-  driverMiniPrice: { fontSize: 17, fontWeight: '700', color: Colors.primary },
   actionsRow: { flexDirection: 'row', gap: 8 },
   iconBtn: {
     flex: 1,
@@ -450,11 +436,9 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: 10,
     backgroundColor: Colors.bg,
-    borderRadius: 14,
+    borderRadius: Radii.md,
     borderWidth: 1,
     borderColor: Colors.border,
   },
   sosBtn: { borderColor: Colors.error, backgroundColor: Colors.errorSubtle },
-  iconBtnEmoji: { fontSize: 20 },
-  iconBtnLabel: { fontSize: 11, fontWeight: '600', color: Colors.textPrimary },
 });

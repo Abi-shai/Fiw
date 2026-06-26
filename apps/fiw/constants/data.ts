@@ -13,6 +13,18 @@ export const SUGGESTIONS = [
   { id: '10', name: 'Université Cheikh Anta Diop', detail: 'Fann', lat: 14.6928, lng: -17.4628 },
 ];
 
+// Lieux enregistrés par le client (onglet « Enregistré »)
+export const SAVED_PLACES = [
+  { id: 's-home', kind: 'home', label: 'Maison', detail: 'Sacré-Cœur 3, Villa 214', lat: 14.7225, lng: -17.4688 },
+  { id: 's-work', kind: 'work', label: 'Travail', detail: 'Plateau, Av. Léopold Sédar Senghor', lat: 14.6712, lng: -17.4382 },
+];
+
+// Destinations récentes (onglet « Suggéré »)
+export const RECENT_PLACES = [
+  { id: 'r-1', name: 'Almadies', detail: 'Dakar Ouest', lat: 14.7320, lng: -17.5113 },
+  { id: 'r-2', name: 'Aéroport AIBD', detail: 'Rufisque', lat: 14.6740, lng: -17.0730 },
+];
+
 export const DRIVER = {
   name: 'Moussa Diallo',
   vehicle: 'Toyota Corolla',

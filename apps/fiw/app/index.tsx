@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, KeyboardAvoidingView,
-  Platform, TouchableOpacity, Image, ScrollView
+  View, StyleSheet, TextInput, KeyboardAvoidingView,
+  Platform, TouchableOpacity, ScrollView
 } from 'react-native';
 import { router } from 'expo-router';
-import { Colors } from '@/constants/colors';
+import { Colors, Radii, Poppins } from '@/constants/tokens';
 import Button from '@/components/Button';
+import Text from '@/components/Text';
 
 export default function OnboardingScreen() {
   const [phone, setPhone] = useState('+221 77 000 00 00');
@@ -18,14 +19,14 @@ export default function OnboardingScreen() {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-            <Text style={styles.logoText}>fiw</Text>
+            <Text color={Colors.surface} style={styles.logoText}>fiw</Text>
           </View>
-          <Text style={styles.tagline}>Votre mobilité à Dakar</Text>
+          <Text variant="body" color={Colors.textSecondary}>Votre mobilité à Dakar</Text>
         </View>
 
         <View style={styles.form}>
-          <Text style={styles.title}>Bienvenue</Text>
-          <Text style={styles.subtitle}>Entrez votre numéro pour continuer</Text>
+          <Text variant="display" style={styles.title}>Bienvenue</Text>
+          <Text variant="body" color={Colors.textSecondary} style={styles.subtitle}>Entrez votre numéro pour continuer</Text>
 
           <View style={styles.inputWrapper}>
             <Text style={styles.flag}>🇸🇳</Text>
@@ -46,13 +47,16 @@ export default function OnboardingScreen() {
           />
 
           <TouchableOpacity onPress={() => router.push('/otp')} style={styles.createLink}>
-            <Text style={styles.createText}>Pas encore de compte ? <Text style={styles.createBold}>Créer un compte</Text></Text>
+            <Text variant="bodySmall" color={Colors.textSecondary}>
+              Pas encore de compte ? <Text variant="bodySmall" color={Colors.primary} style={styles.createBold}>Créer un compte</Text>
+            </Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>En continuant, vous acceptez les{' '}
-            <Text style={styles.footerLink}>Conditions d'utilisation</Text>
+          <Text variant="caption" color={Colors.textTertiary} align="center">
+            En continuant, vous acceptez les{' '}
+            <Text variant="caption" color={Colors.primary}>Conditions d'utilisation</Text>
           </Text>
         </View>
       </ScrollView>
@@ -71,7 +75,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     width: 80,
     height: 80,
-    borderRadius: 24,
+    borderRadius: Radii.lg,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
@@ -83,33 +87,18 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   logoText: {
+    fontFamily: Poppins.bold,
     fontSize: 32,
-    fontWeight: '800',
-    color: Colors.surface,
     letterSpacing: -1,
   },
-  tagline: {
-    fontSize: 15,
-    color: Colors.textSecondary,
-    fontWeight: '400',
-  },
   form: { flex: 1 },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: Colors.textSecondary,
-    marginBottom: 32,
-  },
+  title: { marginBottom: 8 },
+  subtitle: { marginBottom: 32 },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.bg,
-    borderRadius: 14,
+    borderRadius: Radii.md,
     borderWidth: 1.5,
     borderColor: Colors.border,
     paddingHorizontal: 16,
@@ -121,13 +110,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 17,
     color: Colors.textPrimary,
-    fontWeight: '500',
+    fontFamily: Poppins.medium,
   },
   btn: { marginTop: 8 },
   createLink: { marginTop: 20, alignItems: 'center' },
-  createText: { fontSize: 14, color: Colors.textSecondary },
-  createBold: { color: Colors.primary, fontWeight: '600' },
+  createBold: { fontFamily: Poppins.semibold },
   footer: { paddingVertical: 32, alignItems: 'center' },
-  footerText: { fontSize: 12, color: Colors.textTertiary, textAlign: 'center' },
-  footerLink: { color: Colors.primary },
 });

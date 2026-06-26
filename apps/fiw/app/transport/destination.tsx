@@ -1,70 +1,110 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, TouchableOpacity,
-  FlatList, SafeAreaView
+  View, StyleSheet, TextInput, TouchableOpacity, FlatList,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Colors } from '@/constants/colors';
-import { SUGGESTIONS } from '@/constants/data';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
+import LeafletMap from '@/components/LeafletMap';
+import IconButton from '@/components/IconButton';
+import PlaceRow from '@/components/PlaceRow';
+import Text from '@/components/Text';
+import Icon from '@/components/Icon';
+import { sheetSurface } from '@/components/Sheet';
+import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { DAKAR_CENTER, SUGGESTIONS, SAVED_PLACES, RECENT_PLACES } from '@/constants/data';
 
 type Field = 'departure' | 'destination';
+type Tab = 'suggested' | 'saved';
+type Place = { name: string; detail: string; lat: number; lng: number };
 
 export default function DestinationScreen() {
+  const insets = useSafeAreaInsets();
+
   const [activeField, setActiveField] = useState<Field>('destination');
-  const [departureQuery, setDepartureQuery] = useState('');
+  const [tab, setTab] = useState<Tab>('suggested');
   const [departureName, setDepartureName] = useState('Ma position actuelle');
+  const [departureQuery, setDepartureQuery] = useState('');
   const [destinationQuery, setDestinationQuery] = useState('');
 
   const query = activeField === 'departure' ? departureQuery : destinationQuery;
-  const setQuery = activeField === 'departure' ? setDepartureQuery : setDestinationQuery;
 
-  const filtered = query.length > 0
-    ? SUGGESTIONS.filter(s =>
-        s.name.toLowerCase().includes(query.toLowerCase()) ||
-        s.detail.toLowerCase().includes(query.toLowerCase())
-      )
-    : SUGGESTIONS;
+  const goToConfigure = (place: Place) => {
+    router.push({
+      pathname: '/transport/configure',
+      params: {
+        departureName,
+        destName: place.name,
+        destDetail: place.detail,
+        destLat: String(place.lat),
+        destLng: String(place.lng),
+      },
+    });
+  };
 
-  const handleSelect = (item: typeof SUGGESTIONS[0]) => {
+  const handleSelect = (place: Place) => {
+    Haptics.selectionAsync();
     if (activeField === 'departure') {
-      setDepartureName(item.name);
+      setDepartureName(place.name);
       setDepartureQuery('');
       setActiveField('destination');
     } else {
-      router.push({
-        pathname: '/transport/configure',
-        params: {
-          departureName,
-          destName: item.name,
-          destDetail: item.detail,
-          destLat: item.lat,
-          destLng: item.lng,
-        },
-      });
+      goToConfigure(place);
     }
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.back}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Où allons-nous ?</Text>
-      </View>
+  const pickOnMap = () => {
+    Haptics.selectionAsync();
+    goToConfigure({ name: 'Position sur la carte', detail: 'Point sélectionné', ...DAKAR_CENTER });
+  };
 
-      <View style={styles.inputs}>
+  // --- Liste affichée selon l'onglet + la recherche ---
+  const matches = (name: string, detail: string) =>
+    name.toLowerCase().includes(query.toLowerCase()) ||
+    detail.toLowerCase().includes(query.toLowerCase());
+
+  const searching = query.length > 0;
+
+  const suggestedData: Place[] = searching
+    ? SUGGESTIONS.filter(s => matches(s.name, s.detail))
+    : [...RECENT_PLACES];
+
+  const savedData = searching
+    ? SAVED_PLACES.filter(s => matches(s.label, s.detail))
+    : SAVED_PLACES;
+
+  return (
+    <View style={styles.container}>
+      <LeafletMap
+        center={DAKAR_CENTER}
+        zoom={14}
+        markers={[{ lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'user', heading: 25 }]}
+        mapStyle="mapbox://styles/mapbox/streets-v12"
+        tintWater
+        style={StyleSheet.absoluteFillObject}
+      />
+
+      <View style={[sheetSurface, styles.sheet, { marginTop: insets.top + 64, paddingBottom: insets.bottom + 8 }]}>
+        {/* En-tête */}
+        <View style={styles.header}>
+          <Text variant="heading1" style={styles.title}>Indiquer votre itinéraire</Text>
+          <IconButton name="close" variant="flat" color={Colors.textPrimary} onPress={() => router.back()} />
+        </View>
+
+        {/* Champ « De » */}
         <TouchableOpacity
-          style={styles.inputRow}
+          style={[styles.fieldDe, activeField === 'departure' && styles.fieldActive]}
+          activeOpacity={0.85}
           onPress={() => setActiveField('departure')}
-          activeOpacity={0.7}
         >
-          <View style={[styles.dot, { backgroundColor: Colors.primary }]} />
-          <View style={styles.inputBox}>
-            <Text style={styles.inputLabel}>Départ</Text>
+          <View style={styles.deIcon}>
+            <Icon name="hail" size={22} color={Colors.textPrimary} />
+          </View>
+          <View style={styles.fieldBody}>
+            <Text variant="caption" color={Colors.textTertiary}>De</Text>
             {activeField === 'departure' ? (
               <TextInput
-                style={styles.inputField}
+                style={styles.fieldInput}
                 value={departureQuery}
                 onChangeText={setDepartureQuery}
                 placeholder="Saisir un point de départ…"
@@ -72,131 +112,163 @@ export default function DestinationScreen() {
                 autoFocus
               />
             ) : (
-              <Text style={styles.inputValue}>{departureName}</Text>
+              <Text variant="body" style={styles.fieldValue} numberOfLines={1}>{departureName}</Text>
             )}
           </View>
         </TouchableOpacity>
 
-        <View style={styles.dividerLine} />
-
-        <TouchableOpacity
-          style={styles.inputRow}
-          onPress={() => setActiveField('destination')}
-          activeOpacity={0.7}
-        >
-          <View style={[styles.dot, { backgroundColor: Colors.error }]} />
-          <View style={styles.inputBox}>
-            <Text style={styles.inputLabel}>Destination</Text>
-            {activeField === 'destination' ? (
-              <TextInput
-                style={styles.inputField}
-                value={destinationQuery}
-                onChangeText={setDestinationQuery}
-                placeholder="Plateau, Almadies, Yoff…"
-                placeholderTextColor={Colors.textTertiary}
-                autoFocus={activeField === 'destination'}
-              />
-            ) : (
-              <Text style={styles.inputValue}>
-                {destinationQuery || 'Saisir une destination…'}
-              </Text>
-            )}
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      <Text style={styles.sectionTitle}>
-        {query.length > 0
-          ? `Résultats pour "${query}"`
-          : activeField === 'departure' ? 'Choisir un départ' : 'Destinations populaires'}
-      </Text>
-
-      <FlatList
-        data={filtered}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.suggestion} onPress={() => handleSelect(item)}>
-            <View style={styles.suggestionIcon}>
-              <Text style={styles.suggestionEmoji}>
-                {activeField === 'departure' ? '🟢' : '📍'}
-              </Text>
-            </View>
-            <View style={styles.suggestionText}>
-              <Text style={styles.suggestionName}>{item.name}</Text>
-              <Text style={styles.suggestionDetail}>{item.detail}</Text>
-            </View>
+        {/* Champ « À » + sélecteur carte */}
+        <View style={[styles.fieldA, activeField === 'destination' && styles.fieldActive]}>
+          <Icon name="search" size={20} color={Colors.textSecondary} />
+          <TextInput
+            style={styles.aInput}
+            value={destinationQuery}
+            onFocus={() => setActiveField('destination')}
+            onChangeText={setDestinationQuery}
+            placeholder="À"
+            placeholderTextColor={Colors.textTertiary}
+            autoFocus
+          />
+          <TouchableOpacity style={styles.mapBtn} onPress={pickOnMap} activeOpacity={0.85}>
+            <Icon name="pin" size={20} color={Colors.primary} />
           </TouchableOpacity>
+        </View>
+
+        {/* Onglets Suggéré / Enregistré */}
+        <View style={styles.tabs}>
+          <TouchableOpacity
+            style={[styles.tab, tab === 'suggested' && styles.tabActive]}
+            onPress={() => setTab('suggested')}
+            activeOpacity={0.85}
+          >
+            <Text variant="label" color={tab === 'suggested' ? Colors.surface : Colors.textSecondary}>Suggéré</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, tab === 'saved' && styles.tabActive]}
+            onPress={() => setTab('saved')}
+            activeOpacity={0.85}
+          >
+            <Text variant="label" color={tab === 'saved' ? Colors.surface : Colors.textSecondary}>Enregistré</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Résultats */}
+        {tab === 'suggested' ? (
+          <FlatList
+            data={suggestedData}
+            keyExtractor={(item) => item.name}
+            keyboardShouldPersistTaps="handled"
+            ListHeaderComponent={
+              <PlaceRow
+                icon="location"
+                accent
+                title="Choisir sur la carte"
+                subtitle="Positionner le point précisément"
+                trailing="chevronRight"
+                onPress={pickOnMap}
+              />
+            }
+            renderItem={({ item }) => (
+              <PlaceRow
+                icon={searching ? 'location' : 'clock'}
+                title={item.name}
+                subtitle={item.detail}
+                onPress={() => handleSelect(item)}
+              />
+            )}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+          />
+        ) : (
+          <FlatList
+            data={savedData}
+            keyExtractor={(item) => item.id}
+            keyboardShouldPersistTaps="handled"
+            renderItem={({ item }) => (
+              <PlaceRow
+                icon={item.kind === 'home' ? 'home' : 'work'}
+                accent
+                title={item.label}
+                subtitle={item.detail}
+                onPress={() => handleSelect({ name: item.label, detail: item.detail, lat: item.lat, lng: item.lng })}
+              />
+            )}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            ListFooterComponent={
+              <PlaceRow icon="add" title="Ajouter une adresse" />
+            }
+          />
         )}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        keyboardShouldPersistTaps="handled"
-      />
-    </SafeAreaView>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.surface },
+  container: { flex: 1, backgroundColor: Colors.bg },
+
+  sheet: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 22,
+  },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
-    gap: 12,
+    justifyContent: 'space-between',
+    marginBottom: 20,
   },
-  back: { padding: 4 },
-  backIcon: { fontSize: 22, color: Colors.textPrimary },
-  title: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
-  inputs: {
-    marginHorizontal: 16,
+  title: { flex: 1, letterSpacing: -0.4 },
+
+  fieldDe: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     backgroundColor: Colors.bg,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
+    borderRadius: Radii.md,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    marginBottom: 12,
+  },
+  deIcon: { width: 28, alignItems: 'center' },
+  fieldBody: { flex: 1 },
+  fieldValue: { marginTop: 1, fontFamily: Poppins.medium },
+  fieldInput: { fontSize: 15, color: Colors.textPrimary, fontFamily: Poppins.medium, marginTop: 1, padding: 0 },
+
+  fieldA: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: Colors.bg,
+    borderRadius: Radii.md,
+    paddingLeft: 16,
+    paddingRight: 8,
+    height: 56,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  fieldActive: { borderColor: Colors.primary, backgroundColor: Colors.primarySubtle },
+  aInput: { flex: 1, fontSize: 17, color: Colors.textPrimary, fontFamily: Poppins.medium, padding: 0 },
+  mapBtn: {
+    width: 40, height: 40,
+    borderRadius: Radii.md,
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  dot: { width: 10, height: 10, borderRadius: 5, marginTop: 2 },
-  inputBox: { flex: 1 },
-  inputLabel: {
-    fontSize: 11, color: Colors.textTertiary, fontWeight: '600',
-    textTransform: 'uppercase', letterSpacing: 0.5,
+
+  tabs: { flexDirection: 'row', gap: 10, marginTop: 22, marginBottom: 8 },
+  tab: {
+    paddingHorizontal: 22,
+    paddingVertical: 11,
+    borderRadius: Radii.pill,
+    backgroundColor: Colors.bg,
   },
-  inputValue: { fontSize: 15, color: Colors.textSecondary, paddingVertical: 4 },
-  inputField: { fontSize: 15, color: Colors.textPrimary, paddingVertical: 4 },
-  dividerLine: {
-    height: 1,
-    backgroundColor: Colors.border,
-    marginVertical: 10,
-    marginLeft: 22,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  suggestion: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 14,
-  },
-  suggestionIcon: {
-    width: 40, height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.primarySubtle,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  suggestionEmoji: { fontSize: 18 },
-  suggestionText: { flex: 1 },
-  suggestionName: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
-  suggestionDetail: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
-  separator: { height: 1, backgroundColor: Colors.borderSubtle, marginLeft: 70 },
+  tabActive: { backgroundColor: Colors.textPrimary },
+
+  separator: { height: 1, backgroundColor: Colors.borderSubtle, marginLeft: 56 },
 });
