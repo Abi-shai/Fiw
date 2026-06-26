@@ -544,6 +544,22 @@ export default function HomeScreen() {
               </View>
               <ServiceCard service={assistance} variant="wide" onPress={() => onService(assistance)} />
 
+              {/* Entrée temporaire — parcours Affilié Réseau (Ambassadeur) */}
+              <TouchableOpacity
+                style={[styles.card, styles.cardWide]}
+                activeOpacity={0.9}
+                onPress={() => router.push('/affilie/presentation')}
+              >
+                <View style={styles.wideTile}>
+                  <Icon name="coins" size={48} color={Colors.primary} weight="fill" />
+                </View>
+                <View style={styles.flex1}>
+                  <Text variant="label">Gagner de l'argent</Text>
+                  <Text variant="caption" color={Colors.textSecondary} style={styles.cardTagline}>Devenez Ambassadeur</Text>
+                </View>
+                <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
+              </TouchableOpacity>
+
               {/* Recents */}
               <Text variant="caption" color={Colors.textTertiary} style={styles.sectionLabel}>Récemment</Text>
               {RECENTS.map((r) => (

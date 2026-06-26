@@ -15,12 +15,24 @@ Chauffeur ou livreur inscrit sur la plateforme. Utilise l'application **Fiw Pro*
 _Avoid_ : chauffeur (trop restrictif), livreur (trop restrictif), conducteur
 
 **Affilié Réseau** :
-Personne physique (particulier, étudiant, commerçant) qui recrute des clients et des prestataires et perçoit une commission de 2 % sur les courses générées. **Rôle**, pas un compte distinct — un flag activé sur le compte Client ou Prestataire existant, avec un tableau de bord dans le menu de l'app concernée. Pas d'application séparée, pas de connexion séparée.
-_Avoid_ : parrain, ambassadeur, apporteur d'affaires
+Personne physique (particulier, étudiant, commerçant) qui recrute des clients et des prestataires et perçoit une commission de 2 % du montant brut de chaque course générée par son réseau (prélevée sur la part Fiw). **Rôle activé sur un compte Client existant**, dans l'app **Fiw uniquement** — pas un compte distinct, pas d'application séparée, pas de connexion séparée. Modèle « 1 affilié = 1 app » : Affilié Réseau vit dans Fiw (Client), Affilié Partenaire vit dans Fiw Pro (Prestataire). Un Prestataire ne peut pas activer le rôle Affilié Réseau depuis Fiw Pro. **Terme système / canonique** ; le libellé affiché à l'utilisateur est **Ambassadeur**.
+_Avoid_ : parrain, apporteur d'affaires
+
+**Ambassadeur** :
+Libellé **affiché dans l'interface** (app Fiw) pour un Client qui a activé le rôle Affilié Réseau. « Si un Client recrute, il devient Ambassadeur. » Étiquette UI grand public du terme canonique `Affilié Réseau` — même relation que `Commande` → « Course » / « Mission ». Réservé à l'UI ; en base de données, API et docs techniques, dire Affilié Réseau.
+_Avoid_ : parrain, affilié réseau (dans l'UI)
+
+**Affilié** :
+La **personne recrutée** par un Ambassadeur : un Client ou un Prestataire entré dans le réseau via son code/QR, et dont les courses génèrent la commission de 2 %. Terme UI + conceptuel pour un membre du réseau. **Règle de désambiguïsation** : le mot seul « Affilié » = un recruté ; les termes en deux mots `Affilié Réseau` (recruteur) et `Affilié Partenaire` (entreprise, Fiw Pro) désignent les rôles/entités et ne s'abrègent jamais en « Affilié ».
+_Avoid_ : filleul, parrainé, recrue
 
 **Affilié Partenaire** :
 Entreprise ou commerce (restaurant, hôtel, agence…) qui génère des courses depuis son point physique et perçoit une commission de 4 % sur ces courses. **Entité distincte**, pas un rôle sur un compte Client — une entreprise n'est pas une personne physique et peut avoir plusieurs membres accédant au même tableau de bord. Reste à l'intérieur de l'écosystème Fiw (pas d'app séparée à installer), mais avec son propre contexte de connexion/compte.
 _Avoid_ : partenaire commercial, point de vente
+
+**Membre Fondateur** :
+État du lifecycle d'un Affilié Réseau pendant la phase de lancement : ses gains sont **comptabilisés** dans le Wallet Affilié mais le **retrait reste bloqué** jusqu'au lancement officiel. Le passage Membre Fondateur → Actif est déclenché par Fiw côté admin (fin de phase test), avec notification push. À distinguer de l'état **Gelé** (suspension : retrait bloqué + invitation à contacter le support). « Partenaire Fondateur » est à éviter — collision avec Affilié Partenaire.
+_Avoid_ : partenaire fondateur, early adopter, bêta-testeur
 
 ### Services
 
@@ -49,8 +61,12 @@ Système visible par le prestataire dans Fiw Pro. Niveaux : Bronze, Argent, Or, 
 _Avoid_ : niveau, grade, rang
 
 **Wallet** :
-Compte virtuel intégré dans Fiw Pro, propre à chaque prestataire. Sert uniquement à payer la commission de 14 % prélevée automatiquement à chaque course terminée. Alimenté via Mobile Money. Wallet vide = accès bloqué.
+Compte virtuel intégré dans Fiw Pro, propre à chaque prestataire. Sert uniquement à payer la commission de 14 % prélevée automatiquement à chaque course terminée. Alimenté via Mobile Money. Wallet vide = accès bloqué. **Sens unique débit** (le prestataire l'alimente, Fiw le prélève). À ne pas confondre avec le **Wallet Affilié** (sens inverse : crédit + retrait).
 _Avoid_ : portefeuille, solde, compte
+
+**Wallet Affilié** :
+Compte de gains de l'Affilié Réseau dans l'app Fiw (Client). **Crédité** par les commissions de 2 % sur les courses générées par son réseau ; le solde est **retirable vers Mobile Money** à partir de 1 000 F CFA. Affiché « Mon Wallet » dans l'interface Client. Mécanique inverse du `Wallet` Prestataire (qui est prépayé et débit-only). Wallet intermédiaire dans l'app : aucun versement Mobile Money direct sans passer par un retrait explicite.
+_Avoid_ : cagnotte, portefeuille affilié, solde de parrainage
 
 **Livraison groupée** :
 Service de livraison combinant plusieurs colis d'expéditeurs différents dans un même trajet, à l'intérieur d'un cluster géographique. Proposée comme Option B au client (prix réduit, léger délai d'attente).

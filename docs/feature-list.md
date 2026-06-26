@@ -140,7 +140,7 @@
 - Code Prestataire Unique : vérifier → confirmer comme prioritaire
 - Partage prestataire vers Affilié Partenaire (Réseau uniquement)
 - Historique commissions
-- Bannière phase test : commissions comptabilisées, paiement différé, statut « Partenaire Fondateur »
+- Bannière phase test : commissions comptabilisées, paiement différé, statut « Membre Fondateur »
 
 ### Fidélité & Réductions
 - Solde de points (1 pt / 100 F CFA)
@@ -251,12 +251,6 @@
 ### Courses planifiées
 - Liste courses planifiées assignées
 - Intégration direction programmée
-
-### Affiliation *(recrutement prestataires)*
-- Section « Gagner de l'argent »
-- Tableau de bord : prestataires recrutés actifs, courses générées, commissions (2%)
-- QR code + code parrainage
-- Historique commissions
 
 ### Historique
 - Toutes missions terminées

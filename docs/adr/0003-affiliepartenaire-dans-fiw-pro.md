@@ -17,6 +17,6 @@ AffiliéPartenaire est uniquement accessible depuis Fiw Pro. Fiw (app Client) ne
 ## Conséquences
 
 - Dans Fiw (sitemap Client) : la section affiliation couvre uniquement AffiliéRéseau. La mention de l'AffiliéPartenaire se limite à une page informative orientant vers Fiw Pro.
-- Dans Fiw Pro (sitemap Prestataire) : une section dédiée à AffiliéPartenaire s'ajoute, distincte de la section AffiliéRéseau (recrutement de Prestataires à 2 %).
+- Dans Fiw Pro (sitemap Prestataire) : une section dédiée à AffiliéPartenaire s'ajoute. _(Amendé par ADR 0005 : il n'y a plus de section AffiliéRéseau côté Pro — Affilié Réseau est désormais un rôle Client uniquement.)_
 - ADR 0002 (sélecteur de compte dans Fiw) est annulé — l'app Fiw n'a pas besoin de gérer plusieurs contextes d'identité.
 - Les relations membres/succursales de l'entité AffiliéPartenaire (encore ouvertes dans le modèle conceptuel) restent à résoudre avec l'engineering.

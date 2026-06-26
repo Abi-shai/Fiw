@@ -67,6 +67,20 @@ export default function RootLayout() {
         <Stack.Screen name="transport/searching" />
         <Stack.Screen name="transport/course-active" />
         <Stack.Screen name="transport/cloture" />
+        <Stack.Screen name="affilie/presentation" />
+        <Stack.Screen name="affilie/conditions" />
+        <Stack.Screen name="affilie/dashboard" />
+        <Stack.Screen name="affilie/reseau" />
+        <Stack.Screen name="affilie/outils" />
+        <Stack.Screen name="affilie/qr" />
+        <Stack.Screen name="affilie/celebration" />
+        <Stack.Screen name="affilie/wallet" />
+        <Stack.Screen name="affilie/commission-detail" />
+        <Stack.Screen name="affilie/retrait-recap" />
+        <Stack.Screen name="affilie/retrait-numero" />
+        <Stack.Screen name="affilie/retrait-traitement" />
+        <Stack.Screen name="affilie/retrait-confirmation" />
+        <Stack.Screen name="affilie/retrait-echec" />
       </Stack>
 
       {!splashGone && (

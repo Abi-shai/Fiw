@@ -139,9 +139,9 @@ Demande de location longue durée d'une ressource (Véhicule ou Parking) apparte
 ---
 
 ### AffiliéRéseau
-Rôle activé par un Client ou un Prestataire depuis leur application respective. Permet de recruter d'autres clients et prestataires, et de percevoir 2 % de commission sur les Commandes générées.
+Rôle activé par un **Client** depuis l'app Fiw (Client uniquement — ADR 0005, modèle « 1 affilié = 1 app »). Permet de recruter d'autres clients et prestataires (les **Affiliés**), et de percevoir 2 % du montant brut sur les Commandes générées. Libellé UI : **Ambassadeur**.
 
-**Modèle de données :** flag + dashboard sur le compte Client/Prestataire existant — pas d'entité propre, pas de relations supplémentaires à modéliser. *Décidé en travaillant la sitemap : la bannière d'affiliation reste à l'intérieur du compte existant.*
+**Modèle de données :** flag + dashboard sur le compte Client existant — pas d'entité propre, pas de relations supplémentaires à modéliser. *Décidé en travaillant la sitemap : la bannière d'affiliation reste à l'intérieur du compte existant. Un Prestataire ne peut pas activer ce rôle depuis Fiw Pro (ADR 0005).*
 
 ---
 

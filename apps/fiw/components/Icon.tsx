@@ -6,6 +6,7 @@ import {
   CheckCircle, HandsPraying, Person, PencilSimple, CaretDown,
   Check, Timer, FlagBannerFold, Handshake, Lifebuoy,
   Info, Hourglass, Coins, Lightning, CaretUp,
+  Copy, QrCode, Wallet, Gift, UsersThree, Bank, DownloadSimple, XCircle,
   type IconProps as PhosphorProps,
 } from 'phosphor-react-native';
 import { Colors } from '@/constants/tokens';
@@ -52,6 +53,14 @@ const REGISTRY = {
   coins: Coins,
   lightning: Lightning,
   chevronUp: CaretUp,
+  copy: Copy,
+  qr: QrCode,
+  wallet: Wallet,
+  gift: Gift,
+  users: UsersThree,
+  bank: Bank,
+  download: DownloadSimple,
+  xCircle: XCircle,
 } as const;
 
 export type IconName = keyof typeof REGISTRY;
