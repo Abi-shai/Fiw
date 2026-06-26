@@ -3,7 +3,7 @@ import {
   View, StyleSheet, TouchableOpacity, Animated, ScrollView,
   PanResponder, Dimensions, TextInput, FlatList, Keyboard,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import LeafletMap, { LeafletMapHandle } from '@/components/LeafletMap';
@@ -64,10 +64,10 @@ type Service = {
 };
 
 const SERVICES: Service[] = [
-  { id: 'transport',  label: 'Transport',  tagline: 'Réservez une course', icon: 'car',     iconColor: Colors.primary, active: true },
-  { id: 'livraison',  label: 'Livraison',  tagline: 'Envoyez un colis',    icon: 'package', iconColor: Colors.warning, active: false },
-  { id: 'location',   label: 'Location',   tagline: 'Louez un véhicule',   icon: 'key',     iconColor: Colors.success, active: false },
-  { id: 'assistance', label: 'Assistance', tagline: 'Dépannage & secours', icon: 'wrench',  iconColor: Colors.error,   active: false },
+  { id: 'transport',  label: 'Transport',  tagline: 'Réservez une course', icon: 'car',       iconColor: Colors.primary,  active: true },
+  { id: 'livraison',  label: 'Livraison',  tagline: 'Envoyez un colis',    icon: 'package',   iconColor: Colors.primary,  active: false },
+  { id: 'location',   label: 'Location',   tagline: 'Louez un véhicule',   icon: 'handshake', iconColor: Colors.primary,  active: false },
+  { id: 'assistance', label: 'Assistance', tagline: 'Dépannage & secours', icon: 'lifebuoy',  iconColor: Colors.gray700,  active: false },
 ];
 
 function openConfigure(place: Place, departureName: string) {
@@ -88,51 +88,48 @@ function ServiceCard({ service, variant, onPress }: {
   variant: 'hero' | 'small' | 'wide';
   onPress: () => void;
 }) {
-  const wide = variant === 'wide';
-  const iconSize = variant === 'hero' ? 48 : variant === 'small' ? 28 : 32;
+  const props = {
+    activeOpacity: service.active ? 0.9 : 1,
+    disabled: !service.active,
+    onPress,
+  };
 
-  // L'objet posé sur sa plateforme grise neutre (uniforme à tous les services).
-  const platform = (
-    <View style={[styles.platform, wide && styles.platformWide]}>
-      <Icon name={service.icon} size={iconSize} color={service.iconColor} weight="fill" />
-    </View>
-  );
-
-  const header = (
-    <View style={styles.cardHeader}>
-      <View style={styles.cardHeaderText}>
-        <Text variant={variant === 'hero' ? 'heading2' : 'label'}>{service.label}</Text>
-        {variant !== 'small' && (
+  // Assistance : tuile carrée (icône sur fond gris) + texte + chevron, en ligne.
+  if (variant === 'wide') {
+    return (
+      <TouchableOpacity style={[styles.card, styles.cardWide]} {...props}>
+        <View style={styles.wideTile}>
+          <Icon name={service.icon} size={48} color={service.iconColor} weight="fill" />
+        </View>
+        <View style={styles.flex1}>
+          <Text variant="label">{service.label}</Text>
           <Text variant="caption" color={Colors.textSecondary} style={styles.cardTagline}>{service.tagline}</Text>
-        )}
-      </View>
-      <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
-    </View>
-  );
+        </View>
+        <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
+      </TouchableOpacity>
+    );
+  }
 
+  // Transport (hero) & Livraison/Location (small) : en-tête + panneau illustré
+  // bleuté ; l'illustration occupe le reste de la carte.
+  const hero = variant === 'hero';
   return (
     <TouchableOpacity
-      style={[
-        styles.card,
-        variant === 'hero' && styles.cardHero,
-        variant === 'small' && styles.cardSmall,
-        wide && styles.cardWide,
-      ]}
-      activeOpacity={service.active ? 0.9 : 1}
-      disabled={!service.active}
-      onPress={onPress}
+      style={[styles.card, hero ? styles.cardHero : styles.cardSmall]}
+      {...props}
     >
-      {wide ? (
-        <>
-          {platform}
-          <View style={styles.flex1}>{header}</View>
-        </>
-      ) : (
-        <>
-          {header}
-          {platform}
-        </>
-      )}
+      <View style={styles.cardHeader}>
+        <View style={styles.cardHeaderText}>
+          <Text variant={hero ? 'heading2' : 'label'}>{service.label}</Text>
+          {hero && (
+            <Text variant="caption" color={Colors.textSecondary} style={styles.cardTagline}>{service.tagline}</Text>
+          )}
+        </View>
+        <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
+      </View>
+      <View style={[styles.illoPanel, hero && styles.illoPanelHero]}>
+        <Icon name={service.icon} size={hero ? 88 : 48} color={service.iconColor} weight="fill" />
+      </View>
     </TouchableOpacity>
   );
 }
@@ -157,6 +154,9 @@ export default function HomeScreen() {
   const [departureQuery, setDepartureQuery] = useState('');
   const [destinationQuery, setDestinationQuery] = useState('');
   const [kbHeight, setKbHeight] = useState(0);
+
+  // Paramètres reçus quand configure renvoie ici pour éditer l'itinéraire.
+  const editParams = useLocalSearchParams<{ editTs?: string; editDeparture?: string; editDest?: string }>();
 
   useEffect(() => {
     const id = ty.addListener(({ value }) => { tyValue.current = value; });
@@ -196,6 +196,17 @@ export default function HomeScreen() {
     setDepartureQuery('');
     setDestinationQuery('');
   };
+
+  // Édition depuis configure : ouvre la recherche avec Départ/Arrivée préremplis.
+  // `editTs` change à chaque appel pour re-déclencher l'effet à chaque édition.
+  useEffect(() => {
+    if (!editParams.editTs) return;
+    if (editParams.editDeparture) setDepartureName(editParams.editDeparture);
+    setDestinationQuery(editParams.editDest ?? '');
+    setActiveField('destination');
+    setMode('search');
+    snapTo(TY_EXPANDED);
+  }, [editParams.editTs]);
 
   // La tuile Transport se comporte comme la barre de recherche d'InDrive :
   // le sheet déjà présent monte en plein écran et bascule en mode recherche.
@@ -553,7 +564,6 @@ export default function HomeScreen() {
   );
 }
 
-const HERO_H = 196;
 const CARD_GAP = 12;
 
 const styles = StyleSheet.create({
@@ -604,23 +614,30 @@ const styles = StyleSheet.create({
     gap: CARD_GAP,
   },
   flex1: { flex: 1 },
+  // Carte service : fond quasi-blanc + liseré ténu, coins très arrondis.
   card: {
     borderRadius: 20,
-    padding: 14,
-    backgroundColor: '#F2F3F5',
+    padding: 6,
+    backgroundColor: '#FBFBFC',
+    borderWidth: 1,
+    borderColor: 'rgba(242, 243, 245, 0.5)',
   },
   cardHero: {
     flex: 1,
-    height: HERO_H,
+    gap: 10,
   },
   cardSmall: {
-    flex: 1,
+    width: '100%',
+    gap: 8,
   },
   cardWide: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
     marginTop: CARD_GAP,
-    paddingVertical: 16,
+    paddingLeft: 6,
+    paddingRight: 14,
+    paddingVertical: 6,
   },
 
   cardHeader: {
@@ -628,25 +645,28 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 8,
+    padding: 8,
   },
   cardHeaderText: { flex: 1 },
   cardTagline: { marginTop: 3 },
 
-  // Plateforme grise neutre, identique pour tous les services.
-  platform: {
-    flex: 1,
-    marginTop: 10,
-    borderRadius: Radii.md,
-    backgroundColor: '#E8EAED',
+  // Panneau illustré bleuté : reçoit l'illustration du service.
+  illoPanel: {
+    width: '100%',
+    borderRadius: Radii.lg,
+    backgroundColor: 'rgba(230, 240, 255, 0.4)',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 8,
   },
-  platformWide: {
-    flex: 0,
-    marginTop: 0,
-    marginRight: 12,
-    width: 64,
-    height: 64,
+  illoPanelHero: { flex: 1 },
+  // Tuile carrée grise de la carte Assistance.
+  wideTile: {
+    width: 64, height: 64,
+    borderRadius: Radii.md,
+    backgroundColor: '#F2F3F5',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   sectionLabel: {

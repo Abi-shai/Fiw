@@ -47,10 +47,16 @@ export const MOTO_DRIVER = {
   emoji: '👨🏾‍🦱',
 };
 
-export const GAMMES = [
+// Le libellé nomme le TYPE de véhicule (Taxi Moto / Taxi Auto) ; la gamme
+// (Confort, Prestige…) est portée par le `badge` affiché sur la carte.
+export const GAMMES: {
+  id: string; label: string; badge: string | null;
+  description: string; icon: string; basePrice: number; eta: string;
+}[] = [
   {
     id: 'moto',
     label: 'Taxi Moto',
+    badge: null,
     description: 'Rapide, idéal pour courtes distances',
     icon: '🛵',
     basePrice: 800,
@@ -58,7 +64,8 @@ export const GAMMES = [
   },
   {
     id: 'simple',
-    label: 'Simple',
+    label: 'Taxi Auto',
+    badge: null,
     description: 'Confortable, climatisé',
     icon: '🚗',
     basePrice: 1500,
@@ -66,7 +73,8 @@ export const GAMMES = [
   },
   {
     id: 'confort',
-    label: 'Confort',
+    label: 'Taxi Auto',
+    badge: 'Confort',
     description: 'Berline récente, grand confort',
     icon: '🚙',
     basePrice: 2200,
@@ -74,7 +82,8 @@ export const GAMMES = [
   },
   {
     id: 'prestige',
-    label: 'Prestige',
+    label: 'Taxi Auto',
+    badge: 'Prestige',
     description: 'SUV ou berline haut de gamme',
     icon: '🚘',
     basePrice: 3500,

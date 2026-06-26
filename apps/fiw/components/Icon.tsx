@@ -4,6 +4,8 @@ import {
   Clock, House, Briefcase, Plus, CaretRight, Car, Motorcycle, Package, Key,
   Wrench, Phone, ChatCircle, ShareFat, Warning, Star, HandWaving, PersonSimpleWalk,
   CheckCircle, HandsPraying, Person, PencilSimple, CaretDown,
+  Check, Timer, FlagBannerFold, Handshake, Lifebuoy,
+  Info, Hourglass, Coins, Lightning, CaretUp,
   type IconProps as PhosphorProps,
 } from 'phosphor-react-native';
 import { Colors } from '@/constants/tokens';
@@ -28,6 +30,8 @@ const REGISTRY = {
   car: Car,
   moto: Motorcycle,
   package: Package,
+  handshake: Handshake,
+  lifebuoy: Lifebuoy,
   key: Key,
   wrench: Wrench,
   phone: Phone,
@@ -38,8 +42,16 @@ const REGISTRY = {
   hail: HandWaving,
   rider: Person,
   walk: PersonSimpleWalk,
+  flag: FlagBannerFold,
+  timer: Timer,
   check: CheckCircle,
+  tick: Check,
   thanks: HandsPraying,
+  info: Info,
+  hourglass: Hourglass,
+  coins: Coins,
+  lightning: Lightning,
+  chevronUp: CaretUp,
 } as const;
 
 export type IconName = keyof typeof REGISTRY;
