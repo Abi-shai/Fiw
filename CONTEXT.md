@@ -78,6 +78,16 @@ _Avoid_ : frais de plateforme, cut, pourcentage
 Moyen de paiement principal. Comprend Wave, Orange Money et Free Money. Les frais de transaction Mobile Money sont supportés par le prestataire (pas par Fiw).
 _Avoid_ : paiement mobile, transfert mobile
 
+### Programme client
+
+**Fidélité** :
+Programme de récompense côté Client. Chaque 100 F CFA dépensés en Commandes génèrent 1 Point Fidélité. Les Points peuvent être convertis en réductions ou en courses gratuites. Taux de conversion exact et seuil minimum à définir.
+_Avoid_ : points de fidélité (employer « Points Fidélité »), cashback, récompenses
+
+**Point Fidélité** :
+Unité du programme Fidélité. 100 F CFA dépensés = 1 Point Fidélité.
+_Avoid_ : point, crédit fidélité
+
 ## Vocabulaire commun (modèle conceptuel)
 
 **Commande** :

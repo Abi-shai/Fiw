@@ -7,6 +7,7 @@ import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import LeafletMap, { LeafletMapHandle } from '@/components/LeafletMap';
+import MenuDrawer from '@/components/MenuDrawer';
 import IconButton from '@/components/IconButton';
 import PlaceRow from '@/components/PlaceRow';
 import Button from '@/components/Button';
@@ -220,6 +221,7 @@ export default function HomeScreen() {
 
   // Mode de l'écran : grille de services ↔ recherche d'itinéraire (morph
   // in-place) ↔ choix d'un point sur la carte (pin fixe, carte mobile dessous).
+  const [menuOpen, setMenuOpen] = useState(false);
   const [mode, setMode] = useState<'services' | 'search' | 'mappick'>('services');
   const [activeField, setActiveField] = useState<Field>('destination');
   // Centre courant de la carte pendant le choix sur carte (suivi via le webview).
@@ -312,6 +314,20 @@ export default function HomeScreen() {
   modeRef.current = mode;
   const actions = useRef({ closeSearch, snapTo });
   actions.current = { closeSearch, snapTo };
+
+  const menuOpenRef = useRef(menuOpen);
+  menuOpenRef.current = menuOpen;
+  const openMenu = useRef(() => setMenuOpen(true));
+
+  // Zone de bord gauche : swipe gauche → droite pour ouvrir le drawer.
+  const edgePan = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (_, g) =>
+      !menuOpenRef.current && g.dx > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+    onPanResponderRelease: (_, g) => {
+      if (g.dx > 20) openMenu.current();
+    },
+  })).current;
 
   const panResponder = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => true,
@@ -481,13 +497,16 @@ export default function HomeScreen() {
       {/* Voile : assombrit la carte quand la feuille monte */}
       <Scrim opacity={scrimOpacity} />
 
+      {/* Zone de bord gauche — swipe vers la droite pour ouvrir le drawer */}
+      <View {...edgePan.panHandlers} style={styles.edgeZone} />
+
       {/* Menu — single control over the map; profile & account live inside it */}
       {mode !== 'mappick' && (
         <Animated.View
           style={[styles.topRow, { paddingTop: insets.top + 8, opacity: controlsFade }]}
           pointerEvents="box-none"
         >
-          <IconButton name="menu" />
+          <IconButton name="menu" onPress={() => setMenuOpen(true)} />
         </Animated.View>
       )}
 
@@ -660,6 +679,9 @@ export default function HomeScreen() {
           </>
         ) : null}
       </Animated.View>
+
+      {/* Drawer latéral — au-dessus de tout */}
+      <MenuDrawer visible={menuOpen} onClose={() => setMenuOpen(false)} />
     </View>
   );
 }
@@ -669,6 +691,11 @@ const CARD_GAP = 12;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   map: { flex: 1 },
+  edgeZone: {
+    position: 'absolute',
+    left: 0, top: 0, bottom: 0,
+    width: 24,
+  },
 
   topRow: {
     position: 'absolute',
