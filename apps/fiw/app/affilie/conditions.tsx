@@ -32,7 +32,7 @@ export default function Conditions() {
       <ScreenHeader title="Conditions d’utilisation" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <Text variant="body" color={Colors.textSecondary} style={styles.intro}>
-          En activant votre profil Ambassadeur, vous acceptez le contrat d’affiliation Fiw :
+          En activant votre profil Affilié Réseau, vous acceptez le contrat d’affiliation Fiw :
         </Text>
 
         {CLAUSES.map((c, i) => (

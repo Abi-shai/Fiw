@@ -39,7 +39,7 @@ export default function Presentation() {
         </View>
         <Text variant="display" style={styles.title}>Gagnez de l'argent en partageant Fiw</Text>
         <Text variant="body" color={Colors.textSecondary} style={styles.subtitle}>
-          Devenez Ambassadeur et touchez une commission sur chaque course de votre réseau.
+          Devenez Affilié Réseau et touchez une commission sur chaque course de votre réseau.
         </Text>
 
         <View style={styles.steps}>

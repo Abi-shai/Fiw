@@ -7,8 +7,8 @@
 
 | UI (ce que voit l'utilisateur) | Terme canonique | Définition |
 |---|---|---|
-| « Ambassadeur » | Affilié Réseau | Client qui a activé le rôle de recrutement. Si un Client recrute, il devient Ambassadeur. |
-| « Affilié » | Affilié | Personne recrutée (Client ou Prestataire) entrée dans le réseau via le code/QR de l'Ambassadeur. |
+| « Affilié Réseau » | Affilié Réseau | Client qui a activé le rôle de recrutement. Si un Client recrute, il devient Affilié Réseau. |
+| « Affilié » | Affilié | Personne recrutée (Client ou Prestataire) entrée dans le réseau via le code/QR de l'Affilié Réseau. |
 | « Mon Wallet » | Wallet Réseau | Compte de gains : crédité par les commissions, retirable vers Mobile Money (≥ 1 000 F). |
 | badge « Fondateur » | Membre Fondateur | État de lancement : gains comptabilisés, retrait bloqué jusqu'au lancement officiel. |
 
@@ -22,13 +22,13 @@
 - Un **Prestataire ne peut pas** devenir Affilié Réseau depuis Fiw Pro. _(Décision du 26 juin 2026 — voir ADR 0005. Le canal prestataire→prestataire est abandonné au profit d'un modèle plus simple.)_
 
 ### 2. Activation
-- **Aucune validation requise** : n'importe quel Client peut devenir Ambassadeur.
+- **Aucune validation requise** : n'importe quel Client peut devenir Affilié Réseau.
 - Activation en **un écran** : CTA + acceptation des conditions. Aucun formulaire, aucun document.
 
 ### 3. Architecture d'information — section Affilié Réseau
 
 ```
-Section Affilié Réseau (« Mon espace Ambassadeur »)
+Section Affilié Réseau (« Mon espace Affilié Réseau »)
 │
 ├── [Activation] — CTA + acceptation conditions
 │
@@ -65,7 +65,7 @@ Section Affilié Réseau (« Mon espace Ambassadeur »)
 
 États : **Activation → Membre Fondateur → Actif → Gelé**
 
-- **Membre Fondateur → Actif** : déclenché par Fiw côté admin (fin de phase test), notification push envoyée à l'Ambassadeur.
+- **Membre Fondateur → Actif** : déclenché par Fiw côté admin (fin de phase test), notification push envoyée à l'Affilié Réseau.
 
 | État | Wallet Réseau | Retrait | Activité |
 |---|---|---|---|
@@ -73,14 +73,14 @@ Section Affilié Réseau (« Mon espace Ambassadeur »)
 | Actif | visible | **disponible** | tout actif |
 | Gelé | visible | **bloqué** (suspension → support) | reste actif |
 
-### 5. Wallet Affilié
+### 5. Wallet Réseau
 - **Commission : 2 % du montant brut** de chaque course générée par le réseau (prélevée sur la part Fiw).
 - Wallet **intermédiaire** dans l'app — pas de versement Mobile Money direct.
 - **Retrait** vers Mobile Money à partir de **1 000 F CFA**.
 - **Confidentialité des commissions** : l'historique affiché ne contient ni nom ni identification des Affiliés — uniquement la date et le montant.
 
 ### 6. Principes UX transversaux (audit)
-- **Vocabulaire grand public** : on dit « Ambassadeur » et « Affilié », et le mot concret (« chauffeur », « livreur ») quand le service est connu ; jamais « prestataire » brut dans l'UI client.
+- **Vocabulaire grand public** : on dit « Affilié Réseau » et « Affilié », et le mot concret (« chauffeur », « livreur ») quand le service est connu ; jamais « prestataire » brut dans l'UI client.
 - Chaque **liste vide** affiche un message qui dit quoi faire ensuite — jamais d'écran vide muet.
 - Chaque **chemin d'échec** a un écran qui diagnostique, explique et propose une action de récupération.
 - Tout **mouvement d'argent** passe par un récapitulatif explicite avant le point de non-retour.
@@ -91,7 +91,7 @@ Section Affilié Réseau (« Mon espace Ambassadeur »)
 
 ## Breadboards
 
-### JS1 — Activer son profil Ambassadeur
+### JS1 — Activer son profil Affilié Réseau
 
 **Présentation du programme**
 - « Activer mon profil » → Conditions d'utilisation
@@ -121,7 +121,7 @@ Section Affilié Réseau (« Mon espace Ambassadeur »)
 - Partager → Partage natif
 - Télécharger → [toast « QR code enregistré »]
 - Retour → Mes Outils
-- [ QR code agrandi / nom de l'Ambassadeur ]
+- [ QR code agrandi / nom de l'Affilié Réseau ]
 
 **[Notification push — reçue plus tard]**
 « 🎉 Quelqu'un vient de rejoindre avec votre code ! » → Écran de célébration
@@ -171,7 +171,7 @@ Section Affilié Réseau (« Mon espace Ambassadeur »)
 - « Contacter le support » → Support
 - « Retour au tableau de bord » → Tableau de bord
 - [ ✕ cause (numéro invalide / problème réseau / solde indisponible) + ce qu'il faut faire
-  / **rassurer explicitement** : l'argent n'a pas quitté le Wallet Affilié ]
+  / **rassurer explicitement** : l'argent n'a pas quitté le Wallet Réseau ]
 
 ### JS4 — Proposer un prestataire à un Partenaire
 
@@ -181,6 +181,6 @@ Section Affilié Réseau (« Mon espace Ambassadeur »)
 
 ## Décisions reportées / ouvertes
 
-- **JS4 + Prestataires favoris** — but, destinataire et bénéfice Ambassadeur à définir.
+- **JS4 + Prestataires favoris** — but, destinataire et bénéfice Affilié Réseau à définir.
 - **Déclencheur de l'état Gelé** — qui gèle, sur quels critères ? (non spécifié dans la source)
 - **Définition « actif » vs « inactif »** d'un Affilié — seuil (1ʳᵉ course ? course dans les N jours ?) à trancher pour les listes Mon Réseau.

@@ -53,7 +53,7 @@ export default function AffilieDashboard() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <IconButton name="back" variant="flat" color={Colors.textPrimary} onPress={() => router.back()} />
-        <Text variant="heading2" style={styles.headerTitle}>Mon espace Ambassadeur</Text>
+        <Text variant="heading2" style={styles.headerTitle}>Mon espace Affilié Réseau</Text>
         <View style={styles.headerSpacer} />
       </View>
 

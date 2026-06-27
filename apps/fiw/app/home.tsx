@@ -660,7 +660,7 @@ export default function HomeScreen() {
                     driveAnim={driveAnims[2]} dx={DRIVE_DX[2]} />
                 </View>
               </View>
-              {/* Entrée temporaire — parcours Affilié Réseau (Ambassadeur) */}
+              {/* Entrée temporaire — parcours Affilié Réseau */}
               <TouchableOpacity
                 style={[styles.card, styles.cardWide]}
                 activeOpacity={0.9}
@@ -671,7 +671,7 @@ export default function HomeScreen() {
                 </View>
                 <View style={styles.flex1}>
                   <Text variant="label">Gagner de l'argent</Text>
-                  <Text variant="caption" color={Colors.textSecondary} style={styles.cardTagline}>Devenez Ambassadeur</Text>
+                  <Text variant="caption" color={Colors.textSecondary} style={styles.cardTagline}>Devenez Affilié Réseau</Text>
                 </View>
                 <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
               </TouchableOpacity>

@@ -1,4 +1,4 @@
-// Données factices pour le parcours Affilié Réseau (UI : « Ambassadeur »).
+// Données factices pour le parcours Affilié Réseau.
 // Proto de calage visuel — voir docs/breadboard-affilie-reseau.md.
 
 export type AffilieState = 'fondateur' | 'actif' | 'gele';

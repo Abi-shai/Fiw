@@ -15,15 +15,11 @@ Chauffeur ou livreur inscrit sur la plateforme. Utilise l'application **Fiw Pro*
 _Avoid_ : chauffeur (trop restrictif), livreur (trop restrictif), conducteur
 
 **Affilié Réseau** :
-Personne physique (particulier, étudiant, commerçant) qui recrute des clients et des prestataires et perçoit une commission de 2 % du montant brut de chaque course générée par son réseau (prélevée sur la part Fiw). **Rôle activé sur un compte Client existant**, dans l'app **Fiw uniquement** — pas un compte distinct, pas d'application séparée, pas de connexion séparée. Modèle « 1 affilié = 1 app » : Affilié Réseau vit dans Fiw (Client), Affilié Partenaire vit dans Fiw Pro (Prestataire). Un Prestataire ne peut pas activer le rôle Affilié Réseau depuis Fiw Pro. **Terme système / canonique** ; le libellé affiché à l'utilisateur est **Ambassadeur**.
-_Avoid_ : parrain, apporteur d'affaires
-
-**Ambassadeur** :
-Libellé **affiché dans l'interface** (app Fiw) pour un Client qui a activé le rôle Affilié Réseau. « Si un Client recrute, il devient Ambassadeur. » Étiquette UI grand public du terme canonique `Affilié Réseau` — même relation que `Commande` → « Course » / « Mission ». Réservé à l'UI ; en base de données, API et docs techniques, dire Affilié Réseau.
-_Avoid_ : parrain, affilié réseau (dans l'UI)
+Personne physique (particulier, étudiant, commerçant) qui recrute des clients et des prestataires et perçoit une commission de 2 % du montant brut de chaque course générée par son réseau (prélevée sur la part Fiw). **Rôle activé sur un compte Client existant**, dans l'app **Fiw uniquement** — pas un compte distinct, pas d'application séparée, pas de connexion séparée. Modèle « 1 affilié = 1 app » : Affilié Réseau vit dans Fiw (Client), Affilié Partenaire vit dans Fiw Pro (Prestataire). Un Prestataire ne peut pas activer le rôle Affilié Réseau depuis Fiw Pro.
+_Avoid_ : parrain, ambassadeur, apporteur d'affaires
 
 **Affilié** :
-La **personne recrutée** par un Ambassadeur : un Client ou un Prestataire entré dans le réseau via son code/QR, et dont les courses génèrent la commission de 2 %. Terme UI + conceptuel pour un membre du réseau. **Règle de désambiguïsation** : le mot seul « Affilié » = un recruté ; les termes en deux mots `Affilié Réseau` (recruteur) et `Affilié Partenaire` (entreprise, Fiw Pro) désignent les rôles/entités et ne s'abrègent jamais en « Affilié ».
+La **personne recrutée** par un Affilié Réseau : un Client ou un Prestataire entré dans le réseau via son code/QR, et dont les courses génèrent la commission de 2 %. Terme UI + conceptuel pour un membre du réseau. **Règle de désambiguïsation** : le mot seul « Affilié » = un recruté ; les termes en deux mots `Affilié Réseau` (recruteur) et `Affilié Partenaire` (entreprise, Fiw Pro) désignent les rôles/entités et ne s'abrègent jamais en « Affilié ».
 _Avoid_ : filleul, parrainé, recrue
 
 **Affilié Partenaire** :
@@ -77,7 +73,7 @@ Compte virtuel intégré dans Fiw Pro, propre à chaque prestataire. Sert unique
 _Avoid_ : portefeuille, solde, compte
 
 **Wallet Réseau** :
-Compte de gains de l'Affilié Réseau dans l'app Fiw (Client). **Crédité** par les commissions de 2 % sur les courses générées par son réseau ; le solde est **retirable vers Mobile Money** à partir de 1 000 F CFA. Affiché « Mon Wallet » dans l'interface Client (Ambassadeur). Mécanique inverse du `Wallet` Prestataire (qui est prépayé et débit-only). Wallet intermédiaire dans l'app : aucun versement Mobile Money direct sans passer par un retrait explicite.
+Compte de gains de l'Affilié Réseau dans l'app Fiw (Client). **Crédité** par les commissions de 2 % sur les courses générées par son réseau ; le solde est **retirable vers Mobile Money** à partir de 1 000 F CFA. Affiché « Mon Wallet » dans l'interface Client (Affilié Réseau). Mécanique inverse du `Wallet` Prestataire (qui est prépayé et débit-only). Wallet intermédiaire dans l'app : aucun versement Mobile Money direct sans passer par un retrait explicite.
 _Avoid_ : Wallet Affilié, cagnotte, portefeuille affilié, solde de parrainage
 
 **Wallet Partenaire** :

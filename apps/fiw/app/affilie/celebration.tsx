@@ -7,7 +7,7 @@ import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import { Colors, Radii, Spacing } from '@/constants/tokens';
 
-// JS2 — Écran de célébration : quelqu'un a rejoint avec le code de l'Ambassadeur.
+// JS2 — Écran de célébration : quelqu'un a rejoint avec le code de l'Affilié Réseau.
 // Atteint depuis une notification push (non câblée dans le proto).
 
 export default function Celebration() {
