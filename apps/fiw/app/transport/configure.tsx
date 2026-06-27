@@ -13,7 +13,7 @@ import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import Button from '@/components/Button';
 import { Colors, Radii, Poppins } from '@/constants/tokens';
-import { GAMMES, COVOITURAGE, COVOITURAGE_SOLO_PRICE, PAYMENT_METHODS, DAKAR_CENTER } from '@/constants/data';
+import { GAMMES, COVOITURAGE, COVOITURAGE_NODETOUR_PRICE, PAYMENT_METHODS, DAKAR_CENTER } from '@/constants/data';
 import { gammeIllustration, type IlluKey } from '@/constants/illustrations';
 
 const SCREEN_H = Dimensions.get('window').height;
@@ -143,25 +143,26 @@ function PayRow({ method, selected, onPress }: {
   );
 }
 
-// Contenu de la feuille paiement : sélection « en attente » puis « Terminer »
-// (le radio change sans fermer, comme Yango).
-function PaymentSheetContent({ initial, onConfirm }: {
-  initial: string; onConfirm: (id: string) => void;
+// Contenu de la feuille paiement : la sélection « en attente » est portée par le
+// parent (configure) et validée à la fermeture de la feuille, quelle qu'elle
+// soit (voile, glissé, croix) — pas besoin de « Terminer ». Le radio change
+// immédiatement, comme Yango.
+function PaymentSheetContent({ value, onChange, onDone }: {
+  value: string; onChange: (id: string) => void; onDone: () => void;
 }) {
-  const [pending, setPending] = useState(initial);
   return (
     <View style={styles.payList}>
       {PAYMENT_METHODS.map((m, i) => (
         <View key={m.id}>
           <PayRow
             method={m}
-            selected={pending === m.id}
-            onPress={() => { Haptics.selectionAsync(); setPending(m.id); }}
+            selected={value === m.id}
+            onPress={() => { Haptics.selectionAsync(); onChange(m.id); }}
           />
           {i < PAYMENT_METHODS.length - 1 && <View style={styles.payDivider} />}
         </View>
       ))}
-      <Button label="Terminer" onPress={() => onConfirm(pending)} style={styles.payCta} />
+      <Button label="Terminer" onPress={onDone} style={styles.payCta} />
     </View>
   );
 }
@@ -186,14 +187,16 @@ export default function ConfigureScreen() {
   const [selectedGamme, setSelectedGamme] = useState('moto');
   const [noDetour, setNoDetour] = useState(false); // « Pas de détour » : solo, prix plein
   const [selectedPayment, setSelectedPayment] = useState('cash');
+  // Sélection « en attente » dans la feuille paiement, validée à la fermeture.
+  const [pendingPayment, setPendingPayment] = useState('cash');
   const [payOpen, setPayOpen] = useState(false);
 
   // Offre covoiturage dérivée de l'option « Pas de détour » : partagé (prix par
   // passager) ↔ solo (prix plein). Réutilise la forme GAMMES pour GammeCard.
   const covoitGamme = {
     ...COVOITURAGE,
-    badge: noDetour ? 'Solo' : 'Partagé',
-    basePrice: noDetour ? COVOITURAGE_SOLO_PRICE : COVOITURAGE.basePrice,
+    badge: noDetour ? 'Direct' : 'Partagé',
+    basePrice: noDetour ? COVOITURAGE_NODETOUR_PRICE : COVOITURAGE.basePrice,
     // « Pas de détour » bascule sur l'auto noire (luxe) ; sinon orange (partagé).
     illu: (noDetour ? 'luxe' : 'covoiturage') as IlluKey,
   };
@@ -308,7 +311,12 @@ export default function ConfigureScreen() {
   // configuration s'agrandit en fond (medium → étendu) pour rester visible et
   // signaler le lien ; elle revient en medium dès que le paiement se ferme
   // (réduction déclenchée au DÉBUT de la sortie → mouvement synchronisé).
-  const openPay = () => { Haptics.selectionAsync(); setPayOpen(true); snapH(EXPANDED_H); };
+  const openPay = () => {
+    Haptics.selectionAsync();
+    setPendingPayment(selectedPayment); // repart du choix courant
+    setPayOpen(true);
+    snapH(EXPANDED_H);
+  };
 
   // Éditer l'itinéraire : revient à l'étape de recherche (home en mode
   // « search », champs Départ/Arrivée préremplis et modifiables).
@@ -472,11 +480,11 @@ export default function ConfigureScreen() {
               <GammeCard gamme={covoitGamme} selected onPress={() => {}} />
               <View style={styles.covoitInfo}>
                 <Text variant="label" style={styles.covoitTitle}>
-                  {noDetour ? 'Trajet solo' : 'Trajet partagé'}
+                  {noDetour ? 'Trajet sans détour' : 'Trajet partagé'}
                 </Text>
                 <Text variant="caption" color={Colors.textSecondary} style={styles.covoitDesc}>
                   {noDetour
-                    ? 'Vous voyagez seul, sans détour. Prix plein.'
+                    ? 'Toujours partagé, mais seuls les passagers déjà sur votre route sont pris. Trajet plus direct.'
                     : 'Partagé avec d’autres passagers. Prix indiqué par passager.'}
                 </Text>
               </View>
@@ -493,7 +501,7 @@ export default function ConfigureScreen() {
               </View>
               <View style={styles.flex1}>
                 <Text variant="label" style={styles.detourTitle}>Pas de détour</Text>
-                <Text variant="caption" color={Colors.textSecondary} style={styles.detourSub}>Solo, sans détour — prix plein</Text>
+                <Text variant="caption" color={Colors.textSecondary} style={styles.detourSub}>Uniquement les passagers déjà sur votre route</Text>
               </View>
             </TouchableOpacity>
           </>
@@ -532,12 +540,15 @@ export default function ConfigureScreen() {
         <BottomSheet
           title="Modes de paiement"
           onCloseStart={() => snapH(MEDIUM_H)}
-          onClose={() => setPayOpen(false)}
+          // Toute fermeture (voile, glissé, croix, « Terminer ») valide la
+          // sélection en attente → l'icône du footer se met à jour.
+          onClose={() => { setSelectedPayment(pendingPayment); setPayOpen(false); }}
         >
           {(close) => (
             <PaymentSheetContent
-              initial={selectedPayment}
-              onConfirm={(id) => { select(() => setSelectedPayment(id)); close(); }}
+              value={pendingPayment}
+              onChange={setPendingPayment}
+              onDone={close}
             />
           )}
         </BottomSheet>

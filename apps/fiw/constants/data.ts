@@ -100,8 +100,8 @@ export const GAMMES: {
 
 // Covoiturage (catégorie Transport) — proposé via le switcher sur l'écran de
 // configuration. Une seule offre (prix réduit par passager) ; « Pas de détour »
-// est une OPTION (solo, prix plein), pas une gamme distincte — cf. périmètre
-// Covoiturage. Même forme que GAMMES pour réutiliser GammeCard.
+// est une OPTION (pas une gamme distincte) — cf. périmètre Covoiturage. Même
+// forme que GAMMES pour réutiliser GammeCard.
 export const COVOITURAGE: typeof GAMMES[number] = {
   id: 'covoit',
   label: 'Covoiturage',
@@ -112,8 +112,10 @@ export const COVOITURAGE: typeof GAMMES[number] = {
   eta: '6 min',
   illu: 'covoiturage',
 };
-// « Pas de détour » : solo, sans détour, prix plein.
-export const COVOITURAGE_SOLO_PRICE = 1150;
+// Option « Pas de détour » : le covoiturage continue (la voiture peut prendre
+// d'autres passagers) MAIS uniquement ceux déjà sur le trajet vers la
+// destination — aucun détour. Trajet plus direct, donc tarif plus élevé.
+export const COVOITURAGE_NODETOUR_PRICE = 1150;
 
 export const PAYMENT_METHODS = [
   { id: 'wave', label: 'Wave', icon: '🌊', color: '#1EADFF' },
