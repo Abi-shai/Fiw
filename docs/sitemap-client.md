@@ -97,19 +97,38 @@ Point d'entrée post-connexion. Donne accès à tous les services.
 - **Contacts de confiance** — ajouter · modifier · activer notification automatique au départ
 - **Historique** — toutes les Commandes passées avec reçu (lien vers Mes réservations pour les locations)
 - **Préférences** — notifications
+- **Déconnexion**
 - **Supprimer mon compte**
 
 ---
 
-## 8. S'affilier & fidéliser
+## 8. Menu (drawer latéral)
 
-### 8.1 Affiliation
+Accessible depuis le bouton hamburger en haut à gauche de l'Accueil.
+
+**En-tête** : avatar · nom du Client · numéro de téléphone · chevron → Mon compte & sécurité
+
+**Items principaux** :
+- **Mon compte & sécurité** → section 7
+- **Affiliation** → section 9 (adaptatif : page informative si non-affilié · tableau de bord si Affilié Réseau actif)
+- **Fidélité** — solde de Points Fidélité affiché inline → section 10
+
+**Item utilitaire** (séparé par un divider) :
+- **Aide & support**
+
+---
+
+## 9. Affiliation
+
 - **Découvrir l'affiliation** — page informative : AffiliéRéseau (2 %) disponible ici · AffiliéPartenaire (4 %) accessible depuis Fiw Pro
 - **Activer AffiliéRéseau** — activation du rôle sur le compte Client existant
 - **Partager mon code** — QR code · code texte
 - **Tableau de bord AffiliéRéseau** — personnes recrutées · courses générées · commissions
 
-### 8.2 Fidélité
+---
+
+## 10. Fidélité
+
 - **Mes points** — solde · historique d'accumulation
 - **Convertir mes points** — course gratuite · réduction
 

@@ -49,9 +49,12 @@ export const MOTO_DRIVER = {
 
 // Le libellé nomme le TYPE de véhicule (Taxi Moto / Taxi Auto) ; la gamme
 // (Confort, Prestige…) est portée par le `badge` affiché sur la carte.
+// `illu` = clé d'illustration : moto · auto (jaune, gamme classique) · luxe
+// (noire, gammes élevées) · covoiturage (orange, covoiturage partagé).
 export const GAMMES: {
   id: string; label: string; badge: string | null;
   description: string; icon: string; basePrice: number; eta: string;
+  illu: 'moto' | 'auto' | 'luxe' | 'covoiturage';
 }[] = [
   {
     id: 'moto',
@@ -61,6 +64,7 @@ export const GAMMES: {
     icon: '🛵',
     basePrice: 800,
     eta: '3 min',
+    illu: 'moto',
   },
   {
     id: 'simple',
@@ -70,6 +74,7 @@ export const GAMMES: {
     icon: '🚗',
     basePrice: 1500,
     eta: '5 min',
+    illu: 'auto',
   },
   {
     id: 'confort',
@@ -79,6 +84,7 @@ export const GAMMES: {
     icon: '🚙',
     basePrice: 2200,
     eta: '7 min',
+    illu: 'luxe',
   },
   {
     id: 'prestige',
@@ -88,13 +94,32 @@ export const GAMMES: {
     icon: '🚘',
     basePrice: 3500,
     eta: '10 min',
+    illu: 'luxe',
   },
 ];
+
+// Covoiturage (catégorie Transport) — proposé via le switcher sur l'écran de
+// configuration. Une seule offre (prix réduit par passager) ; « Pas de détour »
+// est une OPTION (pas une gamme distincte) — cf. périmètre Covoiturage. Même
+// forme que GAMMES pour réutiliser GammeCard.
+export const COVOITURAGE: typeof GAMMES[number] = {
+  id: 'covoit',
+  label: 'Covoiturage',
+  badge: 'Partagé',
+  description: 'Trajet partagé, prix réduit par passager',
+  icon: '🚗',
+  basePrice: 700,
+  eta: '6 min',
+  illu: 'covoiturage',
+};
+// Option « Pas de détour » : le covoiturage continue (la voiture peut prendre
+// d'autres passagers) MAIS uniquement ceux déjà sur le trajet vers la
+// destination — aucun détour. Trajet plus direct, donc tarif plus élevé.
+export const COVOITURAGE_NODETOUR_PRICE = 1150;
 
 export const PAYMENT_METHODS = [
   { id: 'wave', label: 'Wave', icon: '🌊', color: '#1EADFF' },
   { id: 'orange', label: 'Orange Money', icon: '🟠', color: '#FF6200' },
-  { id: 'free', label: 'Free Money', icon: '🔴', color: '#E02020' },
   { id: 'cash', label: 'Espèces', icon: '💵', color: '#6B7280' },
 ];
 

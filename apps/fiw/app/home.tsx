@@ -1,19 +1,20 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View, StyleSheet, TouchableOpacity, Animated, ScrollView,
-  PanResponder, Dimensions, TextInput, FlatList, Keyboard,
+  PanResponder, Dimensions, TextInput, FlatList, Keyboard, Image,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import LeafletMap, { LeafletMapHandle } from '@/components/LeafletMap';
+import MenuDrawer from '@/components/MenuDrawer';
 import IconButton from '@/components/IconButton';
 import PlaceRow from '@/components/PlaceRow';
 import Button from '@/components/Button';
 import Scrim from '@/components/Scrim';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
-import { Handle, sheetSurface } from '@/components/Sheet';
+import { Handle, SheetHeader, sheetSurface } from '@/components/Sheet';
 import { Colors, Radii, Poppins, Shadows } from '@/constants/tokens';
 import { DAKAR_CENTER, SUGGESTIONS, SAVED_PLACES, RECENT_PLACES } from '@/constants/data';
 
@@ -70,6 +71,38 @@ const SERVICES: Service[] = [
   { id: 'assistance', label: 'Assistance', tagline: 'Dépannage & secours', icon: 'lifebuoy',  iconColor: Colors.gray700,  active: false },
 ];
 
+// Illustrations 3D isométriques par service (maquette Figma) — rendent les
+// tuiles plus expressives que les icônes ligne.
+const SERVICE_ILLUSTRATIONS: Record<string, ReturnType<typeof require>> = {
+  transport:  require('@/assets/serv-transport.png'),
+  livraison:  require('@/assets/serv-livraison.png'),
+  location:   require('@/assets/serv-location.png'),
+  assistance: require('@/assets/serv-assistance.png'),
+};
+
+// Géométrie reprise EXACTEMENT de la maquette (node 62:96). La bande bleue est
+// un grand carré translucide pivoté ; on donne le coin haut-gauche du carré
+// (= position du wrapper Figma + (tailleWrapper − 249.505) / 2, le carré étant
+// centré dans son wrapper) et l'angle. La rotation RN, comme Figma, se fait
+// autour du centre du carré → même rendu.
+const BAND_COLOR = 'rgba(0, 102, 255, 0.2)';
+type BandCfg = { size: number; left: number; top: number; rotate: string; radius?: number };
+const SERVICE_BANDS: Record<string, BandCfg> = {
+  transport:  { size: 249.5, left: -88.34, top: 90.66, rotate: '30deg' },
+  livraison:  { size: 249.5, left: -23.47, top: 54.03, rotate: '-30deg' },
+  location:   { size: 249.5, left: -20.84, top: 39.66, rotate: '-30deg', radius: 58 },
+  assistance: { size: 249.5, left: -139.91, top: 21.09, rotate: '31.91deg' },
+};
+// Illustration : `left`/`top` du wrapper (px ou « 50% ») et translation de base
+// (centrage Figma via -translate-x/y et décalages calc()). Tailles Figma exactes.
+type IlloCfg = { size: number; left: number | string; top: number | string; baseX: number; baseY: number; mirror?: boolean };
+const SERVICE_ILLOS: Record<string, IlloCfg> = {
+  transport:  { size: 132, left: -14,   top: '50%', baseX: 0,       baseY: -47.5 }, // top 50%+18.5, ty -50% (132/2)
+  livraison:  { size: 112, left: 18.5,  top: 0,     baseX: 0,       baseY: 0 },
+  location:   { size: 88,  left: '50%', top: '50%', baseX: -44.25,  baseY: -36 },   // center 50%-0.25 / 50%+8
+  assistance: { size: 88,  left: '50%', top: '50%', baseX: -47,     baseY: -44, mirror: true }, // center 50%-3 / 50%, miroir
+};
+
 function openConfigure(place: Place, departureName: string) {
   router.push({
     pathname: '/transport/configure',
@@ -83,10 +116,52 @@ function openConfigure(place: Place, departureName: string) {
   });
 }
 
-function ServiceCard({ service, variant, onPress }: {
+// Panneau illustré : fond blanc + bande bleue diagonale (carré pivoté clipé) +
+// illustration positionnée EXACTEMENT comme la maquette. L'illustration glisse
+// depuis le côté (`dx`) jusqu'à sa place quand `driveAnim` passe de 0 à 1 — effet
+// « le véhicule arrive en roulant et se gare » (le `dx` s'ajoute à `baseX`, donc
+// elle décélère pile sur sa position Figma).
+function IlloPanel({ serviceId, panelStyle, driveAnim, dx }: {
+  serviceId: string; panelStyle?: object; driveAnim: Animated.Value; dx: number;
+}) {
+  const band = SERVICE_BANDS[serviceId];
+  const illo = SERVICE_ILLOS[serviceId];
+  const translateX = driveAnim.interpolate({
+    inputRange: [0, 1], outputRange: [illo.baseX + dx, illo.baseX],
+  });
+  return (
+    <View style={[styles.illoPanel, panelStyle]}>
+      <View
+        style={[styles.band, {
+          width: band.size, height: band.size, left: band.left, top: band.top,
+          borderRadius: band.radius ?? 0, transform: [{ rotate: band.rotate }],
+        }]}
+      />
+      <Animated.View
+        style={{
+          position: 'absolute',
+          left: illo.left as any, top: illo.top as any,
+          width: illo.size, height: illo.size,
+          opacity: driveAnim,
+          transform: [{ translateX }, { translateY: illo.baseY }],
+        }}
+      >
+        <Image
+          source={SERVICE_ILLUSTRATIONS[serviceId]}
+          style={[{ width: illo.size, height: illo.size }, illo.mirror && styles.mirror]}
+          resizeMode="contain"
+        />
+      </Animated.View>
+    </View>
+  );
+}
+
+function ServiceCard({ service, variant, onPress, driveAnim, dx }: {
   service: Service;
   variant: 'hero' | 'small' | 'wide';
   onPress: () => void;
+  driveAnim: Animated.Value;
+  dx: number;
 }) {
   const props = {
     activeOpacity: service.active ? 0.9 : 1,
@@ -94,13 +169,11 @@ function ServiceCard({ service, variant, onPress }: {
     onPress,
   };
 
-  // Assistance : tuile carrée (icône sur fond gris) + texte + chevron, en ligne.
+  // Assistance : tuile carrée (illustration sur bande bleue) + texte + chevron.
   if (variant === 'wide') {
     return (
       <TouchableOpacity style={[styles.card, styles.cardWide]} {...props}>
-        <View style={styles.wideTile}>
-          <Icon name={service.icon} size={48} color={service.iconColor} weight="fill" />
-        </View>
+        <IlloPanel serviceId={service.id} panelStyle={styles.wideTile} driveAnim={driveAnim} dx={dx} />
         <View style={styles.flex1}>
           <Text variant="label">{service.label}</Text>
           <Text variant="caption" color={Colors.textSecondary} style={styles.cardTagline}>{service.tagline}</Text>
@@ -110,8 +183,7 @@ function ServiceCard({ service, variant, onPress }: {
     );
   }
 
-  // Transport (hero) & Livraison/Location (small) : en-tête + panneau illustré
-  // bleuté ; l'illustration occupe le reste de la carte.
+  // Transport (hero) & Livraison/Location (small) : en-tête + panneau illustré.
   const hero = variant === 'hero';
   return (
     <TouchableOpacity
@@ -127,9 +199,12 @@ function ServiceCard({ service, variant, onPress }: {
         </View>
         <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
       </View>
-      <View style={[styles.illoPanel, hero && styles.illoPanelHero]}>
-        <Icon name={service.icon} size={hero ? 88 : 48} color={service.iconColor} weight="fill" />
-      </View>
+      <IlloPanel
+        serviceId={service.id}
+        panelStyle={hero ? styles.illoPanelHero : styles.illoPanelSmall}
+        driveAnim={driveAnim}
+        dx={dx}
+      />
     </TouchableOpacity>
   );
 }
@@ -146,6 +221,7 @@ export default function HomeScreen() {
 
   // Mode de l'écran : grille de services ↔ recherche d'itinéraire (morph
   // in-place) ↔ choix d'un point sur la carte (pin fixe, carte mobile dessous).
+  const [menuOpen, setMenuOpen] = useState(false);
   const [mode, setMode] = useState<'services' | 'search' | 'mappick'>('services');
   const [activeField, setActiveField] = useState<Field>('destination');
   // Centre courant de la carte pendant le choix sur carte (suivi via le webview).
@@ -239,6 +315,20 @@ export default function HomeScreen() {
   const actions = useRef({ closeSearch, snapTo });
   actions.current = { closeSearch, snapTo };
 
+  const menuOpenRef = useRef(menuOpen);
+  menuOpenRef.current = menuOpen;
+  const openMenu = useRef(() => setMenuOpen(true));
+
+  // Zone de bord gauche : swipe gauche → droite pour ouvrir le drawer.
+  const edgePan = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (_, g) =>
+      !menuOpenRef.current && g.dx > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+    onPanResponderRelease: (_, g) => {
+      if (g.dx > 20) openMenu.current();
+    },
+  })).current;
+
   const panResponder = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 4,
@@ -290,6 +380,31 @@ export default function HomeScreen() {
     if (!s.active) return;
     openSearch();
   };
+
+  // Animation d'entrée « les véhicules arrivent en roulant et se garent » : chaque
+  // illustration glisse depuis le côté (selon son sens) puis décélère (ressort).
+  // Rejouée à chaque fois que la vue services (re)devient active — focus de
+  // l'écran (premier lancement, retour de navigation, retour après absence) ou
+  // retour au mode services depuis la recherche.
+  const driveAnims = useRef(SERVICES.map(() => new Animated.Value(0))).current;
+  // Sens d'arrivée par service : auto/scooter roulent vers la droite (entrent
+  // par la gauche, dx<0) ; clé et dépanneuse (miroir) entrent par la droite.
+  const DRIVE_DX = [-96, -96, 64, 96];
+  const playDriveIn = useCallback(() => {
+    driveAnims.forEach((a) => a.setValue(0));
+    Animated.stagger(
+      90,
+      driveAnims.map((a) =>
+        Animated.spring(a, { toValue: 1, useNativeDriver: true, damping: 15, stiffness: 110, mass: 1 }),
+      ),
+    ).start();
+  }, [driveAnims]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (mode === 'services') playDriveIn();
+    }, [mode, playDriveIn]),
+  );
 
   // --- Résultats de recherche : une seule liste qui suit la saisie du champ
   //     actif. Vide → lieux enregistrés + récents ; en train de saisir →
@@ -382,13 +497,16 @@ export default function HomeScreen() {
       {/* Voile : assombrit la carte quand la feuille monte */}
       <Scrim opacity={scrimOpacity} />
 
+      {/* Zone de bord gauche — swipe vers la droite pour ouvrir le drawer */}
+      <View {...edgePan.panHandlers} style={styles.edgeZone} />
+
       {/* Menu — single control over the map; profile & account live inside it */}
       {mode !== 'mappick' && (
         <Animated.View
           style={[styles.topRow, { paddingTop: insets.top + 8, opacity: controlsFade }]}
           pointerEvents="box-none"
         >
-          <IconButton name="menu" />
+          <IconButton name="menu" onPress={() => setMenuOpen(true)} />
         </Animated.View>
       )}
 
@@ -439,10 +557,7 @@ export default function HomeScreen() {
               <Handle />
             </View>
 
-            <View style={styles.searchHeader}>
-              <Text variant="heading1" style={styles.searchTitle}>Indiquer votre itinéraire</Text>
-              <IconButton name="close" variant="flat" color={Colors.textPrimary} onPress={closeSearch} />
-            </View>
+            <SheetHeader title="Indiquer votre itinéraire" onClose={closeSearch} />
 
             {/* Champ « De » — icône personne (le passager) + géoloc si actif */}
             <TouchableOpacity
@@ -536,10 +651,13 @@ export default function HomeScreen() {
             >
               {/* Bento service grid */}
               <View style={styles.grid}>
-                <ServiceCard service={transport} variant="hero" onPress={() => onService(transport)} />
+                <ServiceCard service={transport} variant="hero" onPress={() => onService(transport)}
+                  driveAnim={driveAnims[0]} dx={DRIVE_DX[0]} />
                 <View style={styles.rightCol}>
-                  <ServiceCard service={livraison} variant="small" onPress={() => onService(livraison)} />
-                  <ServiceCard service={location} variant="small" onPress={() => onService(location)} />
+                  <ServiceCard service={livraison} variant="small" onPress={() => onService(livraison)}
+                    driveAnim={driveAnims[1]} dx={DRIVE_DX[1]} />
+                  <ServiceCard service={location} variant="small" onPress={() => onService(location)}
+                    driveAnim={driveAnims[2]} dx={DRIVE_DX[2]} />
                 </View>
               </View>
               {/* Entrée temporaire — parcours Affilié Réseau (Ambassadeur) */}
@@ -558,7 +676,8 @@ export default function HomeScreen() {
                 <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
               </TouchableOpacity>
 
-              <ServiceCard service={assistance} variant="wide" onPress={() => onService(assistance)} />
+              <ServiceCard service={assistance} variant="wide" onPress={() => onService(assistance)}
+                driveAnim={driveAnims[3]} dx={DRIVE_DX[3]} />
 
               {/* Recents */}
               <Text variant="caption" color={Colors.textTertiary} style={styles.sectionLabel}>Récemment</Text>
@@ -576,6 +695,9 @@ export default function HomeScreen() {
           </>
         ) : null}
       </Animated.View>
+
+      {/* Drawer latéral — au-dessus de tout */}
+      <MenuDrawer visible={menuOpen} onClose={() => setMenuOpen(false)} />
     </View>
   );
 }
@@ -585,6 +707,11 @@ const CARD_GAP = 12;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   map: { flex: 1 },
+  edgeZone: {
+    position: 'absolute',
+    left: 0, top: 0, bottom: 0,
+    width: 24,
+  },
 
   topRow: {
     position: 'absolute',
@@ -630,11 +757,11 @@ const styles = StyleSheet.create({
     gap: CARD_GAP,
   },
   flex1: { flex: 1 },
-  // Carte service : fond quasi-blanc + liseré ténu, coins très arrondis.
+  // Carte service : fond gris clair + liseré ténu, coins très arrondis (maquette).
   card: {
     borderRadius: 20,
     padding: 6,
-    backgroundColor: '#FBFBFC',
+    backgroundColor: '#F2F3F5',
     borderWidth: 1,
     borderColor: 'rgba(242, 243, 245, 0.5)',
   },
@@ -666,23 +793,34 @@ const styles = StyleSheet.create({
   cardHeaderText: { flex: 1 },
   cardTagline: { marginTop: 3 },
 
-  // Panneau illustré bleuté : reçoit l'illustration du service.
+  // Panneau illustré : fond blanc, illustration centrée qui déborde (clipée).
   illoPanel: {
     width: '100%',
     borderRadius: Radii.lg,
-    backgroundColor: 'rgba(230, 240, 255, 0.4)',
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
+    overflow: 'hidden',
   },
   illoPanelHero: { flex: 1 },
-  // Tuile carrée grise de la carte Assistance.
+  illoPanelSmall: { width: '100%', height: 104 },
+  // Bande bleue diagonale (« rampe ») derrière l'illustration : grand carré
+  // translucide pivoté (géométrie injectée par service), clipé par le panneau →
+  // une seule arête diagonale visible.
+  band: {
+    position: 'absolute',
+    backgroundColor: BAND_COLOR,
+  },
+  // Miroir horizontal pour la dépanneuse (Assistance) : elle « regarde » vers le texte.
+  mirror: { transform: [{ scaleX: -1 }] },
+  // Tuile carrée blanche de la carte Assistance (reçoit la bande + dépanneuse).
   wideTile: {
     width: 64, height: 64,
     borderRadius: Radii.md,
-    backgroundColor: '#F2F3F5',
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
 
   sectionLabel: {
@@ -701,14 +839,6 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     alignItems: 'center',
   },
-  searchHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 18,
-  },
-  searchTitle: { flex: 1, letterSpacing: -0.4 },
-
   // Champs De / À — coins arrondis (registre bouton, sans aller jusqu'au pill).
   field: {
     flexDirection: 'row',

@@ -4,6 +4,9 @@ import { WebView } from 'react-native-webview';
 
 export interface LeafletMapHandle {
   recenter: (center: { lat: number; lng: number }, zoom?: number) => void;
+  /** Remplace l'illustration des prestataires sur la carte (sans recharger),
+   *  ex. quand l'utilisateur change de moyen de transport. */
+  setProviderIcon: (uri: string) => void;
 }
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYWJpc2hhaXlwIiwiYSI6ImNtcXMzem50NTA0MncycnNhbmd2bXMzc3AifQ.y16QxZgfQbPsxLa6xSpwrA';
@@ -29,6 +32,18 @@ interface Props {
   searchingCars?: boolean;
   mapStyle?: string;
   tintWater?: boolean;
+  /** Allège la basemap (masque verdure/landuse, POIs, bâtiments, transports) pour
+   *  dégager la lecture du trajet (façon Yango). */
+  declutter?: boolean;
+  /** Marges (px) du cadrage `fitBounds` du trajet. Renseigner `bottom` avec la
+   *  hauteur de la feuille pour que le trajet soit centré dans la zone *visible*
+   *  (au-dessus de la feuille) et non dans le viewport entier. */
+  fitPadding?: { top?: number; bottom?: number; left?: number; right?: number };
+  /** Prestataires disponibles aux alentours (façon Yango) : marqueurs illustrés
+   *  qui dérivent doucement autour du départ. */
+  providers?: { lat: number; lng: number }[];
+  /** URI de l'illustration utilisée pour les marqueurs prestataires (moto/auto). */
+  providerIcon?: string;
   /** Émis (throttlé) pendant que l'utilisateur déplace la carte — sert au
    *  choix d'un point « sur la carte » (pin fixe, carte mobile dessous). */
   onCenterChange?: (c: { lat: number; lng: number }) => void;
@@ -42,10 +57,18 @@ const getMapHTML = (
   route?: RouteConfig,
   searchingCars = false,
   mapStyle = 'mapbox://styles/mapbox/navigation-day-v1',
-  tintWater = false
+  tintWater = false,
+  declutter = false,
+  fitPadding: Props['fitPadding'] = undefined,
+  providers: Props['providers'] = [],
+  providerIcon = ''
 ) => {
   const markersJSON = JSON.stringify(markers);
   const routeJSON = route ? JSON.stringify(route) : 'null';
+  // Marges de cadrage du trajet (asymétriques pour dégager la feuille en bas).
+  const fitPad = { top: 80, bottom: 80, left: 48, right: 48, ...(fitPadding || {}) };
+  const fitPadJSON = JSON.stringify(fitPad);
+  const providersJSON = JSON.stringify(providers);
 
   return `<!DOCTYPE html>
 <html>
@@ -58,19 +81,24 @@ const getMapHTML = (
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body, #map { width: 100%; height: 100%; overflow: hidden; }
     .mapboxgl-ctrl-logo, .mapboxgl-ctrl-attrib { display: none !important; }
-    .dot-origin {
-      width: 16px; height: 16px;
-      background: #0F6B3D; border: 3px solid white; border-radius: 50%;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.35);
-    }
-    .dot-destination {
-      width: 16px; height: 16px;
-      background: #EF4444; border: 3px solid white; border-radius: 50%;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    /* Cercles « donut » (façon Yango) : anneau fin bleu marque foncé (blue-900),
+       centre blanc — mêmes pour le départ et l'arrivée. */
+    .dot-origin, .dot-destination {
+      width: 18px; height: 18px;
+      background: #FFFFFF; border: 3px solid #0D459B; border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.30);
     }
     .driver-icon {
       font-size: 26px; line-height: 1;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+    /* Prestataires disponibles aux alentours : illustration 3D (moto/auto).
+       Calibre Yango : petit marqueur lisible sans masquer la carto. */
+    .provider-icon { width: 32px; height: 32px; pointer-events: none; }
+    .provider-icon img {
+      width: 100%; height: 100%; display: block;
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25));
+      transition: opacity 0.2s ease;
     }
     .user-marker { position: relative; width: 18px; height: 18px; }
     .user-accuracy {
@@ -114,6 +142,9 @@ const getMapHTML = (
 
       var markersData = ${markersJSON};
       var routeConfig = ${routeJSON};
+      var fitPad = ${fitPadJSON};
+      var providersData = ${providersJSON};
+      var providerIcon = ${JSON.stringify(providerIcon)};
 
       markersData.forEach(function(m) {
         var el = document.createElement('div');
@@ -167,6 +198,48 @@ const getMapHTML = (
         }, 150);
       }
 
+      // Prestataires aux alentours (façon Yango) : marqueurs illustrés qui
+      // dérivent doucement. L'illustration (moto/auto) est échangeable à chaud
+      // via le message 'setProviderIcon' (changement de moyen de transport).
+      window._providerMarkers = [];
+      function buildProviders() {
+        if (!providersData || !providersData.length) return;
+        window._providerMarkers = providersData.map(function(p, i) {
+          var el = document.createElement('div');
+          el.className = 'provider-icon';
+          var img = document.createElement('img');
+          if (providerIcon) img.src = providerIcon;
+          el.appendChild(img);
+          var m = new mapboxgl.Marker({ element: el })
+            .setLngLat([p.lng, p.lat]).addTo(map);
+          // Chaque véhicule roule le long d'un cap qui dérive lentement, à une
+          // vitesse propre — mouvement varié et organique sur toute la carte.
+          return {
+            m: m, img: img, lng: p.lng, lat: p.lat,
+            heading: (i * 2.39996),                       // caps initiaux dispersés
+            turn: (i % 2 ? 1 : -1) * 0.00003,             // rad/ms : virage lent
+            speed: 0.00000006 + (i % 3) * 0.00000002,     // deg/ms ≈ 22–30 km/h
+          };
+        });
+        // Deplacement continu via requestAnimationFrame (~60 fps) : fluide, sans
+        // les sauts d'un setInterval. dt borne pour absorber les pauses (onglet
+        // inactif) sans teleportation.
+        var last = null;
+        function tick(ts) {
+          if (last === null) last = ts;
+          var dt = ts - last; last = ts;
+          if (dt > 80) dt = 16;
+          window._providerMarkers.forEach(function(c) {
+            c.heading += c.turn * dt;
+            c.lng += Math.cos(c.heading) * c.speed * dt;
+            c.lat += Math.sin(c.heading) * c.speed * dt;
+            c.m.setLngLat([c.lng, c.lat]);
+          });
+          requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      }
+
       // Émet le centre de la carte vers RN (throttlé) pour le choix sur carte.
       function emitCenter() {
         var c = map.getCenter();
@@ -188,7 +261,17 @@ const getMapHTML = (
             try { map.setPaintProperty(id, 'fill-color', '#AFCBEF'); } catch(e) {}
           });
         }
+        if (${declutter}) {
+          // Dégage la carte : masque verdure/landuse, POIs, bâtiments, transports
+          // et labels naturels — on garde routes, eau et noms de lieux. Le trajet
+          // (vert) ressort ainsi nettement.
+          var KILL = /landuse|landcover|national-park|park|pitch|golf|poi|transit|building|natural-|aeroway/i;
+          (map.getStyle().layers || []).forEach(function(ly) {
+            if (KILL.test(ly.id)) { try { map.setLayoutProperty(ly.id, 'visibility', 'none'); } catch(e) {} }
+          });
+        }
         if (routeConfig) fetchAndAnimateRoute(routeConfig);
+        buildProviders();
       });
 
       function fetchAndAnimateRoute(config) {
@@ -208,12 +291,12 @@ const getMapHTML = (
             map.addLayer({
               id: 'route', type: 'line', source: 'route',
               layout: { 'line-join': 'round', 'line-cap': 'round' },
-              paint: { 'line-color': '#0F6B3D', 'line-width': 5, 'line-opacity': 0.85 }
+              paint: { 'line-color': '#0066FF', 'line-width': 5, 'line-opacity': 0.95 }
             });
             var bounds = coords.reduce(function(b, c) {
               return b.extend(c);
             }, new mapboxgl.LngLatBounds(coords[0], coords[0]));
-            map.fitBounds(bounds, { padding: 80, duration: 1200 });
+            map.fitBounds(bounds, { padding: fitPad, duration: 1200 });
             if (config.animateDuration && config.animateDuration > 0 && window._driverMarker) {
               animateAlongRoute(coords, config.animateDuration);
             }
@@ -252,6 +335,12 @@ const getMapHTML = (
           if (d.type === 'flyTo') {
             map.flyTo({ center: [d.lng, d.lat], zoom: d.zoom || map.getZoom(), duration: 900, essential: true });
           }
+          if (d.type === 'setProviderIcon') {
+            providerIcon = d.uri || '';
+            (window._providerMarkers || []).forEach(function(c) {
+              if (c.img && providerIcon) c.img.src = providerIcon;
+            });
+          }
         } catch(err) {}
       });
       document.addEventListener('message', function(e) {
@@ -264,7 +353,7 @@ const getMapHTML = (
 };
 
 const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMap(
-  { center, zoom = 14, markers = [], route, searchingCars = false, mapStyle, tintWater = false, onCenterChange, style },
+  { center, zoom = 14, markers = [], route, searchingCars = false, mapStyle, tintWater = false, declutter = false, fitPadding, providers = [], providerIcon = '', onCenterChange, style },
   ref
 ) {
   const webRef = useRef<WebView>(null);
@@ -273,12 +362,15 @@ const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMap(
     recenter: (c, z) => {
       webRef.current?.postMessage(JSON.stringify({ type: 'flyTo', lng: c.lng, lat: c.lat, zoom: z }));
     },
+    setProviderIcon: (uri) => {
+      webRef.current?.postMessage(JSON.stringify({ type: 'setProviderIcon', uri }));
+    },
   }));
 
   return (
     <WebView
       ref={webRef}
-      source={{ html: getMapHTML(center, zoom, markers, route, searchingCars, mapStyle, tintWater) }}
+      source={{ html: getMapHTML(center, zoom, markers, route, searchingCars, mapStyle, tintWater, declutter, fitPadding, providers, providerIcon) }}
       style={[styles.map, style]}
       scrollEnabled={false}
       javaScriptEnabled
