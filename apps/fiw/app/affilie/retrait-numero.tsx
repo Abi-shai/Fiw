@@ -10,13 +10,16 @@ import { AMBASSADEUR, detectOperator } from '@/constants/affilie';
 // JS3 — Saisie du numéro Mobile Money. « Valider » → récapitulatif de retrait.
 
 export default function RetraitNumero() {
-  const params = useLocalSearchParams<{ number?: string }>();
+  const params = useLocalSearchParams<{ number?: string; amount?: string; method?: string }>();
   const [number, setNumber] = useState(params.number ?? AMBASSADEUR.defaultNumber);
   const operator = detectOperator(number);
   const valid = number.replace(/\D/g, '').length >= 9;
 
   const validate = () => {
-    router.replace({ pathname: '/affilie/retrait-recap', params: { number } });
+    router.replace({
+      pathname: '/affilie/retrait-recap',
+      params: { number, ...(params.amount ? { amount: params.amount } : {}) },
+    });
   };
 
   return (

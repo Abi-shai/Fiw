@@ -8,19 +8,15 @@ import Button from '@/components/Button';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 import { Colors, Radii, Spacing, Shadows } from '@/constants/tokens';
-
-// Écran témoin — Tableau de bord Ambassadeur (terme système : Affilié Réseau),
-// état « Membre Fondateur » : les gains sont comptabilisés mais le retrait reste
-// bloqué jusqu'au lancement officiel. Voir docs/breadboard-affilie-reseau.md (JS1).
-// Données factices : ce proto sert à caler le style, pas la logique.
+import { AMBASSADEUR, COMMISSIONS, WITHDRAW_MIN, fcfa } from '@/constants/affilie';
 
 type Stat = { key: string; icon: IconName; value: string; label: string };
 
 const STATS: Stat[] = [
-  { key: 'gains',        icon: 'coins',     value: '12 400 F', label: 'Gains cumulés' },
-  { key: 'courses',      icon: 'flag',      value: '27',       label: 'Courses générées' },
-  { key: 'prestataires', icon: 'car',       value: '3',        label: 'Chauffeurs actifs' },
-  { key: 'clients',      icon: 'rider',     value: '8',        label: 'Clients actifs' },
+  { key: 'gains',        icon: 'coins',  value: '12 400 F', label: 'Gains cumulés' },
+  { key: 'courses',      icon: 'flag',   value: '27',       label: 'Courses générées' },
+  { key: 'prestataires', icon: 'car',    value: '3',        label: 'Chauffeurs actifs' },
+  { key: 'clients',      icon: 'rider',  value: '8',        label: 'Clients actifs' },
 ];
 
 function StatCard({ stat }: { stat: Stat }) {
@@ -37,6 +33,16 @@ function StatCard({ stat }: { stat: Stat }) {
 
 export default function AffilieDashboard() {
   const insets = useSafeAreaInsets();
+  const { state, balance } = AMBASSADEUR;
+
+  const locked = state === 'fondateur' || state === 'gele';
+  const lockCaption = state === 'fondateur'
+    ? 'Retrait disponible au lancement officiel'
+    : state === 'gele'
+    ? 'Retraits suspendus — contactez le support'
+    : balance < WITHDRAW_MIN
+    ? `Minimum ${fcfa(WITHDRAW_MIN)}`
+    : null;
 
   const share = () => {
     Haptics.selectionAsync();
@@ -45,7 +51,6 @@ export default function AffilieDashboard() {
 
   return (
     <View style={styles.container}>
-      {/* En-tête */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <IconButton name="back" variant="flat" color={Colors.textPrimary} onPress={() => router.back()} />
         <Text variant="heading2" style={styles.headerTitle}>Mon espace Ambassadeur</Text>
@@ -56,20 +61,29 @@ export default function AffilieDashboard() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
       >
-        {/* Bannière Membre Fondateur — gains comptabilisés, retrait différé */}
-        <View style={styles.banner}>
-          <View style={styles.bannerPill}>
-            <Icon name="flag" size={14} color={Colors.textOnPrimary} weight="fill" />
-            <Text variant="caption" color={Colors.textOnPrimary} style={styles.bannerPillText}>
-              MEMBRE FONDATEUR
-            </Text>
+        {/* Wallet Affilié — hero card bleue */}
+        <View style={styles.walletCard}>
+          <View style={styles.walletTop}>
+            <View>
+              <Text variant="caption" color={Colors.textOnPrimary} style={styles.kicker}>MON WALLET</Text>
+              <Text variant="display" color={Colors.textOnPrimary} style={styles.walletBalance}>{fcfa(balance)}</Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.retirerBtn, locked && styles.retirerBtnLocked]}
+              activeOpacity={locked ? 1 : 0.85}
+              onPress={locked ? undefined : () => router.push('/affilie/retrait-methode')}
+            >
+              <Text variant="label" color={locked ? Colors.textTertiary : Colors.primary}>Retirer</Text>
+            </TouchableOpacity>
           </View>
-          <Text variant="heading2" color={Colors.textOnPrimary} style={styles.bannerTitle}>
-            Vous faites partie des fondateurs
-          </Text>
-          <Text variant="bodySmall" color={Colors.textOnPrimary} style={styles.bannerBody}>
-            Vos gains sont comptabilisés dès maintenant et seront débloqués au lancement officiel.
-          </Text>
+          {lockCaption && (
+            <View style={styles.lockNote}>
+              <Icon name="info" size={16} color={Colors.textOnPrimary} />
+              <Text variant="caption" color={Colors.textOnPrimary} style={styles.lockNoteText}>
+                {lockCaption}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Statistiques du réseau */}
@@ -77,31 +91,30 @@ export default function AffilieDashboard() {
           {STATS.map((s) => <StatCard key={s.key} stat={s} />)}
         </View>
 
-        {/* Aperçu Wallet Affilié — solde visible, retrait verrouillé */}
-        <TouchableOpacity style={styles.walletCard} activeOpacity={0.9} onPress={() => router.push('/affilie/wallet')}>
-          <View style={styles.walletTop}>
-            <View>
-              <Text variant="caption" color={Colors.textTertiary} style={styles.kicker}>MON WALLET</Text>
-              <Text variant="display" style={styles.walletBalance}>12 400 F</Text>
-            </View>
-            <View style={styles.walletIcon}>
-              <Icon name="coins" size={24} color={Colors.primary} weight="fill" />
-            </View>
-          </View>
-          <View style={styles.lockNote}>
-            <Icon name="info" size={16} color={Colors.textSecondary} />
-            <Text variant="caption" color={Colors.textSecondary} style={styles.lockNoteText}>
-              Retrait disponible au lancement officiel.
-            </Text>
-          </View>
-        </TouchableOpacity>
-
         {/* Appels à l'action */}
         <Button label="Partager mon code" icon="share" onPress={share} style={styles.cta} />
         <TouchableOpacity style={styles.linkRow} activeOpacity={0.7} onPress={() => router.push('/affilie/reseau')}>
           <Text variant="label" color={Colors.primary}>Voir mon réseau</Text>
           <Icon name="chevronRight" size={16} color={Colors.primary} />
         </TouchableOpacity>
+
+        {/* Commissions récentes */}
+        <Text variant="caption" color={Colors.textTertiary} style={styles.sectionLabel}>COMMISSIONS RÉCENTES</Text>
+        {COMMISSIONS.length === 0 ? (
+          <Text variant="bodySmall" color={Colors.textSecondary} style={styles.emptyState}>
+            Pas encore de gains — ils apparaîtront ici dès que les personnes de votre réseau commenceront à faire des courses.
+          </Text>
+        ) : (
+          COMMISSIONS.map((c, i) => (
+            <View key={c.id} style={[styles.commRow, i > 0 && styles.commBorder]}>
+              <View style={styles.commIcon}>
+                <Icon name="coins" size={16} color={Colors.primary} />
+              </View>
+              <Text variant="bodySmall" color={Colors.textSecondary} style={styles.flex1}>{c.date}</Text>
+              <Text variant="label" color={Colors.success}>+{fcfa(c.amount)}</Text>
+            </View>
+          ))
+        )}
       </ScrollView>
     </View>
   );
@@ -111,6 +124,7 @@ const GAP = Spacing[3];
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
+  flex1: { flex: 1 },
 
   header: {
     flexDirection: 'row',
@@ -126,29 +140,39 @@ const styles = StyleSheet.create({
     paddingTop: Spacing[2],
   },
 
-  // Bannière fondateur — carte pleine couleur marque, emphase maximale.
-  banner: {
+  walletCard: {
     backgroundColor: Colors.primary,
     borderRadius: Radii.lg,
     padding: Spacing[6],
     ...Shadows.md,
   },
-  bannerPill: {
+  walletTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  kicker: { textTransform: 'uppercase', letterSpacing: 0.8 },
+  walletBalance: { marginTop: Spacing[1], letterSpacing: -0.6 },
+  retirerBtn: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radii.pill,
+    paddingHorizontal: Spacing[4],
+    paddingVertical: Spacing[3],
+  },
+  retirerBtnLocked: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+  },
+  lockNote: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: Radii.pill,
-    marginBottom: Spacing[3],
+    marginTop: Spacing[4],
+    paddingTop: Spacing[3],
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.25)',
   },
-  bannerPillText: { letterSpacing: 0.8 },
-  bannerTitle: { letterSpacing: -0.3 },
-  bannerBody: { marginTop: Spacing[2], opacity: 0.9 },
+  lockNoteText: { flex: 1, opacity: 0.9 },
 
-  // Grille de stats 2×2.
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -174,41 +198,6 @@ const styles = StyleSheet.create({
   },
   statValue: { letterSpacing: -0.4 },
 
-  // Carte Wallet.
-  walletCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    padding: Spacing[6],
-    marginTop: GAP,
-    ...Shadows.sm,
-  },
-  walletTop: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-  },
-  kicker: { textTransform: 'uppercase', letterSpacing: 0.8 },
-  walletBalance: { marginTop: Spacing[1], letterSpacing: -0.6 },
-  walletIcon: {
-    width: 48, height: 48,
-    borderRadius: Radii.md,
-    backgroundColor: Colors.primarySubtle,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  lockNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: Spacing[4],
-    paddingTop: Spacing[3],
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderSubtle,
-  },
-  lockNoteText: { flex: 1 },
-
   cta: { marginTop: Spacing[6] },
   linkRow: {
     flexDirection: 'row',
@@ -216,5 +205,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
     marginTop: Spacing[4],
+  },
+
+  sectionLabel: {
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginTop: Spacing[8],
+    marginBottom: Spacing[2],
+  },
+  emptyState: { lineHeight: 20 },
+  commRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing[3],
+    paddingVertical: Spacing[3],
+  },
+  commBorder: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderSubtle,
+  },
+  commIcon: {
+    width: 30, height: 30,
+    borderRadius: Radii.sm,
+    backgroundColor: Colors.primarySubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

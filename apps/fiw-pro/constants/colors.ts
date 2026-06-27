@@ -42,4 +42,12 @@ export const Colors = {
   online:     '#10B981',
   offline:    '#9CA3AF',
   walletLow:  '#EF4444',
+
+  // Aliases (backward compat with existing screens)
+  white:        '#FFFFFF',
+  black:        '#1A1A1A',
+  primaryLight: '#D6EDFF',
+  background:   '#F9FAFB',
+  overlay:      'rgba(0,0,0,0.5)',
+  warningLight: '#FEF3C7',
 };

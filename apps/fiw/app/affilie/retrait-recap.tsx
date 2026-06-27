@@ -11,10 +11,10 @@ import { AMBASSADEUR, fcfa, detectOperator } from '@/constants/affilie';
 // JS3 — Récapitulatif de retrait (point de non-retour avant confirmation).
 
 export default function RetraitRecap() {
-  const params = useLocalSearchParams<{ number?: string }>();
+  const params = useLocalSearchParams<{ number?: string; amount?: string; method?: string }>();
   const number = params.number ?? AMBASSADEUR.defaultNumber;
-  const operator = detectOperator(number);
-  const amount = AMBASSADEUR.balance;
+  const operator = params.method ?? detectOperator(number);
+  const amount = params.amount ? parseInt(params.amount, 10) : AMBASSADEUR.balance;
 
   return (
     <View style={styles.container}>
@@ -28,7 +28,7 @@ export default function RetraitRecap() {
           <TouchableOpacity
             style={styles.numberRow}
             activeOpacity={0.7}
-            onPress={() => router.push({ pathname: '/affilie/retrait-numero', params: { number } })}
+            onPress={() => router.push({ pathname: '/affilie/retrait-numero', params: { number, ...(params.amount ? { amount: params.amount } : {}) } })}
           >
             <Icon name="phone" size={18} color={Colors.primary} />
             <Text variant="heading2" color={Colors.primary}>{number}</Text>
@@ -43,7 +43,13 @@ export default function RetraitRecap() {
 
         {/* Détails */}
         <View style={styles.details}>
-          <View style={styles.detailRow}>
+          {operator && (
+            <View style={styles.detailRow}>
+              <Text variant="bodySmall" color={Colors.textSecondary}>Méthode</Text>
+              <Text variant="label">{operator}</Text>
+            </View>
+          )}
+          <View style={[styles.detailRow, operator ? styles.detailBorder : null]}>
             <Text variant="bodySmall" color={Colors.textSecondary}>Frais de retrait</Text>
             <Text variant="label" color={Colors.success}>Gratuit</Text>
           </View>

@@ -12,7 +12,7 @@ export default function OTPScreen() {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      router.replace('/dashboard');
+      router.replace('/choix-compte');
     }, 1200);
   };
 

@@ -542,8 +542,6 @@ export default function HomeScreen() {
                   <ServiceCard service={location} variant="small" onPress={() => onService(location)} />
                 </View>
               </View>
-              <ServiceCard service={assistance} variant="wide" onPress={() => onService(assistance)} />
-
               {/* Entrée temporaire — parcours Affilié Réseau (Ambassadeur) */}
               <TouchableOpacity
                 style={[styles.card, styles.cardWide]}
@@ -559,6 +557,8 @@ export default function HomeScreen() {
                 </View>
                 <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
               </TouchableOpacity>
+
+              <ServiceCard service={assistance} variant="wide" onPress={() => onService(assistance)} />
 
               {/* Recents */}
               <Text variant="caption" color={Colors.textTertiary} style={styles.sectionLabel}>Récemment</Text>

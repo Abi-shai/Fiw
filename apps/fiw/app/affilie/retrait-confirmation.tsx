@@ -34,7 +34,7 @@ export default function RetraitConfirmation() {
       </View>
 
       <View style={styles.footer}>
-        <Button label="Retour à mon Wallet" onPress={() => router.replace('/affilie/wallet')} />
+        <Button label="Retour au tableau de bord" onPress={() => router.replace('/affilie/dashboard')} />
       </View>
     </View>
   );

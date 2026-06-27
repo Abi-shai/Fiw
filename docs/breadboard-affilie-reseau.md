@@ -9,7 +9,7 @@
 |---|---|---|
 | « Ambassadeur » | Affilié Réseau | Client qui a activé le rôle de recrutement. Si un Client recrute, il devient Ambassadeur. |
 | « Affilié » | Affilié | Personne recrutée (Client ou Prestataire) entrée dans le réseau via le code/QR de l'Ambassadeur. |
-| « Mon Wallet » | Wallet Affilié | Compte de gains : crédité par les commissions, retirable vers Mobile Money (≥ 1 000 F). |
+| « Mon Wallet » | Wallet Réseau | Compte de gains : crédité par les commissions, retirable vers Mobile Money (≥ 1 000 F). |
 | badge « Fondateur » | Membre Fondateur | État de lancement : gains comptabilisés, retrait bloqué jusqu'au lancement officiel. |
 
 ---
@@ -33,25 +33,31 @@ Section Affilié Réseau (« Mon espace Ambassadeur »)
 ├── [Activation] — CTA + acceptation conditions
 │
 ├── Tableau de bord
+│   ├── Solde Wallet Affilié (hero card) + bouton « Retirer »
 │   ├── Prestataires actifs (Affiliés prestataires)
 │   ├── Clients actifs (Affiliés clients)
 │   ├── Courses générées
-│   └── Aperçu solde Wallet Affilié
+│   ├── Lien → Mon Réseau
+│   └── Commissions récentes (date + montant — sans identification des Affiliés)
 │
 ├── Mon Réseau
 │   ├── Affiliés clients (actifs / inactifs)
 │   └── Affiliés prestataires (actifs / inactifs)
 │
-├── Mon Wallet (Wallet Affilié)
-│   ├── Solde disponible
-│   ├── Historique des commissions
-│   ├── Règle de calcul affichée
-│   └── Retrait vers Mobile Money (minimum 1 000 F CFA)
+├── Parcours retrait (accessible depuis le bouton « Retirer » du tableau de bord)
+│   ├── Choix méthode Mobile Money + montant
+│   ├── Récapitulatif (point de non-retour)
+│   ├── [optionnel] Modifier le numéro Mobile Money
+│   ├── Traitement
+│   ├── Confirmation (succès) → Tableau de bord
+│   └── Échec → Réessayer / Support / Tableau de bord
 │
 └── Mes Outils
     ├── QR code (affichage + partage)
     └── Code perso (copie + partage)
 ```
+
+> **Supprimé (session 27 juin 2026)** : l'écran "Mon Wallet" est retiré. Le solde vit dans la hero card du tableau de bord ; les commissions récentes (date + montant uniquement, sans nom ni identification d'Affilié) sont listées en bas du tableau de bord. La règle de calcul (2 %) n'est pas répétée en permanence — elle figure dans les conditions d'utilisation acceptées à l'activation.
 
 > **Hors périmètre de cette itération** : « Prestataires favoris » et « Proposer un prestataire à un Partenaire » (JS4 de la source). Bénéfice et destinataire trop flous, action cross-app. À traiter dans une session dédiée.
 
@@ -61,7 +67,7 @@ Section Affilié Réseau (« Mon espace Ambassadeur »)
 
 - **Membre Fondateur → Actif** : déclenché par Fiw côté admin (fin de phase test), notification push envoyée à l'Ambassadeur.
 
-| État | Wallet Affilié | Retrait | Activité |
+| État | Wallet Réseau | Retrait | Activité |
 |---|---|---|---|
 | Membre Fondateur | visible | **bloqué** (jusqu'au lancement officiel) | reste actif |
 | Actif | visible | **disponible** | tout actif |
@@ -71,6 +77,7 @@ Section Affilié Réseau (« Mon espace Ambassadeur »)
 - **Commission : 2 % du montant brut** de chaque course générée par le réseau (prélevée sur la part Fiw).
 - Wallet **intermédiaire** dans l'app — pas de versement Mobile Money direct.
 - **Retrait** vers Mobile Money à partir de **1 000 F CFA**.
+- **Confidentialité des commissions** : l'historique affiché ne contient ni nom ni identification des Affiliés — uniquement la date et le montant.
 
 ### 6. Principes UX transversaux (audit)
 - **Vocabulaire grand public** : on dit « Ambassadeur » et « Affilié », et le mot concret (« chauffeur », « livreur ») quand le service est connu ; jamais « prestataire » brut dans l'UI client.
@@ -78,6 +85,7 @@ Section Affilié Réseau (« Mon espace Ambassadeur »)
 - Chaque **chemin d'échec** a un écran qui diagnostique, explique et propose une action de récupération.
 - Tout **mouvement d'argent** passe par un récapitulatif explicite avant le point de non-retour.
 - Le badge **« Fondateur »** est toujours accompagné d'une phrase qui explique pourquoi les commissions sont encore gelées.
+- Le bouton « Retirer » est **désactivé** (grisé) en état Membre Fondateur et Gelé — pas d'écran intermédiaire bloquant.
 
 ---
 
@@ -125,26 +133,25 @@ Section Affilié Réseau (« Mon espace Ambassadeur »)
 
 ### JS3 — Suivre et retirer ses commissions
 
-**Mon Wallet**
-- Voir détail d'une commission → Détail commission
-- « Retirer » [si Actif + solde ≥ 1 000 F] → Récapitulatif de retrait
-- « Retirer » [si solde < 1 000 F] → Message : « Minimum 1 000 F pour retirer — il vous manque X F »
-- « Retirer » [si Membre Fondateur] → Message : « Vos gains seront retirables au lancement officiel »
-- « Retirer » [si Gelé] → Message : « Retraits momentanément suspendus — contactez le support » + bouton support
-- [ solde disponible / historique / **règle de calcul** affichée en clair : « 2 % du prix de chaque course faite par vos affiliés » ]
+**Tableau de bord (section commissions)**
+- [ commissions récentes : date + montant uniquement, sans identification des Affiliés ]
+- [ EMPTY STATE : « Pas encore de gains — ils apparaîtront ici dès que les personnes de votre réseau commenceront à faire des courses. » ]
 
-**EMPTY STATE (aucune commission encore)**
-- [ « Pas encore de gains — ils apparaîtront ici dès que les personnes de votre réseau commenceront à faire des courses. » ]
+**Tableau de bord → bouton « Retirer »**
+- [si Actif + solde ≥ 1 000 F] → Choix méthode + montant
+- [si Actif + solde < 1 000 F] → bouton désactivé + caption : « Minimum 1 000 F »
+- [si Membre Fondateur] → bouton désactivé + caption : « Retrait disponible au lancement officiel »
+- [si Gelé] → bouton désactivé + caption : « Retraits suspendus — contactez le support »
 
-**Détail commission**
-- Retour → Mon Wallet
-- [ date / Affilié concerné (« chauffeur » / « livreur » / client selon le cas) / courses générées / montant ]
+**Choix méthode + montant**
+- [ sélection méthode Mobile Money (Orange Money / Wave / Free Money) / saisie montant / raccourci « Tout retirer » / numéro de réception affiché (modifiable à l'étape suivante) ]
+- « Continuer » [montant valide] → Récapitulatif de retrait
 
 **Récapitulatif de retrait**
 - « Confirmer le retrait » → Traitement
 - « Modifier le numéro » → Saisie numéro Mobile Money
-- Annuler → Mon Wallet
-- [ EN GRAND : « Vous retirez X F vers le [numéro Mobile Money] » / frais éventuels affichés / délai estimé d'arrivée ]
+- Annuler → retour (Choix méthode + montant)
+- [ EN GRAND : « Vous retirez X F vers le [numéro Mobile Money] » / méthode / frais éventuels / délai estimé ]
 
 **Saisie numéro Mobile Money**
 - « Valider » → Récapitulatif de retrait
@@ -156,13 +163,13 @@ Section Affilié Réseau (« Mon espace Ambassadeur »)
 - → automatiquement → Échec de retrait [si échec]
 
 **Confirmation [succès]**
-- Retour → Mon Wallet
+- « Retour au tableau de bord » → Tableau de bord
 - [ ✓ « Retrait envoyé » / montant / numéro / statut « En cours d'arrivée » ]
 
 **Échec de retrait**
 - « Réessayer » → Récapitulatif de retrait
 - « Contacter le support » → Support
-- Retour → Mon Wallet
+- « Retour au tableau de bord » → Tableau de bord
 - [ ✕ cause (numéro invalide / problème réseau / solde indisponible) + ce qu'il faut faire
   / **rassurer explicitement** : l'argent n'a pas quitté le Wallet Affilié ]
 

@@ -74,8 +74,7 @@ export default function RootLayout() {
         <Stack.Screen name="affilie/outils" />
         <Stack.Screen name="affilie/qr" />
         <Stack.Screen name="affilie/celebration" />
-        <Stack.Screen name="affilie/wallet" />
-        <Stack.Screen name="affilie/commission-detail" />
+        <Stack.Screen name="affilie/retrait-methode" />
         <Stack.Screen name="affilie/retrait-recap" />
         <Stack.Screen name="affilie/retrait-numero" />
         <Stack.Screen name="affilie/retrait-traitement" />

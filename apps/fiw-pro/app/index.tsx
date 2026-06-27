@@ -21,7 +21,7 @@ export default function OnboardingScreen() {
             <Text style={styles.logoText}>fiw</Text>
             <Text style={styles.logoPro}>pro</Text>
           </View>
-          <Text style={styles.tagline}>Votre espace prestataire</Text>
+          <Text style={styles.tagline}>Votre espace professionnel</Text>
         </View>
 
         <View style={styles.form}>
@@ -47,12 +47,16 @@ export default function OnboardingScreen() {
           />
 
           <TouchableOpacity onPress={() => router.push('/otp')} style={styles.createLink}>
-            <Text style={styles.createText}>Pas encore inscrit ? <Text style={styles.createBold}>Créer un compte</Text></Text>
+            <Text style={styles.createText}>
+              Pas encore inscrit ?{' '}
+              <Text style={styles.createBold}>Créer un compte</Text>
+            </Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>En continuant, vous acceptez les{' '}
+          <Text style={styles.footerText}>
+            En continuant, vous acceptez les{' '}
             <Text style={styles.footerLink}>Conditions d'utilisation</Text>
           </Text>
         </View>
