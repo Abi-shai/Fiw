@@ -36,9 +36,9 @@ _Avoid_ : option standard, option normale
 Choix présenté au client : prise en charge rapide par un prestataire plus éloigné, avec frais de rapprochement affichés. Prix total affiché avant confirmation.
 _Avoid_ : option rapide, option premium
 
-**Option C** :
-Affichée quand aucun prestataire libre n'est disponible, mais qu'un prestataire occupé est proche et sur le point de terminer sa course. Prix normal, pas de frais. L'attente est la contrepartie.
-_Avoid_ : prestataire bientôt disponible
+**Aucun prestataire** :
+Issue de la mise en relation où **aucun prestataire libre n'est disponible** dans le périmètre. Ce n'est **pas** une « Option » : le Client ne choisit rien, c'est un cul-de-sac assorti d'actions de repli (réessayer, changer de gamme quand une autre gamme a du stock). **Mutuellement exclusif de l'Option A/B** : soit un prestataire libre existe mais dépasse le seuil de distance gratuite (le Client voit A/B), soit personne n'est libre (le Client voit Aucun prestataire) — jamais les deux. Étiquette UI : « Aucun prestataire disponible ».
+_Avoid_ : Option D, rupture d'offre, indisponibilité totale
 
 **Score de coopération** :
 Mécanisme algorithmique interne et invisible pour le prestataire. Détermine l'ordre de priorité d'attribution des courses attractives selon l'historique d'acceptation des courses à faible tarif. N'empêche jamais un prestataire de travailler.
@@ -65,7 +65,7 @@ Fonctionnalité dans Fiw Pro permettant au prestataire de définir une direction
 _Avoid_ : filtre de destination, trajet préféré
 
 **Frais d'attente** :
-Frais facturés au client si le prestataire est arrivé et attend au-delà du délai gratuit (3 min si course ≤ 1 000 F, 5 min si > 1 000 F). 100 F CFA/minute. Déclenchés automatiquement par GPS.
+Frais facturés au client si le prestataire est arrivé et attend au-delà du délai gratuit (**5 min, délai unique quel que soit le prix de la course**). 100 F CFA/minute au-delà. Déclenchés automatiquement par GPS. Le montant potentiel est **annoncé au client dès la commande** (message clair avant confirmation), jamais révélé seulement en fin de course.
 _Avoid_ : frais de retard, pénalité d'attente
 
 ### Modèle économique

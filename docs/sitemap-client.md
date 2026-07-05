@@ -33,8 +33,8 @@ Point d'entrée post-connexion. Donne accès à tous les services.
 - Saisir départ / destination
 - Choisir la gamme : Simple · Confort · Prestige · Covoiturage
 - Voir le prix garanti (fixe, sans surge pricing)
-- Décider sur les Frais de rapprochement : Option A · Option B · Option C
-- Choisir le moyen de paiement : Wave · Orange Money · Free Money · Espèces
+- Décider sur les Frais de rapprochement : Option A · Option B
+- Choisir le moyen de paiement : Wave · Orange Money · Espèces
 
 ### 3.2 Course active
 - Carte : position du Prestataire en temps réel

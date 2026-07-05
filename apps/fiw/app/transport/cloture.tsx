@@ -1,22 +1,24 @@
 import React, { useState } from 'react';
-import {
-  View, StyleSheet, TouchableOpacity, TextInput,
-  SafeAreaView, ScrollView
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Poppins, Shadows } from '@/constants/tokens';
 import { DRIVER, MOTO_DRIVER, PAYMENT_METHODS, FRAIS_RAPPROCHEMENT } from '@/constants/data';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import Avatar from '@/components/Avatar';
+import ReceiptCard from '@/components/ReceiptCard';
 
 const QUICK_TAGS = [
   'Très sympa', 'Bonne conduite', 'Ponctuel',
   'Discret', 'Véhicule propre', 'Bon itinéraire',
 ];
+// Libellé de note (index = nombre d'étoiles).
+const RATING_LABEL = ['', 'Mauvais', 'Passable', 'Bien', 'Très bien', 'Excellent !'];
 
 export default function ClotureScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     destName: string; gammeLabel: string; gammeId: string;
     finalPrice: string; paymentId: string; selectedOption: string; waitFrais: string;
@@ -33,15 +35,16 @@ export default function ClotureScreen() {
   const now = new Date();
   const dateStr = now.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
   const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  const fmt = (n: number) => `${n.toLocaleString('fr-FR')} F`;
 
   const [stars, setStars] = useState(5);
   const [comment, setComment] = useState('');
+  const [showComment, setShowComment] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
 
-  const toggleTag = (tag: string) => {
+  const toggleTag = (tag: string) =>
     setTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
-  };
 
   const handleSubmit = () => {
     setSubmitted(true);
@@ -50,78 +53,75 @@ export default function ClotureScreen() {
 
   if (submitted) {
     return (
-      <SafeAreaView style={styles.thankYouContainer}>
-        <Icon name="thanks" size={56} color={Colors.primary} weight="fill" />
+      <View style={styles.thankYou}>
+        <View style={styles.thankYouBadge}>
+          <Icon name="thanks" size={40} color={Colors.primary} weight="fill" />
+        </View>
         <Text variant="display" style={styles.thankYouTitle}>Merci pour votre avis !</Text>
-        <Text variant="body" color={Colors.textSecondary} align="center">Votre retour aide toute la communauté Fiw.</Text>
-      </SafeAreaView>
+        <Text variant="body" color={Colors.textSecondary} align="center">
+          Votre retour aide toute la communauté Fiw.
+        </Text>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 16 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.successBadge}>
-          <Icon name="check" size={48} color={Colors.success} weight="fill" />
-          <Text variant="display" style={styles.successTitle}>Course terminée</Text>
-          <Text variant="body" color={Colors.textSecondary}>{dateStr} à {timeStr}</Text>
+        {/* Confirmation — pastille succès + date. */}
+        <View style={styles.header}>
+          <View style={styles.successBadge}>
+            <Icon name="check" size={34} weight="fill" color={Colors.success} />
+          </View>
+          <Text variant="display" style={styles.headerTitle}>Course terminée</Text>
+          <Text variant="body" color={Colors.textSecondary}>{dateStr} · {timeStr}</Text>
         </View>
 
-        <View style={styles.card}>
-          <Text variant="label" color={Colors.textSecondary} style={styles.cardTitle}>Détail de la course</Text>
-          <Row label="Destination" value={params.destName} />
-          <Row label="Service" value={params.gammeLabel} />
-          <Row label="Prestataire" value={driver.name} />
-          <Row label="Paiement" value={payment.label} />
+        {/* Reçu. */}
+        <ReceiptCard
+          rows={[
+            { label: 'Destination', value: params.destName },
+            { label: 'Service', value: params.gammeLabel },
+            { label: 'Paiement', value: payment.label },
+          ]}
+          lines={[
+            { label: 'Course', value: fmt(basePrice) },
+            ...(params.selectedOption === 'B'
+              ? [{ label: 'Frais de rapprochement', value: fmt(FRAIS_RAPPROCHEMENT) }]
+              : []),
+            ...(waitFrais > 0 ? [{ label: "Frais d'attente", value: fmt(waitFrais) }] : []),
+          ]}
+          total={`${finalPrice.toLocaleString('fr-FR')} F CFA`}
+        />
 
-          <View style={styles.divider} />
-
-          <Row label="Course" value={`${basePrice.toLocaleString()} F`} />
-          {params.selectedOption === 'B' && (
-            <Row label="Frais de rapprochement" value={`${FRAIS_RAPPROCHEMENT.toLocaleString()} F`} />
-          )}
-          {waitFrais > 0 && (
-            <Row label="Frais d'attente" value={`${waitFrais.toLocaleString()} F`} />
-          )}
-
-          <View style={styles.divider} />
-
-          <View style={styles.totalRow}>
-            <Text variant="heading2">Total payé</Text>
-            <Text variant="heading1" color={Colors.primary}>{finalPrice.toLocaleString()} F CFA</Text>
-          </View>
-        </View>
-
-        <View style={styles.avisCard}>
-          <View style={styles.avisHeader}>
-            <Avatar name={driver.name} size={48} bordered />
-            <View style={styles.flex1}>
-              <Text variant="heading2">Comment était votre course ?</Text>
-              <Text variant="bodySmall" color={Colors.textSecondary}>{driver.name} · {driver.vehicle}</Text>
-            </View>
-          </View>
+        {/* Notation (héros). */}
+        <View style={styles.ratingCard}>
+          <Avatar name={driver.name} size={72} bordered />
+          <Text variant="heading1" align="center" style={styles.ratingTitle}>Comment était votre course ?</Text>
+          <Text variant="bodySmall" color={Colors.textSecondary} align="center">
+            {driver.name} · {driver.vehicle}
+          </Text>
 
           <View style={styles.starsRow}>
             {[1, 2, 3, 4, 5].map((s) => (
-              <TouchableOpacity key={s} onPress={() => setStars(s)} activeOpacity={0.7}>
+              <TouchableOpacity key={s} onPress={() => setStars(s)} activeOpacity={0.7} hitSlop={6}>
                 <Icon
                   name="star"
-                  size={40}
+                  size={38}
                   weight={s <= stars ? 'fill' : 'bold'}
                   color={s <= stars ? Colors.warning : Colors.border}
                 />
               </TouchableOpacity>
             ))}
           </View>
-          <Text variant="body" align="center" style={styles.starsLabel}>
-            {stars === 5 ? 'Excellent !' : stars === 4 ? 'Très bien' : stars === 3 ? 'Bien' : stars === 2 ? 'Passable' : 'Mauvais'}
+          <Text variant="label" color={Colors.textPrimary} align="center" style={styles.ratingLabel}>
+            {RATING_LABEL[stars]}
           </Text>
 
-          <Text variant="label" color={Colors.textSecondary} style={styles.sectionLabel}>Points positifs</Text>
           <View style={styles.tagsRow}>
             {QUICK_TAGS.map((tag) => {
               const on = tags.includes(tag);
@@ -132,7 +132,11 @@ export default function ClotureScreen() {
                   onPress={() => toggleTag(tag)}
                   activeOpacity={0.8}
                 >
-                  <Text variant="bodySmall" color={on ? Colors.primaryPressed : Colors.textPrimary} style={on ? styles.tagTextActive : undefined}>
+                  <Text
+                    variant="bodySmall"
+                    color={on ? Colors.primaryPressed : Colors.textPrimary}
+                    style={on ? styles.tagTextActive : undefined}
+                  >
                     {tag}
                   </Text>
                 </TouchableOpacity>
@@ -140,105 +144,102 @@ export default function ClotureScreen() {
             })}
           </View>
 
-          <TextInput
-            style={styles.commentInput}
-            value={comment}
-            onChangeText={setComment}
-            placeholder="Commentaire optionnel…"
-            placeholderTextColor={Colors.textTertiary}
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
-          />
+          {showComment ? (
+            <TextInput
+              style={styles.commentInput}
+              value={comment}
+              onChangeText={setComment}
+              placeholder="Votre commentaire…"
+              placeholderTextColor={Colors.textTertiary}
+              multiline
+              textAlignVertical="top"
+              autoFocus
+            />
+          ) : (
+            <TouchableOpacity style={styles.addComment} onPress={() => setShowComment(true)} activeOpacity={0.7}>
+              <Icon name="edit" size={16} color={Colors.primary} />
+              <Text variant="label" color={Colors.primary}>Ajouter un commentaire</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
-        <Button label="Envoyer mon avis" onPress={handleSubmit} style={styles.submitBtn} />
-        <TouchableOpacity style={styles.passerBtn} onPress={() => router.replace('/home')}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+        <Button label="Envoyer mon avis" onPress={handleSubmit} />
+        <TouchableOpacity style={styles.passerBtn} onPress={() => router.replace('/home')} activeOpacity={0.7}>
           <Text variant="body" color={Colors.textSecondary}>Passer</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.row}>
-      <Text variant="body" color={Colors.textSecondary}>{label}</Text>
-      <Text variant="body" style={styles.rowValue}>{value}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
-  scroll: { padding: 20, paddingBottom: 8 },
-  flex1: { flex: 1 },
-  successBadge: { alignItems: 'center', paddingVertical: 24, marginBottom: 4 },
-  successTitle: { marginTop: 10 },
-  card: {
+  scroll: { paddingHorizontal: 20, paddingBottom: 16, gap: 14 },
+
+  // En-tête succès.
+  header: { alignItems: 'center', paddingVertical: 12, gap: 6 },
+  successBadge: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: Colors.successSubtle,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 6,
+  },
+  headerTitle: {},
+
+  // Carte notation.
+  ratingCard: {
     backgroundColor: Colors.surface,
     borderRadius: Radii.lg,
     padding: 20,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  cardTitle: { textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 16 },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    ...Shadows.sm,
     alignItems: 'center',
-    paddingVertical: 8,
   },
-  rowValue: { fontFamily: Poppins.medium, maxWidth: '60%', textAlign: 'right' },
-  divider: { height: 1, backgroundColor: Colors.border, marginVertical: 8 },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 },
-  avisCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
-    padding: 20,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  avisHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
-  starsRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 8 },
-  starsLabel: { fontFamily: Poppins.medium, marginBottom: 20 },
-  sectionLabel: { textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
-  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+  ratingTitle: { marginTop: 14 },
+  starsRow: { flexDirection: 'row', gap: 8, marginTop: 16, marginBottom: 6 },
+  ratingLabel: { fontFamily: Poppins.medium, marginBottom: 16 },
+  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 14 },
   tag: {
-    paddingHorizontal: 12, paddingVertical: 8,
+    paddingHorizontal: 14, paddingVertical: 8,
     borderRadius: Radii.pill,
-    borderWidth: 1.5, borderColor: Colors.border,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.track,
   },
-  tagActive: { borderColor: Colors.primary, backgroundColor: Colors.primarySubtle },
+  tagActive: { backgroundColor: Colors.primarySubtle },
   tagTextActive: { fontFamily: Poppins.semibold },
+  addComment: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6 },
   commentInput: {
+    alignSelf: 'stretch',
     backgroundColor: Colors.bg,
     borderRadius: Radii.md,
-    borderWidth: 1.5, borderColor: Colors.border,
     padding: 14,
     fontSize: 15,
+    lineHeight: 21,
     fontFamily: Poppins.regular,
     color: Colors.textPrimary,
-    minHeight: 80,
+    minHeight: 84,
   },
+
+  // Bas de page.
   footer: {
-    padding: 16,
-    paddingBottom: 32,
-    borderTopWidth: 1,
+    paddingHorizontal: 20, paddingTop: 12,
+    gap: 2,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.border,
     backgroundColor: Colors.surface,
   },
-  submitBtn: { marginBottom: 10 },
-  passerBtn: { alignItems: 'center', paddingVertical: 10 },
-  thankYouContainer: {
+  passerBtn: { alignItems: 'center', paddingVertical: 12 },
+
+  // Écran de remerciement.
+  thankYou: {
     flex: 1, backgroundColor: Colors.surface,
-    justifyContent: 'center', alignItems: 'center', padding: 40,
+    justifyContent: 'center', alignItems: 'center', padding: 40, gap: 10,
   },
-  thankYouTitle: { marginTop: 20, marginBottom: 8 },
+  thankYouBadge: {
+    width: 88, height: 88, borderRadius: 44,
+    backgroundColor: Colors.primarySubtle,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 10,
+  },
+  thankYouTitle: { marginBottom: 2 },
 });

@@ -98,6 +98,14 @@ export const GAMMES: {
   },
 ];
 
+// Gamme complémentaire suggérée à l'état « Aucun prestataire » (cf. CONTEXT.md) :
+// si la gamme demandée n'a personne, on renvoie vers l'autre famille de véhicule
+// susceptible d'avoir du stock — Moto ↔ Auto.
+export const complementaryGamme = (gammeId: string) =>
+  gammeId === 'moto'
+    ? GAMMES.find((g) => g.id === 'simple')!
+    : GAMMES.find((g) => g.id === 'moto')!;
+
 // Covoiturage (catégorie Transport) — proposé via le switcher sur l'écran de
 // configuration. Une seule offre (prix réduit par passager) ; « Pas de détour »
 // est une OPTION (pas une gamme distincte) — cf. périmètre Covoiturage. Même
@@ -124,3 +132,43 @@ export const PAYMENT_METHODS = [
 ];
 
 export const FRAIS_RAPPROCHEMENT = 350;
+
+// Frais d'attente (cf. CONTEXT.md) : délai gratuit unique de 5 min à l'arrivée
+// du prestataire, puis 100 F CFA/min. Annoncés au client dès la commande.
+export const WAIT_GRACE_MINUTES = 5;
+export const WAIT_FEE_PER_MIN = 100;
+
+// Historique des courses (mock). Le détail expose la PLAQUE (retrouver un objet
+// oublié via le service client), jamais le numéro du prestataire — le client ne
+// contacte jamais directement le prestataire (cf. décision design).
+export const COURSE_HISTORY: {
+  id: string; date: string; destName: string; destDetail: string;
+  gammeId: string; gammeLabel: string;
+  driverName: string; driverPlate: string; vehicle: string; paymentLabel: string;
+  base: number; fraisRapprochement: number; fraisAttente: number; total: number;
+}[] = [
+  {
+    id: 'h-1', date: "Aujourd'hui · 14:32", destName: 'Almadies', destDetail: 'Dakar Ouest',
+    gammeId: 'simple', gammeLabel: 'Taxi Auto',
+    driverName: 'Moussa Diallo', driverPlate: 'DK-4521-A', vehicle: 'Toyota Corolla Blanche', paymentLabel: 'Wave',
+    base: 1500, fraisRapprochement: 0, fraisAttente: 0, total: 1500,
+  },
+  {
+    id: 'h-2', date: 'Hier · 08:15', destName: 'Aéroport AIBD', destDetail: 'Rufisque',
+    gammeId: 'confort', gammeLabel: 'Taxi Auto Confort',
+    driverName: 'Awa Ndiaye', driverPlate: 'DK-3092-C', vehicle: 'Hyundai Accent Grise', paymentLabel: 'Orange Money',
+    base: 5200, fraisRapprochement: 350, fraisAttente: 200, total: 5750,
+  },
+  {
+    id: 'h-3', date: '28 juin · 19:40', destName: 'Plateau', destDetail: 'Dakar Centre',
+    gammeId: 'moto', gammeLabel: 'Taxi Moto',
+    driverName: 'Ibrahima Sy', driverPlate: 'DK-7734-B', vehicle: 'Yamaha FZ Rouge', paymentLabel: 'Espèces',
+    base: 800, fraisRapprochement: 0, fraisAttente: 0, total: 800,
+  },
+  {
+    id: 'h-4', date: '25 juin · 12:05', destName: 'Parcelles Assainies', destDetail: 'Dakar Nord',
+    gammeId: 'simple', gammeLabel: 'Taxi Auto',
+    driverName: 'Fatou Sarr', driverPlate: 'DK-1188-D', vehicle: 'Kia Picanto Bleue', paymentLabel: 'Wave',
+    base: 2100, fraisRapprochement: 350, fraisAttente: 0, total: 2450,
+  },
+];

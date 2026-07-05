@@ -4,6 +4,7 @@ import {
   View, StyleSheet, Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import Avatar from '@/components/Avatar';
 import Icon, { type IconName } from '@/components/Icon';
 import Text from '@/components/Text';
@@ -129,6 +130,11 @@ export default function MenuDrawer({ visible, onClose }: Props) {
         <View style={styles.divider} />
 
         <MenuItem icon="rider" label="Mon compte & sécurité" />
+        <MenuItem
+          icon="clock"
+          label="Historique"
+          onPress={() => { onCloseRef.current(); router.push('/history'); }}
+        />
         <MenuItem icon="hail" label="Affiliation" />
         <MenuItem icon="star" label="Fidélité" badge="240 pts" />
 

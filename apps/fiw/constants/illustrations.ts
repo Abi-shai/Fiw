@@ -14,3 +14,14 @@ export type IlluKey = keyof typeof GAMME_ILLUSTRATIONS;
 
 export const gammeIllustration = (illu: IlluKey) =>
   GAMME_ILLUSTRATIONS[illu] ?? GAMME_ILLUSTRATIONS.auto;
+
+// Illustrations des moyens de paiement (Wave, Orange Money, espèces) — partagées
+// entre la feuille de configuration et le suivi de course.
+export const PAY_ILLUSTRATIONS: Record<string, ReturnType<typeof require>> = {
+  cash: require('../assets/argent.png'),
+  wave: require('../assets/pay-wave.png'),
+  orange: require('../assets/pay-orange.png'),
+};
+
+export const payIllustration = (id?: string) =>
+  (id && PAY_ILLUSTRATIONS[id]) || PAY_ILLUSTRATIONS.cash;

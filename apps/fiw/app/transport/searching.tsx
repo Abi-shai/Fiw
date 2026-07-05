@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, StyleSheet, Animated, TouchableOpacity, Image,
+  LayoutAnimation, Platform, UIManager,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,22 +11,46 @@ import Text from '@/components/Text';
 import Button from '@/components/Button';
 import Icon from '@/components/Icon';
 import IconButton from '@/components/IconButton';
-import RapprochementChoice, { type OptId } from '@/components/RapprochementChoice';
-import { Handle, sheetSurface } from '@/components/Sheet';
-import { Colors, Poppins, Radii } from '@/constants/tokens';
-import { DAKAR_CENTER, FRAIS_RAPPROCHEMENT, PAYMENT_METHODS } from '@/constants/data';
+import {
+  GroupedSheet, SheetCard, ProgressBar, AvatarStack, AltSuggestCard,
+  VehicleGroup, TotalBar,
+} from '@/components/RideSheet';
+import { Colors, Poppins, Radii, Shadows } from '@/constants/tokens';
+import { DAKAR_CENTER, FRAIS_RAPPROCHEMENT, DRIVER, MOTO_DRIVER, complementaryGamme } from '@/constants/data';
 import { gammeIllustration, type IlluKey } from '@/constants/illustrations';
 
-// Durées de simulation (proto) — réglables pour mieux jauger l'attente.
-const SEARCH_DURATION = 11000; // recherche d'un prestataire avant de proposer le choix
-const MATCH_DURATION = 4200;   // mise en relation (prestataire trouvé → course active)
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
-// Phases : on cherche un prestataire → s'il n'y en a pas tout près, on propose
-// le choix frais de rapprochement → mise en relation → course active.
-type Phase = 'searching' | 'choice' | 'matching';
+// Motion : lissage de la hauteur de la feuille quand son contenu change d'état
+// (standard mobile — la feuille « respire » au lieu d'un saut sec).
+const SHEET_LAYOUT = {
+  duration: 280,
+  update: { type: LayoutAnimation.Types.easeInEaseOut },
+  create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+  delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+};
+
+// Durées de simulation (proto) — réglables pour mieux jauger l'attente.
+const SEARCH_DURATION = 11000; // recherche avant de résoudre l'issue
+const REVEAL_DURATION = 2600;  // carte « Prestataire trouvé » avant la course active
+
+// Trois issues de la mise en relation (cf. CONTEXT.md) : prestataire proche
+// (chemin heureux, sans frais) · un peu loin (frais de rapprochement à accepter)
+// · aucun prestataire dans le périmètre (cul-de-sac).
+type Outcome = 'near' | 'far' | 'none';
+// Phases d'écran : recherche → (frais | aucun) → révélation → course.
+type Phase = 'searching' | 'frais' | 'reveal' | 'none';
 
 const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/[\s  ]/g, '.');
-const mmss = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+
+// Pile d'avatars (preuve sociale) — initiales tintées, façon maquette 118-328.
+const NEARBY = [
+  { label: 'A', bg: '#e7ecff', fg: Colors.primaryPressed },
+  { label: 'C', bg: Colors.warningSubtle, fg: '#b45309' },
+  { label: 'F', bg: Colors.successSubtle, fg: '#047857' },
+];
 
 // Radar : anneaux concentriques qui s'étendent en boucle depuis le départ.
 function Radar() {
@@ -58,22 +83,46 @@ function Radar() {
 export default function SearchingScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
-    destName: string; gammePrice: string; gammeId: string; gammeLabel: string;
+    departureName?: string; destName: string; destDetail?: string;
+    gammePrice: string; gammeId: string; gammeLabel: string;
     gammeIllu: string; paymentId: string; destLat: string; destLng: string;
   }>();
 
   const base = parseInt(params.gammePrice || '0', 10);
   const frais = FRAIS_RAPPROCHEMENT;
 
-  const [phase, setPhase] = useState<Phase>('searching');
-  const [option, setOption] = useState<OptId>('A');
+  const [phase, setPhaseState] = useState<Phase>('searching');
+  // Toute transition de phase anime la hauteur de la feuille (motion mobile).
+  const setPhase = (p: Phase) => { LayoutAnimation.configureNext(SHEET_LAYOUT); setPhaseState(p); };
+  // Issue présentée — pilotée par l'interrupteur de démo (facilitateur), invisible
+  // en production. Défaut « far » (frais de rapprochement).
+  const [outcome, setOutcome] = useState<Outcome>('far');
+  const outcomeRef = useRef<Outcome>('far');
+  outcomeRef.current = outcome;
   const [elapsed, setElapsed] = useState(0);
-  const [showDetails, setShowDetails] = useState(false);
   const [sheetH, setSheetH] = useState(0); // hauteur mesurée de la feuille (pour le retour flottant)
-  const finalPrice = option === 'B' ? base + frais : base;
+  const [runId, setRunId] = useState(0);   // relance de recherche (« Réessayer »)
+
+  // Reframe frais de rapprochement : quand les prestataires libres sont tous un
+  // peu loin (« far »), le Client paie +frais pour en rapprocher un — accepté via
+  // « Continuer », jamais imposé. Plus de choix binaire Option A/B.
+  const isFar = outcome === 'far';
+  const selectedOption = isFar ? 'B' : 'A'; // 'B' → cloture affiche la ligne frais
+  const finalPrice = isFar ? base + frais : base;
 
   const illu = (params.gammeIllu || 'auto') as IlluKey;
-  const payment = PAYMENT_METHODS.find(p => p.id === params.paymentId);
+  const driver = params.gammeId === 'moto' ? MOTO_DRIVER : DRIVER;
+  // Gamme complémentaire suggérée à l'état « Aucun prestataire ».
+  const alt = complementaryGamme(params.gammeId || 'simple');
+
+  const revealEta = isFar ? '4 min' : '3 min';
+
+  // Statut de recherche qui évolue — donne du sens à l'attente.
+  const statusLine = elapsed < 4
+    ? 'On repère les prestataires autour de vous.'
+    : elapsed < 8
+      ? 'Votre demande part vers les plus proches.'
+      : 'En attente d’une confirmation…';
 
   // Prestataires aux alentours, illustrés selon le moyen de transport choisi.
   const mapRef = useRef<LeafletMapHandle>(null);
@@ -89,32 +138,101 @@ export default function SearchingScreen() {
     [illu],
   );
 
-  // Overlay de chargement : fondu d'entrée, reste tant que l'écran est monté.
   const scrimFade = useRef(new Animated.Value(0)).current;
+  const sheetY = useRef(new Animated.Value(700)).current;
+  const didEnter = useRef(false);
+  const contentAnim = useRef(new Animated.Value(0)).current;
+  const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(scrimFade, { toValue: 1, duration: 450, useNativeDriver: true }).start();
-    const tick = setInterval(() => setElapsed(e => e + 1), 1000);
-    // Proto : on simule l'absence de prestataire tout près → on présente le choix.
-    const timer = setTimeout(() => setPhase('choice'), SEARCH_DURATION);
-    return () => { clearInterval(tick); clearTimeout(timer); };
   }, []);
 
-  // Choix validé → mise en relation puis course active.
-  const proceed = () => {
-    Haptics.selectionAsync();
-    setPhase('matching');
-    setTimeout(() => {
+  // Entrée de la feuille : glissement façon bottom-sheet natif.
+  useEffect(() => {
+    if (sheetH > 0 && !didEnter.current) {
+      didEnter.current = true;
+      Animated.spring(sheetY, { toValue: 0, tension: 60, friction: 12, useNativeDriver: true }).start();
+    }
+  }, [sheetH]);
+
+  // Fondu + relèvement du contenu à chaque changement de phase.
+  useEffect(() => {
+    contentAnim.setValue(0);
+    Animated.timing(contentAnim, { toValue: 1, duration: 260, useNativeDriver: true }).start();
+  }, [phase]);
+
+  const resolve = (o: Outcome) => {
+    if (o === 'none') setPhase('none');
+    else if (o === 'near') { Haptics.selectionAsync(); setPhase('reveal'); }
+    else setPhase('frais');
+  };
+
+  useEffect(() => {
+    if (phase !== 'searching') return;
+    setElapsed(0);
+    progress.setValue(0);
+    const anim = Animated.timing(progress, {
+      toValue: 0.92, duration: SEARCH_DURATION, useNativeDriver: false,
+    });
+    anim.start();
+    const tick = setInterval(() => setElapsed((e) => e + 1), 1000);
+    const timer = setTimeout(() => resolve(outcomeRef.current), SEARCH_DURATION);
+    return () => { clearInterval(tick); clearTimeout(timer); anim.stop(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, runId]);
+
+  useEffect(() => {
+    if (phase !== 'reveal') return;
+    Animated.timing(scrimFade, { toValue: 0, duration: 600, useNativeDriver: true }).start();
+    Animated.timing(progress, { toValue: 1, duration: 350, useNativeDriver: false }).start();
+    mapRef.current?.recenter(DAKAR_CENTER, 15);
+    const t = setTimeout(() => {
       router.replace({
         pathname: '/transport/course-active',
-        params: { ...params, selectedOption: option, finalPrice: String(finalPrice) },
+        params: { ...params, selectedOption, finalPrice: String(finalPrice) },
       });
-    }, MATCH_DURATION);
+    }, REVEAL_DURATION);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
+  const proceed = () => { Haptics.selectionAsync(); setPhase('reveal'); };
+
+  const cycleOutcome = () => {
+    Haptics.selectionAsync();
+    const order: Outcome[] = ['near', 'far', 'none'];
+    const next = order[(order.indexOf(outcomeRef.current) + 1) % order.length];
+    outcomeRef.current = next;
+    setOutcome(next);
+    if (phase !== 'searching') resolve(next);
+  };
+
+  const retry = () => { Haptics.selectionAsync(); setPhase('searching'); setRunId((r) => r + 1); };
+
+  const changeGamme = () => {
+    Haptics.selectionAsync();
+    router.replace({
+      pathname: '/transport/configure',
+      params: {
+        departureName: params.departureName ?? 'Ma position actuelle',
+        destName: params.destName,
+        destDetail: params.destDetail ?? '',
+        destLat: params.destLat,
+        destLng: params.destLng,
+        preselectGamme: alt.id,
+      },
+    });
   };
 
   const cancel = () => router.replace('/home');
 
-  const searchingLike = phase === 'searching' || phase === 'matching';
+  const DEMO_LABEL: Record<Outcome, string> = { near: 'Proche', far: 'Loin', none: 'Aucun' };
+
+  const contentStyle = {
+    opacity: contentAnim,
+    transform: [{ translateY: contentAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
+  };
 
   return (
     <View style={styles.container}>
@@ -131,18 +249,15 @@ export default function SearchingScreen() {
         style={StyleSheet.absoluteFillObject}
       />
 
-      {/* Overlay de chargement sur la carte : assombrit la carte tant que la
-          course n'est pas validée → on comprend que l'écran est concentré sur
-          le chargement. Reste affiché pendant toute la liaison. */}
       <Animated.View style={[styles.mapScrim, { opacity: scrimFade }]} pointerEvents="none" />
 
-      {/* Radar centré sur le départ — pulse en continu jusqu'à validation. */}
-      <View style={styles.mapCenterOverlay} pointerEvents="none">
-        <Radar />
-      </View>
+      {phase === 'searching' && (
+        <View style={styles.mapCenterOverlay} pointerEvents="none">
+          <Radar />
+        </View>
+      )}
 
-      {/* Bannière haute : véhicule recherché + classe */}
-      {searchingLike && (
+      {phase === 'searching' && (
         <View style={[styles.banner, { top: insets.top + 8 }]} pointerEvents="none">
           <View style={styles.bannerThumb}>
             <Image source={gammeIllustration(illu)} style={styles.bannerImg} resizeMode="contain" />
@@ -153,97 +268,111 @@ export default function SearchingScreen() {
         </View>
       )}
 
-      {/* Retour flottant juste au-dessus de la feuille (comme les autres écrans) */}
       {phase === 'searching' && sheetH > 0 && (
         <View style={[styles.controls, { bottom: sheetH + 12 }]} pointerEvents="box-none">
           <IconButton name="back" onPress={cancel} />
         </View>
       )}
 
-      <View
-        style={[sheetSurface, styles.sheet, { paddingBottom: insets.bottom + 20 }]}
+      {/* Interrupteur de démo (facilitateur) : cycle les 3 issues. */}
+      {phase !== 'reveal' && sheetH > 0 && (
+        <View style={[styles.demoControls, { bottom: sheetH + 12 }]} pointerEvents="box-none">
+          <TouchableOpacity style={styles.demoChip} onPress={cycleOutcome} activeOpacity={0.85}>
+            <Icon name="lightning" size={12} weight="bold" color={Colors.textSecondary} />
+            <Text variant="caption" color={Colors.textSecondary}>Démo · {DEMO_LABEL[outcome]}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <GroupedSheet
+        translateY={sheetY}
+        contentStyle={contentStyle}
         onLayout={(e) => setSheetH(e.nativeEvent.layout.height)}
       >
-        <View style={styles.handleArea}>
-          <Handle />
-        </View>
-
-          {phase === 'choice' ? (
+        {phase === 'frais' ? (
+            /* Un peu loin — frais de rapprochement à accepter (maquette 118-345). */
             <>
-              <Text variant="heading2">Pas de prestataire tout près</Text>
-              <Text variant="bodySmall" color={Colors.textSecondary} style={styles.choiceSub}>
-                Choisissez comment être pris en charge :
-              </Text>
-
-              <RapprochementChoice base={base} frais={frais} value={option} onChange={setOption} />
-
-              <Button label="Continuer" onPress={proceed} style={styles.cta} />
-              <TouchableOpacity style={styles.cancelBtn} onPress={cancel} activeOpacity={0.7}>
-                <Text variant="label" color={Colors.error}>Annuler</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              {/* En-tête : statut + chrono */}
-              <View style={styles.headRow}>
-                <View style={styles.flex1}>
-                  <Text variant="heading2" numberOfLines={1}>
-                    {phase === 'matching' ? 'Mise en relation…' : 'Plusieurs prestataires à proximité'}
-                  </Text>
-                  <Text variant="caption" color={Colors.textSecondary}>
-                    {phase === 'matching'
-                      ? 'Un prestataire a accepté votre course'
-                      : 'Recherche d’un véhicule disponible'}
+              <SheetCard>
+                <View style={styles.head}>
+                  <Text variant="heading2">Les prestataires sont un peu loin…</Text>
+                  <Text variant="body" color={Colors.textSecondary}>
+                    Un frais de rapprochement couvre leur trajet jusqu'à vous.
                   </Text>
                 </View>
-                <Text variant="body" style={styles.timer}>{mmss(elapsed)}</Text>
-              </View>
-
-              {phase === 'searching' && (
-                <>
-                  {/* Actions : annuler + détails (façon Yango) */}
-                  <View style={styles.actionRow}>
-                    <TouchableOpacity style={styles.actionBtn} onPress={cancel} activeOpacity={0.85}>
-                      <Icon name="close" size={20} weight="bold" color={Colors.textPrimary} />
-                      <Text variant="label" style={styles.actionText}>Annuler la commande</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.actionBtnSm}
-                      onPress={() => setShowDetails(v => !v)}
-                      activeOpacity={0.85}
-                    >
-                      <Icon name="info" size={20} weight="bold" color={Colors.textPrimary} />
-                      <Text variant="label" style={styles.actionText}>Détails</Text>
-                    </TouchableOpacity>
+                <View style={styles.totalCard}>
+                  <View style={styles.flex1}>
+                    <Text variant="heading2" color={Colors.primaryPressed}>Total à payer</Text>
+                    <Text variant="bodySmall" color={Colors.textSecondary} style={styles.breakdown}>
+                      <Text variant="bodySmall" style={styles.breakdownStrong}>{fmt(base)} F</Text>
+                      {' de course + '}
+                      <Text variant="bodySmall" style={styles.breakdownStrong}>{fmt(frais)} F</Text>
+                      {' de frais de rapprochement.'}
+                    </Text>
                   </View>
+                  <Text style={styles.totalCardAmount}>{fmt(finalPrice)} F</Text>
+                </View>
+              </SheetCard>
 
-                  {/* Détails repliables : trajet, classe, prix, paiement */}
-                  {showDetails && (
-                    <View style={styles.details}>
-                      <DetailRow icon="flag" label="Destination" value={params.destName} />
-                      <DetailRow icon="car" label="Classe" value={params.gammeLabel} />
-                      <DetailRow
-                        icon="coins"
-                        label="Prix"
-                        value={payment ? `${fmt(base)} FCFA · ${payment.label}` : `${fmt(base)} FCFA`}
-                      />
-                    </View>
-                  )}
-                </>
-              )}
+              <SheetCard style={styles.actionCard}>
+                <Button label="Continuer" onPress={proceed} />
+                <Button label="Annuler la commande" variant="destructive" onPress={cancel} />
+              </SheetCard>
+            </>
+          ) : phase === 'none' ? (
+            /* Aucun prestataire (maquette 118-362). */
+            <>
+              <SheetCard>
+                <View style={styles.head}>
+                  <Text variant="heading2">Aucun prestataire disponible</Text>
+                  <Text variant="body" color={Colors.textSecondary}>
+                    Aucun prestataire n'est libre tout près pour l'instant. C'est fréquent aux heures de pointe, mais ça se libère vite.
+                  </Text>
+                </View>
+                <AltSuggestCard
+                  illu={alt.illu}
+                  title={`Prendre un ${alt.label}`}
+                  subtitle={`Souvent disponible · dès ${fmt(alt.basePrice)} F`}
+                  onPress={changeGamme}
+                />
+              </SheetCard>
+
+              <SheetCard style={styles.actionCard}>
+                <Button label="Réessayer" onPress={retry} />
+                <Button label="Annuler la commande" variant="destructive" onPress={cancel} />
+              </SheetCard>
+            </>
+          ) : phase === 'reveal' ? (
+            /* Révélation « Prestataire trouvé » — carte véhicule (maquette 118-305). */
+            <>
+              <SheetCard>
+                <Text variant="heading2">Votre prestataire arrive dans environ {revealEta}</Text>
+                <VehicleGroup driver={driver} illu={illu} />
+              </SheetCard>
+              <TotalBar amount={finalPrice} />
+            </>
+          ) : (
+            /* Recherche en cours (maquette 118-328). */
+            <>
+              <SheetCard>
+                <View style={styles.head}>
+                  <Text variant="heading2" numberOfLines={2}>Recherche du prestataire le plus proche…</Text>
+                  <Text variant="body" color={Colors.textSecondary}>{statusLine}</Text>
+                </View>
+                <ProgressBar progress={progress} />
+                <View style={styles.social}>
+                  <AvatarStack items={NEARBY} />
+                  <Text variant="label" style={styles.flex1}>
+                    {providers.length} prestataires à proximité
+                  </Text>
+                </View>
+              </SheetCard>
+
+              <SheetCard style={styles.actionCard}>
+                <Button label="Annuler la commande" variant="destructive" onPress={cancel} />
+              </SheetCard>
             </>
           )}
-      </View>
-    </View>
-  );
-}
-
-function DetailRow({ icon, label, value }: { icon: any; label: string; value?: string }) {
-  return (
-    <View style={styles.detailRow}>
-      <Icon name={icon} size={18} color={Colors.textSecondary} />
-      <Text variant="caption" color={Colors.textSecondary} style={styles.detailLabel}>{label}</Text>
-      <Text variant="label" style={styles.detailValue} numberOfLines={1}>{value}</Text>
+      </GroupedSheet>
     </View>
   );
 }
@@ -252,80 +381,57 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   flex1: { flex: 1 },
 
-  // Overlay de chargement (assombrit la carte pendant la liaison).
   mapScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(17, 24, 39, 0.22)' },
-  // Radar, centré sur le centre de la carte (= départ).
   mapCenterOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
   radarWrap: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
   ring: {
     position: 'absolute',
     width: 80, height: 80, borderRadius: 40,
-    borderWidth: 2,
-    borderColor: Colors.primary,
+    borderWidth: 2, borderColor: Colors.primary,
     backgroundColor: 'rgba(0, 102, 255, 0.06)',
   },
 
-  // Bannière haute « Recherche en cours pour … »
   banner: {
     position: 'absolute', left: 16, right: 16,
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: Colors.surface,
     borderRadius: Radii.lg,
     paddingVertical: 10, paddingHorizontal: 12,
-    ...{ shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
+    ...Shadows.float,
   },
   bannerThumb: {
     width: 48, height: 48, borderRadius: Radii.md,
-    backgroundColor: '#F2F3F5',
+    backgroundColor: Colors.track,
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
   bannerImg: { width: 44, height: 44 },
   bannerText: { flex: 1, fontSize: 15, lineHeight: 20 },
 
-  // Contrôles flottants (retour) juste au-dessus de la feuille, comme configure.
   controls: { position: 'absolute', left: 16 },
 
-  sheet: {
-    position: 'absolute',
-    left: 0, right: 0, bottom: 0,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-  handleArea: { paddingTop: 6, paddingBottom: 16, alignItems: 'center' },
+  head: { gap: 8 },
+  actionCard: { gap: 12 },
 
-  headRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  timer: { fontFamily: Poppins.semibold, fontVariant: ['tabular-nums'] },
+  social: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 
-  // Actions (boutons pilule gris, façon Yango)
-  actionRow: { flexDirection: 'row', gap: 10, marginTop: 18 },
-  actionBtn: {
-    flex: 1,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#F2F3F5',
-    borderRadius: Radii.md,
-    paddingVertical: 14, paddingHorizontal: 12,
+  // Frais de rapprochement : carte « Total à payer » (primarySubtle).
+  totalCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 16,
+    backgroundColor: Colors.primarySubtle,
+    borderRadius: 20,
+    paddingHorizontal: 16, paddingVertical: 12,
   },
-  actionBtnSm: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#F2F3F5',
-    borderRadius: Radii.md,
-    paddingVertical: 14, paddingHorizontal: 18,
-  },
-  actionText: { fontSize: 14 },
+  breakdown: { marginTop: 4, lineHeight: 21 },
+  breakdownStrong: { fontFamily: Poppins.semibold, color: Colors.textPrimary },
+  totalCardAmount: { fontFamily: Poppins.bold, fontSize: 22, lineHeight: 29, color: Colors.primary },
 
-  // Détails repliables
-  details: {
-    marginTop: 14,
-    backgroundColor: '#FBFBFC',
-    borderRadius: Radii.lg,
-    paddingHorizontal: 14, paddingVertical: 6,
+  demoControls: { position: 'absolute', right: 16 },
+  demoChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: Colors.surface,
+    borderRadius: Radii.pill,
+    paddingVertical: 8, paddingHorizontal: 12,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: Colors.hairline,
+    ...Shadows.float,
   },
-  detailRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 },
-  detailLabel: { width: 86 },
-  detailValue: { flex: 1, textAlign: 'right' },
-
-  // Phase choix frais de rapprochement
-  choiceSub: { marginTop: 4, marginBottom: 16 },
-  cta: { marginTop: 8 },
-  cancelBtn: { alignItems: 'center', paddingVertical: 14 },
 });

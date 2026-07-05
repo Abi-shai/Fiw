@@ -40,9 +40,8 @@
 - Sélection gamme : Simple/Économique, Confort/Climatisé, Prestige/Luxe
 - Prix total affiché avant confirmation
 - Choix binaire Option A / Option B (frais de rapprochement, si applicable)
-- Option C (prestataire bientôt disponible, si applicable)
 - Réservation planifiée (date + heure)
-- Sélection paiement : Wave, Orange Money, Free Money, Espèces
+- Sélection paiement : Wave, Orange Money, Espèces
 - Écran recherche prestataire
 - Fiche prestataire : nom, photo, véhicule, plaque, note, ID
 - Carte en direct : position prestataire en route
@@ -78,7 +77,6 @@
 - Description colis
 - Prix avant confirmation
 - Option A / B (frais de rapprochement)
-- Option C
 - Proposition livraison groupée : Option A (immédiat) vs Option B (groupée, prix réduit, compteur attente)
 - Livraison planifiée
 - Suivi en direct du livreur
