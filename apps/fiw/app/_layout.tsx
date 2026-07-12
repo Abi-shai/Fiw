@@ -62,11 +62,19 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="otp" />
         <Stack.Screen name="home" />
-        <Stack.Screen name="transport/destination" />
         <Stack.Screen name="transport/configure" />
         <Stack.Screen name="transport/searching" />
         <Stack.Screen name="transport/course-active" />
         <Stack.Screen name="transport/cloture" />
+        <Stack.Screen name="transport/call" />
+        <Stack.Screen name="transport/chat" />
+        <Stack.Screen name="livraison/configure" />
+        <Stack.Screen name="livraison/options" />
+        <Stack.Screen name="livraison/searching" />
+        <Stack.Screen name="livraison/suivi" />
+        <Stack.Screen name="livraison/cloture" />
+        <Stack.Screen name="history/index" />
+        <Stack.Screen name="history/[id]" />
       </Stack>
 
       {!splashGone && (

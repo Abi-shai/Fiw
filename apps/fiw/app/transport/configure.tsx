@@ -1,55 +1,30 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import {
-  View, StyleSheet, TouchableOpacity, FlatList, ScrollView, Animated, Dimensions, Image, PanResponder,
+  View, StyleSheet, TouchableOpacity, FlatList, Animated, Image,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import LeafletMap, { LeafletMapHandle } from '@/components/LeafletMap';
-import { Handle, SheetHeader, sheetSurface } from '@/components/Sheet';
 import BottomSheet from '@/components/BottomSheet';
 import IconButton from '@/components/IconButton';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import Button from '@/components/Button';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
-import { GAMMES, COVOITURAGE, COVOITURAGE_NODETOUR_PRICE, PAYMENT_METHODS, DAKAR_CENTER } from '@/constants/data';
+import { GroupedSheet, SheetCard } from '@/components/RideSheet';
+import PaymentSheetContent from '@/components/PaymentSheet';
+import { Colors, Radii, Poppins, Shadows } from '@/constants/tokens';
+import { GAMMES, COVOITURAGE, COVOITURAGE_NODETOUR_PRICE, DAKAR_CENTER, WAIT_GRACE_MINUTES, WAIT_FEE_PER_MIN } from '@/constants/data';
 import { gammeIllustration, type IlluKey } from '@/constants/illustrations';
 
-const SCREEN_H = Dimensions.get('window').height;
-// Trois crans déplaçables : rétracté (bas, voir la carte) · medium (défaut) ·
-// élevé (haut). Le voile (overlay) n'apparaît qu'au cran élevé. EXPANDED_H sert
-// aussi à l'agrandissement auto pendant le paiement.
-const COLLAPSED_H = Math.round(SCREEN_H * 0.42);
-const MEDIUM_H = Math.round(SCREEN_H * 0.62);
-const EXPANDED_H = Math.round(SCREEN_H * 0.9);
-const SNAPS = [COLLAPSED_H, MEDIUM_H, EXPANDED_H];
-const MAX_SNAP = Math.max(...SNAPS);
-const MIN_SNAP = Math.min(...SNAPS);
-// Même ressort que le sheet de l'accueil : vif, légèrement sous-amorti.
-const SHEET_SPRING = { stiffness: 280, damping: 26, mass: 1 };
-const RUBBER = 0.4;          // résistance hors bornes (rubber-band)
-const FLICK_V = 0.5;         // px/ms : au-delà, le flick décide du cran
-const TAP_THRESHOLD = 6;     // tap sur la poignée → bascule du cran
-
-const nearestSnapH = (h: number) => SNAPS.reduce((a, b) => (Math.abs(b - h) < Math.abs(a - h) ? b : a));
-const snapAboveH = (h: number) => { const a = SNAPS.filter((s) => s > h + 1); return a.length ? Math.min(...a) : MAX_SNAP; };
-const snapBelowH = (h: number) => { const b = SNAPS.filter((s) => s < h - 1); return b.length ? Math.max(...b) : MIN_SNAP; };
-
-// Illustrations 3D isométriques des moyens de transport (maquette Figma) : moto
 // Séparateur de milliers façon FR/Sénégal (« 1.150 ») pour coller à la maquette.
-const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/[\s  ]/g, '.');
+const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/[\s  ]/g, '.');
 
-// Ressort doux propre à la bascule de gamme : la transition d'une option active
-// à une autre se fait en fondu (couleurs, opacité, icône, tarif) plutôt qu'en
-// saut sec.
+// Ressort doux propre à la bascule de gamme : transition en fondu.
 const GAMME_SPRING = { stiffness: 220, damping: 22, mass: 1 };
 
-// Carte gamme : plateforme colorée (bleue si choisie), badge ETA en débord,
-// libellé + tarif. Les cartes non choisies sont estompées (emphase sélection).
-// La sélection est animée via une valeur `progress` (0 → 1) qui interpole tous
-// les attributs visuels, et qui croise en fondu l'icône et le tarif (deux états
-// superposés) pour un changement de poids/couleur fluide.
+// Carte gamme (maquette 118-525) : plateforme colorée (bleue si choisie), badge
+// ETA en débord, libellé + tarif. Sélection animée via `progress` (0 → 1).
 function GammeCard({ gamme, selected, onPress }: {
   gamme: typeof GAMMES[number]; selected: boolean; onPress: () => void;
 }) {
@@ -62,9 +37,9 @@ function GammeCard({ gamme, selected, onPress }: {
     }).start();
   }, [selected]);
 
-  const cardBg = progress.interpolate({ inputRange: [0, 1], outputRange: ['#FBFBFC', '#E6F0FF'] });
+  const cardBg = progress.interpolate({ inputRange: [0, 1], outputRange: [Colors.surfaceAlt, Colors.primarySubtle] });
   const cardOpacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] });
-  const platformBg = progress.interpolate({ inputRange: [0, 1], outputRange: ['#F2F3F5', '#3B82F6'] });
+  const platformBg = progress.interpolate({ inputRange: [0, 1], outputRange: [Colors.track, Colors.primary] });
   const platformScale = progress.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] });
   const idleOpacity = progress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
 
@@ -73,9 +48,7 @@ function GammeCard({ gamme, selected, onPress }: {
       <Animated.View style={[StyleSheet.absoluteFillObject, styles.gCardBg, { backgroundColor: cardBg }]} />
       <Animated.View style={[styles.gContent, { opacity: cardOpacity }]}>
         <Animated.View style={[styles.gPlatform, { backgroundColor: platformBg, transform: [{ scale: platformScale }] }]}>
-          {/* Illustration 3D du véhicule, alignée à droite dans la plateforme. */}
           <Image source={gammeIllustration(gamme.illu)} style={styles.gIllo} resizeMode="contain" />
-          {/* Badge ETA en débord, chevauchant le bas de la plateforme */}
           <View style={[styles.gEta, selected && styles.gEtaSel]}>
             <Icon name="timer" size={12} weight="bold" color={Colors.textPrimary} />
             <Text variant="caption" style={styles.gEtaText}>{gamme.eta}</Text>
@@ -90,7 +63,6 @@ function GammeCard({ gamme, selected, onPress }: {
               </View>
             )}
           </View>
-          {/* Tarif : deux teintes superposées, croisées en fondu (idem icône). */}
           <View style={styles.gPrice}>
             <Animated.View style={{ opacity: idleOpacity }}>
               <Text variant="heading2" align="center" style={styles.gPriceText} color={Colors.textPrimary}>
@@ -109,111 +81,49 @@ function GammeCard({ gamme, selected, onPress }: {
   );
 }
 
-// Illustrations par moyen de paiement (espèces fournie ; les autres viendront).
-// L'emoji teinté sert de remplacement tant qu'aucune illustration n'est fournie.
+// Illustrations par moyen de paiement (bouton de la barre de confirmation).
 const PAY_ILLUSTRATIONS: Record<string, ReturnType<typeof require>> = {
   cash: require('@/assets/argent.png'),
   wave: require('@/assets/pay-wave.png'),
   orange: require('@/assets/pay-orange.png'),
 };
 
-// Ligne moyen de paiement (façon Yango) : illustration/logo + libellé +
-// sous-titre + radio à droite.
-function PayRow({ method, selected, onPress }: {
-  method: typeof PAYMENT_METHODS[number]; selected: boolean; onPress: () => void;
-}) {
-  const illustration = PAY_ILLUSTRATIONS[method.id];
-  return (
-    <TouchableOpacity style={styles.payRow} activeOpacity={0.85} onPress={onPress}>
-      {illustration ? (
-        <View style={styles.payIlloWrap}>
-          <Image source={illustration} style={styles.payIllo} />
-        </View>
-      ) : (
-        <View style={[styles.payLogo, { backgroundColor: method.color + '1A' }]}>
-          <Text style={styles.payEmoji}>{method.icon}</Text>
-        </View>
-      )}
-      <Text variant="label" style={styles.payName}
-        color={selected ? Colors.primary : Colors.textPrimary}>{method.label}</Text>
-      <View style={[styles.radio, selected && styles.radioSel]}>
-        {selected && <Icon name="tick" size={15} weight="bold" color={Colors.surface} />}
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-// Contenu de la feuille paiement : la sélection « en attente » est portée par le
-// parent (configure) et validée à la fermeture de la feuille, quelle qu'elle
-// soit (voile, glissé, croix) — pas besoin de « Terminer ». Le radio change
-// immédiatement, comme Yango.
-function PaymentSheetContent({ value, onChange, onDone }: {
-  value: string; onChange: (id: string) => void; onDone: () => void;
-}) {
-  return (
-    <View style={styles.payList}>
-      {PAYMENT_METHODS.map((m, i) => (
-        <View key={m.id}>
-          <PayRow
-            method={m}
-            selected={value === m.id}
-            onPress={() => { Haptics.selectionAsync(); onChange(m.id); }}
-          />
-          {i < PAYMENT_METHODS.length - 1 && <View style={styles.payDivider} />}
-        </View>
-      ))}
-      <Button label="Terminer" onPress={onDone} style={styles.payCta} />
-    </View>
-  );
-}
-
 export default function ConfigureScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     departureName: string;
     destName: string; destDetail: string; destLat: string; destLng: string;
+    preselectGamme?: string;
   }>();
 
   const departureName = params.departureName || 'Ma position actuelle';
   const destLat = parseFloat(params.destLat || String(DAKAR_CENTER.lat));
   const destLng = parseFloat(params.destLng || String(DAKAR_CENTER.lng));
-  // Centre de la carte = milieu départ/arrivée (réutilisé pour le cadrage,
-  // le recentrage et la dispersion des prestataires).
   const mapCenter = { lat: (DAKAR_CENTER.lat + destLat) / 2, lng: (DAKAR_CENTER.lng + destLng) / 2 };
 
-  // Catégorie Transport (switcher façon Yango) : Course = grille de gammes
-  // (Moto/Simple/Confort/Prestige) · Covoiturage = une offre + option Pas de détour.
   const [category, setCategory] = useState<'course' | 'covoit'>('course');
-  const [selectedGamme, setSelectedGamme] = useState('moto');
-  const [noDetour, setNoDetour] = useState(false); // « Pas de détour » : solo, prix plein
+  const [selectedGamme, setSelectedGamme] = useState(params.preselectGamme || 'moto');
+  const [noDetour, setNoDetour] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState('cash');
-  // Sélection « en attente » dans la feuille paiement, validée à la fermeture.
   const [pendingPayment, setPendingPayment] = useState('cash');
   const [payOpen, setPayOpen] = useState(false);
 
-  // Offre covoiturage dérivée de l'option « Pas de détour » : partagé (prix par
-  // passager) ↔ solo (prix plein). Réutilise la forme GAMMES pour GammeCard.
   const covoitGamme = {
     ...COVOITURAGE,
     badge: noDetour ? 'Direct' : 'Partagé',
     basePrice: noDetour ? COVOITURAGE_NODETOUR_PRICE : COVOITURAGE.basePrice,
-    // « Pas de détour » bascule sur l'auto noire (luxe) ; sinon orange (partagé).
-    illu: (noDetour ? 'luxe' : 'covoiturage') as IlluKey,
+    illu: (noDetour ? 'luxe' : 'covoiturage') as 'luxe' | 'covoiturage',
   };
   const gamme = category === 'covoit'
     ? covoitGamme
     : (GAMMES.find(g => g.id === selectedGamme) ?? GAMMES[0]);
 
   const select = (fn: () => void) => { Haptics.selectionAsync(); fn(); };
-
   const handleGammeSelect = (id: string) => select(() => setSelectedGamme(id));
 
-  // Transition entre vues Classique ↔ Covoiturage : le contenu fond et glisse
-  // depuis le côté du segment choisi (vers la droite pour Covoiturage).
+  // Transition Classique ↔ Covoiturage : fondu + glissement latéral.
   const switchAnim = useRef(new Animated.Value(1)).current;
   const switchDir = useRef(0);
-
-  // Bascule de catégorie (la sélection « Classique » est conservée au retour).
   const handleCategory = (cat: 'course' | 'covoit') => {
     if (cat === category) return;
     switchDir.current = cat === 'covoit' ? 1 : -1;
@@ -224,9 +134,8 @@ export default function ConfigureScreen() {
     }).start();
   };
 
-  // Prestataires disponibles, dispersés sur toute la carte autour du centre
-  // (façon Yango) ; seule l'illustration change avec le moyen de transport
-  // actif. Positions de départ générées une fois — ils se déplacent ensuite.
+  // Prestataires dispersés sur la carte ; seule l'illustration change avec la gamme.
+  const mapRef = useRef<LeafletMapHandle>(null);
   const providers = useMemo(() => {
     const o = mapCenter;
     return [
@@ -240,95 +149,33 @@ export default function ConfigureScreen() {
     () => Image.resolveAssetSource(gammeIllustration(gamme.illu)).uri,
     [gamme.illu],
   );
-  // Seul l'icône INITIAL est injecté dans le HTML de la carte ; les changements
-  // passent par `setProviderIcon` (message) pour ne pas régénérer le HTML et
-  // donc recharger la carte à chaque changement de gamme.
   const initialProviderIcon = useRef(providerIcon).current;
 
-  // Entrée par le bas (slide-in) + hauteur animée (drag utilisateur + paiement).
-  const mapRef = useRef<LeafletMapHandle>(null);
-  const ty = useRef(new Animated.Value(SCREEN_H)).current;
-  const sheetH = useRef(new Animated.Value(MEDIUM_H)).current;
-  const hValue = useRef(MEDIUM_H);
-  const dragStartH = useRef(MEDIUM_H);
-  const payOpenRef = useRef(false);
-  payOpenRef.current = payOpen;
+  // Entrée de la feuille par le bas + mesure de hauteur (pour les contrôles carte).
+  const [sheetH, setSheetH] = useState(0);
+  const ty = useRef(new Animated.Value(700)).current;
+  const didEnter = useRef(false);
+  useEffect(() => {
+    if (sheetH > 0 && !didEnter.current) {
+      didEnter.current = true;
+      Animated.spring(ty, { toValue: 0, tension: 60, friction: 12, useNativeDriver: true }).start();
+    }
+  }, [sheetH]);
 
-  React.useEffect(() => {
-    const id = sheetH.addListener(({ value }) => { hValue.current = value; });
-    Animated.spring(ty, { toValue: 0, ...SHEET_SPRING, useNativeDriver: false }).start();
-    return () => sheetH.removeListener(id);
-  }, []);
-
-  // Change de moyen de transport → échange l'illustration des prestataires sur
-  // la carte (sans la recharger).
+  // Change de gamme → échange l'illustration des prestataires (sans recharger).
   useEffect(() => { mapRef.current?.setProviderIcon(providerIcon); }, [providerIcon]);
 
-  const snapH = (to: number, vy = 0) =>
-    Animated.spring(sheetH, {
-      toValue: to, velocity: vy, ...SHEET_SPRING,
-      restDisplacementThreshold: 0.3, restSpeedThreshold: 0.3, useNativeDriver: false,
-    }).start();
-
-  // Voile derrière la feuille : nul du cran rétracté au medium, apparaît
-  // seulement en montant vers l'élevé (clamp).
-  const scrimOpacity = sheetH.interpolate({
-    inputRange: [MEDIUM_H, EXPANDED_H],
-    outputRange: [0, 0.5],
-    extrapolate: 'clamp',
-  });
-
-  // Poignée déplaçable : l'utilisateur agrandit / rétracte la feuille à sa guise
-  // entre les trois crans (désactivée pendant le choix paiement).
-  const pan = useRef(PanResponder.create({
-    onStartShouldSetPanResponder: () => false,
-    onMoveShouldSetPanResponder: (_, g) => !payOpenRef.current && Math.abs(g.dy) > 4,
-    onPanResponderGrant: () => { dragStartH.current = hValue.current; },
-    onPanResponderMove: (_, g) => {
-      let next = dragStartH.current - g.dy; // glisser vers le haut → agrandir
-      if (next > MAX_SNAP) next = MAX_SNAP + (next - MAX_SNAP) * RUBBER;
-      else if (next < MIN_SNAP) next = MIN_SNAP - (MIN_SNAP - next) * RUBBER;
-      sheetH.setValue(next);
-    },
-    onPanResponderRelease: (_, g) => {
-      const pos = hValue.current;
-      if (Math.abs(g.dy) < TAP_THRESHOLD && Math.abs(g.dx) < TAP_THRESHOLD) {
-        // Tap sur la poignée : monte d'un cran (rétracté→medium→élevé), et
-        // redescend à medium depuis l'élevé.
-        const t = pos >= EXPANDED_H - 1 ? MEDIUM_H : pos >= MEDIUM_H - 1 ? EXPANDED_H : MEDIUM_H;
-        snapH(t);
-        return;
-      }
-      let target: number;
-      if (g.vy < -FLICK_V) target = snapAboveH(pos);
-      else if (g.vy > FLICK_V) target = snapBelowH(pos);
-      else target = nearestSnapH(pos - g.vy * 120);
-      snapH(target, -g.vy * 1000);
-    },
-  })).current;
-
-  // Paiement = feuille modale au-dessus. Quand elle s'ouvre, la feuille de
-  // configuration s'agrandit en fond (medium → étendu) pour rester visible et
-  // signaler le lien ; elle revient en medium dès que le paiement se ferme
-  // (réduction déclenchée au DÉBUT de la sortie → mouvement synchronisé).
   const openPay = () => {
     Haptics.selectionAsync();
-    setPendingPayment(selectedPayment); // repart du choix courant
+    setPendingPayment(selectedPayment);
     setPayOpen(true);
-    snapH(EXPANDED_H);
   };
 
-  // Éditer l'itinéraire : revient à l'étape de recherche (home en mode
-  // « search », champs Départ/Arrivée préremplis et modifiables).
   const editItinerary = () => {
     Haptics.selectionAsync();
     router.dismissTo({
       pathname: '/home',
-      params: {
-        editTs: String(Date.now()),
-        editDeparture: departureName,
-        editDest: params.destName ?? '',
-      },
+      params: { editDeparture: departureName, editDest: params.destName ?? '' },
     });
   };
 
@@ -347,6 +194,8 @@ export default function ConfigureScreen() {
     });
   };
 
+  const payImg = PAY_ILLUSTRATIONS[selectedPayment] ?? PAY_ILLUSTRATIONS.cash;
+
   return (
     <View style={styles.container}>
       <LeafletMap
@@ -361,187 +210,147 @@ export default function ConfigureScreen() {
         mapStyle="mapbox://styles/mapbox/light-v11"
         tintWater
         declutter
-        // Prestataires disponibles aux alentours, illustrés selon le moyen de
-        // transport actif (moto/auto) — façon Yango.
         providers={providers}
         providerIcon={initialProviderIcon}
-        // Cadrage du trajet dans la zone visible : on réserve la hauteur de la
-        // feuille (cran medium par défaut) en bas + les contrôles flottants en
-        // haut, pour que le trajet soit centré et non décalé sous la feuille.
-        fitPadding={{ top: insets.top + 64, bottom: MEDIUM_H + 24, left: 56, right: 56 }}
+        fitPadding={{ top: insets.top + 64, bottom: (sheetH || 420) + 24, left: 56, right: 56 }}
         style={StyleSheet.absoluteFillObject}
       />
 
-      {/* Voile derrière la feuille — visible uniquement au cran élevé (nul du
-          rétracté au medium). Masqué pendant le paiement (la feuille modale a
-          déjà son propre voile). Non interactif : la carte reste lisible. */}
-      {!payOpen && (
-        <Animated.View
-          style={[styles.scrim, { opacity: scrimOpacity }]}
-          pointerEvents="none"
-        />
+      {/* Contrôles flottants (retour + recentrage) juste au-dessus de la feuille. */}
+      {sheetH > 0 && (
+        <View style={[styles.mapControls, { bottom: sheetH + 12 }]} pointerEvents="box-none">
+          <IconButton name="back" onPress={() => router.back()} />
+          <IconButton name="navigate" onPress={() => mapRef.current?.recenter(mapCenter, 13)} />
+        </View>
       )}
 
-      {/* Contrôles flottants juste au-dessus de la feuille (façon Yango) : ils
-          suivent le bord supérieur de la feuille quand elle s'agrandit/rétracte. */}
-      <Animated.View
-        style={[styles.mapControls, { bottom: Animated.add(sheetH, 12) }]}
-        pointerEvents="box-none"
+      <GroupedSheet
+        translateY={ty}
+        onLayout={(e) => setSheetH(e.nativeEvent.layout.height)}
       >
-        <IconButton name="back" onPress={() => router.back()} />
-        <IconButton
-          name="navigate"
-          onPress={() => mapRef.current?.recenter(mapCenter, 13)}
-        />
-      </Animated.View>
-
-      <Animated.View
-        style={[
-          sheetSurface, styles.sheet,
-          { height: sheetH, paddingBottom: insets.bottom + 16, transform: [{ translateY: ty }] },
-        ]}
-      >
-        {/* Zone déplaçable : poignée + en-tête (glisser pour agrandir / rétracter) */}
-        <View {...pan.panHandlers}>
-          <View style={styles.handleArea}>
-            <Handle />
-          </View>
-
-          {/* En-tête standard (pièce partagée du design system) */}
-          <SheetHeader title="Votre course" onClose={() => router.back()} />
-        </View>
-
-        {/* Contenu défilant — pas de compression : si ça dépasse, on scrolle */}
-        <ScrollView
-          style={styles.scroll}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-        {/* Itinéraire de bout en bout — toute la carte édite l'itinéraire */}
-        <TouchableOpacity style={styles.routeCard} onPress={editItinerary} activeOpacity={0.85}>
-          <View style={styles.routeRail}>
-            <Icon name="walk" size={24} weight="bold" color={Colors.textPrimary} />
-            <View style={styles.routeLine} />
-            <Icon name="flag" size={24} weight="bold" color={Colors.textPrimary} />
-          </View>
-          <View style={styles.routeCol}>
-            <View>
-              <Text variant="caption" color={Colors.textSecondary}>Départ</Text>
-              <Text variant="label" numberOfLines={1}>{departureName}</Text>
-            </View>
-            <View>
-              <Text variant="caption" color={Colors.textSecondary}>Arrivée</Text>
-              <Text variant="label" numberOfLines={1}>{params.destName}</Text>
-              {!!params.destDetail && (
-                <Text variant="caption" color={Colors.textSecondary} numberOfLines={1}>{params.destDetail}</Text>
-              )}
-            </View>
-          </View>
-          {/* Affordance « modifier » (toute la carte est cliquable) */}
-          <View style={styles.routeEdit}>
-            <Icon name="edit" size={18} color={Colors.textSecondary} />
-          </View>
-        </TouchableOpacity>
-
-        {/* Switcher de catégorie Transport (Classique / Covoiturage), façon Yango */}
-        <View style={styles.segment}>
-          {([['course', 'Classique'], ['covoit', 'Covoiturage']] as const).map(([cat, label]) => {
-            const active = category === cat;
-            return (
-              <TouchableOpacity
-                key={cat}
-                style={[styles.segmentItem, active && styles.segmentItemActive]}
-                onPress={() => handleCategory(cat)}
-                activeOpacity={0.85}
-              >
-                <Text variant="label" color={active ? Colors.textPrimary : Colors.textSecondary} style={styles.segmentText}>
-                  {label}
-                </Text>
+          {/* Carte 1 : en-tête + itinéraire. */}
+          <SheetCard>
+            <View style={styles.headerRow}>
+              <Text variant="heading1" style={styles.flex1} numberOfLines={1}>Votre course</Text>
+              <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()} activeOpacity={0.85}>
+                <Icon name="close" size={18} weight="bold" color={Colors.textPrimary} />
               </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Choix de l'offre — gammes (Classique) ou covoiturage (offre + option).
-            Enveloppé dans un Animated.View qui fond/glisse à chaque bascule. */}
-        <Animated.View style={{
-          opacity: switchAnim,
-          transform: [{ translateX: switchAnim.interpolate({ inputRange: [0, 1], outputRange: [switchDir.current * 24, 0] }) }],
-        }}>
-        {category !== 'covoit' && (
-          <Text variant="caption" color={Colors.textSecondary} style={styles.sectionLabel}>
-            Moyens de déplacement
-          </Text>
-        )}
-        {category === 'covoit' ? (
-          <>
-            {/* Offre unique covoiturage + descriptif (prix par passager) */}
-            <View style={styles.covoitRow}>
-              <GammeCard gamme={covoitGamme} selected onPress={() => {}} />
-              <View style={styles.covoitInfo}>
-                <Text variant="label" style={styles.covoitTitle}>
-                  {noDetour ? 'Trajet sans détour' : 'Trajet partagé'}
-                </Text>
-                <Text variant="caption" color={Colors.textSecondary} style={styles.covoitDesc}>
-                  {noDetour
-                    ? 'Toujours partagé, mais seuls les passagers déjà sur votre route sont pris. Trajet plus direct.'
-                    : 'Partagé avec d’autres passagers. Prix indiqué par passager.'}
-                </Text>
-              </View>
             </View>
 
-            {/* Option « Pas de détour » (solo, prix plein) — case à cocher */}
-            <TouchableOpacity
-              style={styles.detourRow}
-              onPress={() => select(() => setNoDetour(v => !v))}
-              activeOpacity={0.85}
-            >
-              <View style={[styles.radio, noDetour && styles.radioSel]}>
-                {noDetour && <Icon name="tick" size={15} weight="bold" color={Colors.surface} />}
+            <TouchableOpacity style={styles.routeCard} onPress={editItinerary} activeOpacity={0.85}>
+              <View style={styles.routeRail}>
+                <Icon name="walk" size={22} weight="bold" color={Colors.textPrimary} />
+                <View style={styles.routeLine} />
+                <Icon name="flag" size={22} weight="bold" color={Colors.textPrimary} />
               </View>
-              <View style={styles.flex1}>
-                <Text variant="label" style={styles.detourTitle}>Pas de détour</Text>
-                <Text variant="caption" color={Colors.textSecondary} style={styles.detourSub}>Uniquement les passagers déjà sur votre route</Text>
+              <View style={styles.routeCol}>
+                <View>
+                  <Text variant="bodySmall" color={Colors.textSecondary}>Départ</Text>
+                  <Text variant="label" numberOfLines={1}>{departureName}</Text>
+                </View>
+                <View>
+                  <Text variant="bodySmall" color={Colors.textSecondary}>Arrivée</Text>
+                  <Text variant="label" numberOfLines={1}>{params.destName}</Text>
+                </View>
+              </View>
+              <View style={styles.routeEdit}>
+                <Icon name="edit" size={18} color={Colors.textSecondary} />
               </View>
             </TouchableOpacity>
-          </>
-        ) : (
-          <FlatList
-            data={GAMMES}
-            extraData={selectedGamme}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={g => g.id}
-            contentContainerStyle={styles.gList}
-            renderItem={({ item }) => (
-              <GammeCard gamme={item} selected={selectedGamme === item.id} onPress={() => handleGammeSelect(item.id)} />
-            )}
-          />
-        )}
-        </Animated.View>
+          </SheetCard>
 
-        </ScrollView>
+          {/* Carte 2 : switcher de catégorie + choix de l'offre. */}
+          <SheetCard>
+            <View style={styles.segment}>
+              {([['course', 'Classique'], ['covoit', 'Covoiturage']] as const).map(([cat, label]) => {
+                const active = category === cat;
+                return (
+                  <TouchableOpacity
+                    key={cat}
+                    style={[styles.segmentItem, active && styles.segmentItemActive]}
+                    onPress={() => handleCategory(cat)}
+                    activeOpacity={0.85}
+                  >
+                    <Text variant="label" color={active ? Colors.textPrimary : Colors.textSecondary} style={styles.segmentText}>
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
 
-        {/* Zone d'action épinglée : moyen de paiement + confirmation */}
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.payBtn} onPress={openPay} activeOpacity={0.85}>
-            <Image
-              source={PAY_ILLUSTRATIONS[selectedPayment] ?? PAY_ILLUSTRATIONS.cash}
-              style={styles.payImg}
-            />
-          </TouchableOpacity>
-          <Button label="Confirmer la course" onPress={confirm} style={styles.cta} />
-        </View>
-      </Animated.View>
+            <Animated.View style={{
+              opacity: switchAnim,
+              transform: [{ translateX: switchAnim.interpolate({ inputRange: [0, 1], outputRange: [switchDir.current * 24, 0] }) }],
+            }}>
+              {category === 'covoit' ? (
+                <>
+                  <View style={styles.covoitRow}>
+                    <GammeCard gamme={covoitGamme} selected onPress={() => {}} />
+                    <View style={styles.covoitInfo}>
+                      <Text variant="label" style={styles.covoitTitle}>
+                        {noDetour ? 'Trajet sans détour' : 'Trajet partagé'}
+                      </Text>
+                      <Text variant="caption" color={Colors.textSecondary} style={styles.covoitDesc}>
+                        {noDetour
+                          ? 'Toujours partagé, mais seuls les passagers déjà sur votre route sont pris. Trajet plus direct.'
+                          : 'Partagé avec d’autres passagers. Prix indiqué par passager.'}
+                      </Text>
+                    </View>
+                  </View>
 
-      {/* Moyen de paiement — feuille modale au-dessus ; la config s'agrandit en
-          fond, et se réduit dès le début de la sortie (mouvement synchronisé). */}
+                  <TouchableOpacity
+                    style={styles.detourRow}
+                    onPress={() => select(() => setNoDetour(v => !v))}
+                    activeOpacity={0.85}
+                  >
+                    <View style={[styles.radio, noDetour && styles.radioSel]}>
+                      {noDetour && <Icon name="tick" size={15} weight="bold" color={Colors.surface} />}
+                    </View>
+                    <View style={styles.flex1}>
+                      <Text variant="label" style={styles.detourTitle}>Pas de détour</Text>
+                      <Text variant="caption" color={Colors.textSecondary} style={styles.detourSub}>Uniquement les passagers déjà sur votre route</Text>
+                    </View>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <FlatList
+                  data={GAMMES}
+                  extraData={selectedGamme}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyExtractor={g => g.id}
+                  contentContainerStyle={styles.gList}
+                  renderItem={({ item }) => (
+                    <GammeCard gamme={item} selected={selectedGamme === item.id} onPress={() => handleGammeSelect(item.id)} />
+                  )}
+                />
+              )}
+            </Animated.View>
+          </SheetCard>
+
+          {/* Carte 3 : annonce frais d'attente + paiement + confirmation. */}
+          <SheetCard style={styles.confirmCard}>
+            {/* Frais d'attente annoncés dès la commande (cf. CONTEXT.md). */}
+            <View style={styles.waitNote}>
+              <Icon name="timer" size={15} weight="bold" color={Colors.textSecondary} />
+              <Text variant="caption" color={Colors.textSecondary} style={styles.flex1}>
+                {WAIT_GRACE_MINUTES} min d'attente offertes à l'arrivée, puis {WAIT_FEE_PER_MIN} F/min
+              </Text>
+            </View>
+            <View style={styles.footerRow}>
+              <TouchableOpacity style={styles.payBtn} onPress={openPay} activeOpacity={0.85}>
+                <Image source={payImg} style={styles.payImg} />
+              </TouchableOpacity>
+              <Button label="Confirmer la course" onPress={confirm} style={styles.cta} />
+            </View>
+          </SheetCard>
+      </GroupedSheet>
+
+      {/* Moyen de paiement — feuille modale. */}
       {payOpen && (
         <BottomSheet
           title="Modes de paiement"
-          onCloseStart={() => snapH(MEDIUM_H)}
-          // Toute fermeture (voile, glissé, croix, « Terminer ») valide la
-          // sélection en attente → l'icône du footer se met à jour.
           onClose={() => { setSelectedPayment(pendingPayment); setPayOpen(false); }}
         >
           {(close) => (
@@ -559,11 +368,8 @@ export default function ConfigureScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
+  flex1: { flex: 1 },
 
-  // Voile (overlay) derrière la feuille au cran élevé.
-  scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: '#000' },
-
-  // Contrôles carte (retour + recentrage) posés juste au-dessus de la feuille.
   mapControls: {
     position: 'absolute',
     left: 0, right: 0,
@@ -572,28 +378,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
 
-  sheet: {
-    position: 'absolute',
-    left: 0, right: 0, bottom: 0,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    overflow: 'hidden',
+  // En-tête « Votre course » + fermeture.
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  closeBtn: {
+    width: 36, height: 36, borderRadius: Radii.lg,
+    backgroundColor: Colors.track,
+    alignItems: 'center', justifyContent: 'center',
   },
-  handleArea: {
-    paddingTop: 6,
-    paddingBottom: 12,
-    alignItems: 'center',
-  },
-  // flex: 1 → la zone défilante remplit la hauteur fixe (medium) et épingle le
-  // footer en bas ; si le contenu dépasse, il scrolle au lieu d'être compressé.
-  scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 4 },
 
-  // Itinéraire
+  // Itinéraire.
   routeCard: {
     flexDirection: 'row',
     gap: 12,
-    backgroundColor: '#FBFBFC',
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: Radii.lg,
     padding: 14,
   },
@@ -602,20 +399,12 @@ const styles = StyleSheet.create({
   routeCol: { flex: 1, justifyContent: 'space-between', gap: 14 },
   routeEdit: { alignSelf: 'flex-start', padding: 2 },
 
-  sectionLabel: {
-    fontSize: 12,
-    marginTop: 16,
-    marginBottom: 10,
-  },
-
-  // Switcher de catégorie (Course / Covoiturage) — segmented control façon Yango :
-  // piste grise, segment actif en pastille blanche ombrée.
+  // Switcher de catégorie (segmented control).
   segment: {
     flexDirection: 'row',
-    backgroundColor: '#F2F3F5',
+    backgroundColor: Colors.track,
     borderRadius: Radii.pill,
     padding: 4,
-    marginTop: 16,
   },
   segmentItem: {
     flex: 1,
@@ -623,56 +412,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: Radii.pill,
   },
-  segmentItemActive: {
-    backgroundColor: Colors.surface,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-  },
+  segmentItemActive: { backgroundColor: Colors.surface, ...Shadows.sm },
   segmentText: { fontSize: 14 },
 
-  // Covoiturage : carte d'offre unique + descriptif à droite.
-  flex1: { flex: 1 },
-  covoitRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, marginTop: 16 },
-  covoitInfo: { flex: 1, gap: 5, paddingTop: 14 },
+  // Covoiturage.
+  covoitRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, marginTop: 12 },
+  covoitInfo: { flex: 1, gap: 5, paddingTop: 8 },
   covoitTitle: { fontFamily: Poppins.semibold, fontSize: 16, lineHeight: 22 },
   covoitDesc: { fontSize: 14, lineHeight: 19 },
   detourTitle: { fontSize: 14, lineHeight: 19 },
   detourSub: { fontSize: 12, lineHeight: 16 },
-  // Option « Pas de détour » — case à cocher pleine largeur.
   detourRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    backgroundColor: '#FBFBFC',
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    marginTop: 12,
+    paddingVertical: 12, paddingHorizontal: 14,
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: Radii.lg,
   },
 
-  // Cartes gamme : plateforme colorée + badge ETA en débord + tarif
-  gList: { gap: 10, paddingRight: 4 },
-  gCard: {
-    width: 138,
-    height: 133,
-    padding: 8,
-    borderRadius: Radii.lg,
-  },
-  // Fond animé de la carte (couleur interpolée) posé sous le contenu.
+  // Cartes gamme.
+  gList: { gap: 10, paddingTop: 12, paddingRight: 4 },
+  gCard: { width: 138, height: 133, padding: 8, borderRadius: Radii.lg },
   gCardBg: { borderRadius: Radii.lg },
-  // Contenu (au-dessus du fond) : plateforme extensible + infos, estompé en repos.
   gContent: { flex: 1, gap: 12 },
-  // Plateforme : remplit la hauteur dispo ; illustration alignée à droite, qui
-  // déborde légèrement vers le haut (effet « véhicule posé », façon maquette).
   gPlatform: {
-    flex: 1,
-    width: '100%',
+    flex: 1, width: '100%',
     borderRadius: Radii.md,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
+    alignItems: 'flex-end', justifyContent: 'center',
     paddingRight: 12,
     overflow: 'visible',
   },
@@ -683,78 +449,36 @@ const styles = StyleSheet.create({
   gPrice: { width: '100%' },
   gPriceText: { fontFamily: Poppins.bold, width: '100%' },
   gTag: {
-    backgroundColor: '#FFE347',
+    backgroundColor: Colors.brandYellow,
     borderRadius: Radii.pill,
-    borderWidth: 1,
-    borderColor: '#E6F0FF',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    borderWidth: 1, borderColor: Colors.primarySubtle,
+    paddingHorizontal: 6, paddingVertical: 2,
   },
   gTagText: { fontFamily: Poppins.medium, color: Colors.textPrimary },
-  // Badge ETA : pastille blanche en débord, chevauchant le bas de la plateforme.
   gEta: {
     position: 'absolute',
     bottom: -8, left: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
+    flexDirection: 'row', alignItems: 'center', gap: 3,
     backgroundColor: Colors.surface,
     borderRadius: Radii.pill,
-    borderWidth: 1,
-    borderColor: '#F0F0F1',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    borderWidth: 1, borderColor: Colors.borderSubtle,
+    paddingHorizontal: 8, paddingVertical: 3,
   },
-  gEtaSel: { borderColor: '#E6F0FF' },
+  gEtaSel: { borderColor: Colors.primarySubtle },
   gEtaText: { fontFamily: Poppins.medium, color: Colors.textPrimary },
 
-  // Paiement — affordance illustrée (zone d'action) + feuille de sélection.
-  payBtn: { padding: 8 },
+  // Carte confirmation.
+  confirmCard: { gap: 12 },
+  waitNote: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  footerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  payBtn: { padding: 4 },
   payImg: { width: 40, height: 40, borderRadius: 11 },
-  // Feuille moyen de paiement (façon Yango)
-  payList: { paddingBottom: 4 },
-  payDivider: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.borderSubtle, marginLeft: 64 },
-  payRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 12,
-  },
-  payLogo: {
-    width: 56, height: 56,
-    borderRadius: Radii.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // Slot transparent (même empreinte que la tuile logo) pour aligner le texte ;
-  // l'illustration s'affiche sans fond.
-  payIlloWrap: {
-    width: 56, height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  payIllo: { width: 52, height: 52, borderRadius: 14 },
-  payEmoji: { fontSize: 28 },
-  payName: { flex: 1, fontSize: 16 },
+  cta: { flex: 1 },
+
   radio: {
-    width: 26, height: 26,
-    borderRadius: 13,
-    borderWidth: 2,
-    borderColor: Colors.textDisabled,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 26, height: 26, borderRadius: 13,
+    borderWidth: 2, borderColor: Colors.textDisabled,
+    alignItems: 'center', justifyContent: 'center',
   },
   radioSel: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  payCta: { marginTop: 16 },
-
-  // Footer : paiement + confirmation
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderSubtle,
-  },
-  cta: { flex: 1 },
 });

@@ -47,7 +47,6 @@ Ce sont les deux flux du prochain jalon. Les prototyper en premier.
 3. **Prix & frais de rapprochement** — Le prix garanti doit être affiché de façon visible et explicite : **« Prix fixe — jamais de majoration »** (c'est le premier levier d'acquisition identifié en entretiens, à ne pas enfouir). Si des frais de rapprochement s'appliquent, l'écran présente un choix obligatoire avec les 3 conditions non-négociables respectées : (1) prix total affiché avant confirmation, (2) présenté comme un choix binaire, (3) temps estimé affiché et crédible :
    - **Option A** — Attendre un prestataire proche. Prix standard. Temps d'attente estimé affiché.
    - **Option B** — Prise en charge rapide par un prestataire plus éloigné. Frais de rapprochement + prix total affichés. Temps d'attente estimé affiché.
-   - **Option C** — (si aucun prestataire libre mais un bientôt disponible) — Prix normal, pas de frais, temps d'attente estimé affiché.
 4. **Paiement** — Choisir : Wave · Orange Money · Free Money · Espèces.
 5. **Confirmation** (état : Créée) — Récapitulatif (départ, destination, gamme, prix, moyen de paiement). Bouton « Confirmer la course ».
 6. **Recherche prestataire** (état : En_recherche) — Écran d'attente avec carte + animation. Bouton « Annuler » disponible (sans frais).

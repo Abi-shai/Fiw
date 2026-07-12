@@ -4,7 +4,16 @@ import { Colors, Radii, Shadows, Poppins } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'destructive';
+// Système de boutons Fiw :
+// · primary          — plein bleu marque (CTA principal).
+// · secondary        — contour neutre (bordure grise, sans fond) : action
+//                      secondaire à la même empreinte que le primary.
+// · destructive      — sans fond ni bordure, texte rouge Error : action
+//                      dangereuse secondaire (ex. « Annuler la commande »).
+//                      Même typo/spacing/empreinte pilule, juste sans bordure.
+// · destructiveFilled — plein rouge : réservé au cas où l'action destructive EST
+//                      le CTA de l'écran (ex. « Raccrocher »).
+type Variant = 'primary' | 'secondary' | 'destructive' | 'destructiveFilled';
 type Size = 'lg' | 'md' | 'sm';
 
 interface Props {
@@ -21,19 +30,26 @@ interface Props {
   style?: ViewStyle;
 }
 
-// Couleurs par variante et par état (repos / pressé).
+// Couleurs de fond par variante et par état (repos / pressé).
 const BG: Record<Variant, { rest: string; pressed: string }> = {
-  primary:     { rest: Colors.primary,       pressed: Colors.primaryPressed },
-  secondary:   { rest: Colors.primarySubtle, pressed: Colors.blue100 },
-  ghost:       { rest: 'transparent',        pressed: Colors.primarySubtle },
-  destructive: { rest: Colors.error,         pressed: Colors.errorPressed },
+  primary:          { rest: Colors.primary, pressed: Colors.primaryPressed },
+  secondary:        { rest: 'transparent',  pressed: Colors.bg },
+  destructive:      { rest: 'transparent',  pressed: Colors.errorSubtle },
+  destructiveFilled:{ rest: Colors.error,   pressed: Colors.errorPressed },
 };
 
+// Couleur du texte + icône par variante.
 const FG: Record<Variant, string> = {
   primary: Colors.textOnPrimary,
-  secondary: Colors.primary,
-  ghost: Colors.primary,
-  destructive: Colors.textOnPrimary,
+  secondary: Colors.textPrimary,
+  destructive: Colors.error,
+  destructiveFilled: Colors.textOnPrimary,
+};
+
+// Bordure : seul `secondary` porte un contour (neutre gris). `destructive` est
+// sans bordure (texte rouge sur fond transparent) ; `destructiveFilled` est plein.
+const BORDER: Partial<Record<Variant, string>> = {
+  secondary: Colors.border,
 };
 
 // Hauteurs « pouce-friendly » (cibles tactiles ≥ 48px) + typo par taille.
@@ -50,7 +66,7 @@ export default function Button({
   const isDisabled = disabled || loading;
   const fg = FG[variant];
   const s = SIZING[size];
-  const filled = variant === 'primary' || variant === 'destructive';
+  const filled = variant === 'primary' || variant === 'destructiveFilled';
 
   const scale = useRef(new Animated.Value(1)).current;
   const press = (to: number) =>
@@ -67,7 +83,9 @@ export default function Button({
           styles.base,
           { height: s.height, paddingHorizontal: s.padX, borderRadius: Radii.pill },
           { backgroundColor: pressed ? BG[variant].pressed : BG[variant].rest },
-          variant === 'ghost' && styles.ghostBorder,
+          // Contour des variantes à fond transparent (secondary = gris neutre,
+          // destructive = rouge Error).
+          BORDER[variant] && { borderWidth: 1.5, borderColor: BORDER[variant] },
           filled && !isDisabled && Shadows.sm,
           isDisabled && styles.disabled,
         ]}
@@ -92,6 +110,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   content: { flexDirection: 'row', alignItems: 'center' },
-  ghostBorder: { borderWidth: 1.5, borderColor: Colors.primary },
   disabled: { opacity: 0.45 },
 });

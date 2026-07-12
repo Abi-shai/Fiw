@@ -27,7 +27,7 @@ Cette session couvre uniquement **l'app Fiw côté Client** — passager ou exp�
 | Prestataire | chauffeur, conducteur, livreur |
 | Course | order, commande (dans l'UI) |
 | Frais de rapprochement | frais de déplacement, surplus, supplément |
-| Option A / Option B / Option C | option standard, option rapide, option premium |
+| Option A / Option B | option standard, option rapide, option premium |
 | Avis | note, rating |
 | Contacts de confiance | contacts d'urgence |
 | Wallet | portefeuille, solde (ce mot est dans Fiw Pro, pas dans Fiw) |
@@ -64,7 +64,6 @@ Créée → En_recherche → Assignée → En_route → Arrivée → En_cours �
   3. Temps estimé affiché sur chaque option
 - **Option A** — Attendre un prestataire proche · Prix standard · Temps estimé : [X min]
 - **Option B** — Prestataire plus éloigné, prise en charge rapide · Frais de rapprochement affichés · Prix total affiché · Temps estimé : [X min]
-- **Option C** — (uniquement si aucun prestataire libre mais un bientôt disponible) — Prix normal · Pas de frais · Temps estimé : [X min]
 
 ### Écran 4 — Paiement
 

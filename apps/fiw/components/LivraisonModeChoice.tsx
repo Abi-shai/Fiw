@@ -3,51 +3,46 @@ import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { GROUPEE_ECONOMIE, GROUPAGE_DELAI_MAX_MIN } from '@/constants/data';
 
-export type OptId = 'A' | 'B';
-
-// Délais d'illustration (le matching réel viendra du back-end).
-const WAIT_A_MIN = 12;
-const WAIT_B_MIN = 4;
-const WAIT_DELTA = WAIT_A_MIN - WAIT_B_MIN; // temps gagné en choisissant l'Option B
+export type LivraisonMode = 'express' | 'groupee';
 
 const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/[\s  ]/g, '.');
 
 type Props = {
-  /** Prix de base de la course (sans frais). */
+  /** Prix standard de la gamme (la groupée retranche l'économie). */
   base: number;
-  /** Montant des frais de rapprochement (Option B). */
-  frais: number;
-  value: OptId;
-  onChange: (o: OptId) => void;
+  value: LivraisonMode;
+  onChange: (m: LivraisonMode) => void;
 };
 
 type OptionMeta = {
-  id: OptId; icon: IconName; title: string; wait: number;
-  // « Bénéfice » distinctif de l'option — le cœur de l'arbitrage, rendu
-  // scannable et symétrique : A fait gagner de l'argent, B fait gagner du temps.
-  benefit: string; benefitIcon: IconName; benefitColor: string;
+  id: LivraisonMode; icon: IconName; title: string;
+  detail: string; benefit: string; benefitIcon: IconName; benefitColor: string;
 };
 
 /**
- * Choix « frais de rapprochement » présenté quand le prestataire libre le plus
- * proche dépasse la zone gratuite (arbitrage Temps ⇄ Prix). Deux cartes qui
- * mettent le DELTA en avant (économie ⇄ temps gagné) — symétriques, aucune n'est
- * marquée « recommandée » : le choix reste au Client. Une note explique CE QU'EST
- * le frais de rapprochement pour lever l'ambiguïté.
- * Termes « Option A / B » et « frais de rapprochement » canoniques (imposés) ;
- * jamais imposé au Client (3 conditions terrain : prix total, choix binaire,
- * temps estimé).
+ * Proposition Option A / Option B après détection d'un groupage possible
+ * (Product Doc « B — Détection automatique ») — présentée pendant la mise en
+ * relation, jamais comme réglage a priori. Même grammaire visuelle que les
+ * frais de rapprochement (cartes symétriques, delta en héros) : A part tout de
+ * suite au prix standard, B part groupée à prix réduit dès 2 commandes
+ * confirmées.
  */
-export default function RapprochementChoice({ base, frais, value, onChange }: Props) {
+export default function LivraisonModeChoice({ base, value, onChange }: Props) {
+  // Writing réf. Uber Eats « Priority / Standard » : un bénéfice par ligne,
+  // pas de jargon (« groupage » et « Option A/B » restent des termes internes),
+  // pas de paragraphe. On dit directement ce que fait chaque option.
   const OPTIONS: OptionMeta[] = [
     {
-      id: 'A', icon: 'hourglass', title: 'Attendre un prestataire proche', wait: WAIT_A_MIN,
-      benefit: `Économisez ${fmt(frais)} F`, benefitIcon: 'coins', benefitColor: Colors.success,
+      id: 'express', icon: 'send', title: 'Directe',
+      detail: 'Part seul, sans détour',
+      benefit: 'Part tout de suite', benefitIcon: 'lightning', benefitColor: Colors.primary,
     },
     {
-      id: 'B', icon: 'lightning', title: 'Être pris en charge plus vite', wait: WAIT_B_MIN,
-      benefit: `~${WAIT_DELTA} min plus tôt`, benefitIcon: 'lightning', benefitColor: Colors.primary,
+      id: 'groupee', icon: 'group', title: 'Groupée',
+      detail: `Part avec un colis voisin (${GROUPAGE_DELAI_MAX_MIN} min max)`,
+      benefit: `Économisez ${fmt(GROUPEE_ECONOMIE)} F`, benefitIcon: 'coins', benefitColor: Colors.success,
     },
   ];
 
@@ -55,8 +50,7 @@ export default function RapprochementChoice({ base, frais, value, onChange }: Pr
     <View style={styles.wrap}>
       {OPTIONS.map((o) => {
         const active = value === o.id;
-        const price = o.id === 'A' ? base : base + frais;
-        const feeLabel = o.id === 'A' ? 'sans frais' : `+${fmt(frais)} F`;
+        const price = o.id === 'express' ? base : base - GROUPEE_ECONOMIE;
         return (
           <TouchableOpacity
             key={o.id}
@@ -70,13 +64,12 @@ export default function RapprochementChoice({ base, frais, value, onChange }: Pr
 
             <View style={styles.mid}>
               <Text variant="body" style={styles.title} numberOfLines={2}>{o.title}</Text>
-              {/* Bénéfice distinctif — le point saillant de l'arbitrage. */}
               <View style={[styles.benefit, { backgroundColor: active ? Colors.surface : Colors.bg }]}>
                 <Icon name={o.benefitIcon} size={12} weight="bold" color={o.benefitColor} />
                 <Text variant="caption" color={o.benefitColor} style={styles.benefitTxt}>{o.benefit}</Text>
               </View>
               <Text variant="caption" color={Colors.textSecondary}>
-                Option {o.id} · ~{o.wait} min · {feeLabel}
+                {o.detail}
               </Text>
             </View>
 
@@ -90,13 +83,11 @@ export default function RapprochementChoice({ base, frais, value, onChange }: Pr
         );
       })}
 
-      {/* Explication du concept : ce qu'est le frais de rapprochement (le point
-          qui manquait de clarté). Statique — n'explique plus « l'option courante »
-          mais le mécanisme lui-même. */}
+      {/* La garantie seule (Product Doc « C ») — une ligne, pas de mécanisme. */}
       <View style={styles.note}>
         <Icon name="info" size={16} weight="bold" color={Colors.textSecondary} />
         <Text variant="caption" color={Colors.textSecondary} style={styles.noteTxt}>
-          Les frais de rapprochement couvrent le trajet d'un prestataire plus éloigné jusqu'à vous. En patientant, vous ne payez aucun frais.
+          Pas de colis voisin d'ici {GROUPAGE_DELAI_MAX_MIN} min ? Le vôtre part seul, au prix normal.
         </Text>
       </View>
     </View>

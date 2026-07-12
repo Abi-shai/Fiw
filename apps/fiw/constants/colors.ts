@@ -5,6 +5,8 @@ export const Colors = {
   primaryPressed: '#0D459B',
   primarySubtle:  '#EDF7FF',
   primaryOn:      '#FFFFFF',
+  // Jaune de marque (logo Fiw, accents ponctuels). Seul jaune autorisé.
+  brandYellow:    '#FFE347',
 
   // Blue scale
   blue50:  '#EDF7FF',
@@ -31,6 +33,10 @@ export const Colors = {
   // du fond carto quel que soit son contraste (translucide, neutre).
   hairline:      'rgba(17, 24, 39, 0.08)',
   borderSubtle:  '#F3F4F6',
+  // Piste neutre des segmented controls & pills d'action (gris froid).
+  track:         '#F2F3F5',
+  // Fond de card subtil, légèrement plus froid que `surface` (cards internes).
+  surfaceAlt:    '#FBFBFC',
   textPrimary:   '#1A1A1A',
   textSecondary: '#6B7280',
   textTertiary:  '#9CA3AF',

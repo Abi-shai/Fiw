@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, StyleSheet, TouchableOpacity, Animated, ScrollView, Image,
-  Share, LayoutAnimation, Platform, UIManager, Dimensions,
+  Share, LayoutAnimation, Platform, UIManager, Dimensions, Easing,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -11,19 +11,20 @@ import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 import Button from '@/components/Button';
 import BottomSheet from '@/components/BottomSheet';
+import StepProgress, { type Step } from '@/components/StepProgress';
+import CodePill from '@/components/CodePill';
 import {
   groupedSheetSurface, SheetCard, VehicleGroup, RouteCard, InfoBanner, ActionPill, CARD_GAP,
 } from '@/components/RideSheet';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
 import { Colors, Radii, Poppins } from '@/constants/tokens';
-import { DRIVER, MOTO_DRIVER, DAKAR_CENTER, WAIT_FEE_PER_MIN } from '@/constants/data';
-import { payIllustration, type IlluKey } from '@/constants/illustrations';
+import { VELO_LIVREUR, MOTO_LIVREUR, DAKAR_CENTER } from '@/constants/data';
+import { payIllustration } from '@/constants/illustrations';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-// Motion : la feuille lisse sa hauteur quand on passe d'une étape à l'autre.
 const SHEET_LAYOUT = {
   duration: 300,
   update: { type: LayoutAnimation.Types.easeInEaseOut },
@@ -31,30 +32,49 @@ const SHEET_LAYOUT = {
   delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
 };
 
-type StepKey = 'en_route' | 'arrived' | 'in_progress' | 'finished';
+// Étapes du suivi (proto : progression automatique, comme la course active) :
+// vers la collecte → remise du colis au prestataire → trajet → remise finale.
+type StepKey = 'vers_collecte' | 'collecte' | 'vers_livraison' | 'remise' | 'finished';
 
 const STEPS: { key: StepKey; duration: number }[] = [
-  { key: 'en_route', duration: 55000 },
-  { key: 'arrived', duration: 12000 },
-  { key: 'in_progress', duration: 60000 },
+  { key: 'vers_collecte', duration: 45000 },
+  { key: 'collecte', duration: 12000 },
+  { key: 'vers_livraison', duration: 55000 },
+  { key: 'remise', duration: 12000 },
   { key: 'finished', duration: 0 },
 ];
 
-const DRIVER_START = { lat: 14.7100, lng: -17.4500 };
-// Délai gratuit COMPRESSÉ pour la démo (règle réelle : WAIT_GRACE_MINUTES).
-const GRACE_SECONDS_SIM = 3;
+// Jalons affichés (réf. benchmark : barre segmentée Shopee SPX / Walmart).
+const JALONS: Step[] = [
+  { icon: 'package', label: 'Collecte' },
+  { icon: 'navigate', label: 'En route' },
+  { icon: 'flag', label: 'Livraison' },
+  { icon: 'shield', label: 'Remis' },
+];
+const JALON_INDEX: Record<StepKey, number> = {
+  vers_collecte: 0, collecte: 0, vers_livraison: 1, remise: 2, finished: 3,
+};
 
+// Remplissage du segment vers le jalon suivant, par étape de simulation : la
+// barre grise se remplit en continu jusqu'à atteindre le jalon. Les deux
+// premières étapes vivent sur le jalon Collecte → elles se partagent le même
+// segment (trajet ≈ 78 % du temps, remise du colis le reste).
+const SEG_PLAN: Record<StepKey, { from: number; to: number } | null> = {
+  vers_collecte: { from: 0, to: 0.78 },
+  collecte: { from: 0.78, to: 1 },
+  vers_livraison: { from: 0, to: 1 },
+  remise: { from: 0, to: 1 },
+  finished: null,
+};
+
+const DRIVER_START = { lat: 14.7100, lng: -17.4500 };
 const SCREEN_H = Dimensions.get('window').height;
-// Feuille de suivi à 3 crans, HUG-CONTENT : elle épouse exactement son contenu —
-// AUCUN vide gris sous la dernière carte. `translateY` la décale vers le bas pour
-// la replier (glisser l'en-tête = redimensionner). Le corps ne scrolle QUE si le
-// contenu dépasse l'écran (borne `bodyMaxH`). Crans mesurés au layout, cf. `snaps`.
 
 const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/[\s  ]/g, '.');
 
 function getMapConfig(stepKey: StepKey, destLat: number, destLng: number) {
   switch (stepKey) {
-    case 'en_route':
+    case 'vers_collecte':
       return {
         center: { lat: (DRIVER_START.lat + DAKAR_CENTER.lat) / 2, lng: (DRIVER_START.lng + DAKAR_CENTER.lng) / 2 },
         zoom: 13,
@@ -62,15 +82,15 @@ function getMapConfig(stepKey: StepKey, destLat: number, destLng: number) {
           { lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'origin' as const },
           { lat: DRIVER_START.lat, lng: DRIVER_START.lng, type: 'driver' as const },
         ],
-        route: { from: DRIVER_START, to: DAKAR_CENTER, animateDuration: 54000 },
+        route: { from: DRIVER_START, to: DAKAR_CENTER, animateDuration: 44000 },
       };
-    case 'arrived':
+    case 'collecte':
       return {
         center: DAKAR_CENTER, zoom: 16,
         markers: [{ lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'driver' as const }],
         route: undefined,
       };
-    case 'in_progress':
+    case 'vers_livraison':
       return {
         center: { lat: (DAKAR_CENTER.lat + destLat) / 2, lng: (DAKAR_CENTER.lng + destLng) / 2 },
         zoom: 13,
@@ -78,69 +98,84 @@ function getMapConfig(stepKey: StepKey, destLat: number, destLng: number) {
           { lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'driver' as const },
           { lat: destLat, lng: destLng, type: 'destination' as const },
         ],
-        route: { from: DAKAR_CENTER, to: { lat: destLat, lng: destLng }, animateDuration: 59000 },
+        route: { from: DAKAR_CENTER, to: { lat: destLat, lng: destLng }, animateDuration: 54000 },
+      };
+    case 'remise':
+      return {
+        center: { lat: destLat, lng: destLng }, zoom: 16,
+        markers: [{ lat: destLat, lng: destLng, type: 'driver' as const }],
+        route: undefined,
       };
     default:
       return { center: DAKAR_CENTER, zoom: 14, markers: [], route: undefined };
   }
 }
 
-export default function CourseActiveScreen() {
+/**
+ * Suivi de Livraison active — feuille à 3 crans hug-content (pattern course
+ * active) : statut + jalons en tête, prestataire, colis (n° de suivi + code de
+ * remise), détails, actions. L'annulation n'est possible qu'avant la collecte
+ * (sans frais, cf. sitemap 4.3).
+ */
+export default function LivraisonSuiviScreen() {
   const params = useLocalSearchParams<{
-    destName: string; gammeLabel: string; gammeId: string; gammeIllu?: string;
-    finalPrice: string; paymentId: string; selectedOption: string;
-    destLat: string; destLng: string;
+    departureName?: string; destName: string; destLat: string; destLng: string;
+    colisType: string; colisTaille: string; colisDesc: string;
+    destinataireName: string; destinatairePhone: string;
+    gammeId: string; gammeLabel: string; finalPrice: string; paymentId: string;
+    selectedOption: string; mode: string; tracking: string; codeRemise: string;
   }>();
 
-  const driver = params.gammeId === 'moto' ? MOTO_DRIVER : DRIVER;
-  const illu = (params.gammeIllu || (params.gammeId === 'moto' ? 'moto' : 'auto')) as IlluKey;
-  const basePrice = parseInt(params.finalPrice || '1500');
+  const driver = params.gammeId === 'velo' ? VELO_LIVREUR : MOTO_LIVREUR;
+  const price = parseInt(params.finalPrice || '700', 10);
   const destLat = parseFloat(params.destLat || String(DAKAR_CENTER.lat));
   const destLng = parseFloat(params.destLng || String(DAKAR_CENTER.lng));
 
   const insets = useSafeAreaInsets();
   const [stepIndex, setStepIndex] = useState(0);
-  const [waitSeconds, setWaitSeconds] = useState(0);
   const [etaSeconds, setEtaSeconds] = useState(Math.round(STEPS[0].duration / 1000));
   const [sosOpen, setSosOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
 
   const mapRef = useRef<LeafletMapHandle>(null);
 
-  // Actions de comm/sécurité — aucun numéro brut du prestataire n'est exposé.
   const onCall = () => router.push({ pathname: '/transport/call', params: { name: driver.name } });
   const onChat = () => router.push({ pathname: '/transport/chat', params: { name: driver.name } });
   const onShare = () => {
-    Share.share({ message: `Suivez ma course Fiw en direct : https://fiw.sn/suivi/${driver.plate.replace(/-/g, '')}` });
+    Share.share({ message: `Suivez mon colis Fiw en direct : https://fiw.sn/colis/${params.tracking}` });
+  };
+  // Partage du code de remise au destinataire via les applis externes
+  // (réf. benchmark : carte code + bouton Partager, Airalo/Hopper/Klook).
+  const onShareCode = () => {
+    Share.share({
+      message: `Votre colis Fiw ${params.tracking} arrive ! Code de remise : ${params.codeRemise} — le prestataire vous le demandera à la remise.`,
+    });
   };
   const onSos = () => setSosOpen(true);
 
   const step = STEPS[stepIndex];
-  const waitFrais = waitSeconds > GRACE_SECONDS_SIM ? (waitSeconds - GRACE_SECONDS_SIM) * WAIT_FEE_PER_MIN : 0;
-  const currentPrice = basePrice + waitFrais;
   const mapConfig = getMapConfig(step.key, destLat, destLng);
 
-  // Crans mesurés : hauteur totale (hug-content) + hauteur de l'en-tête (contenu
-  // du cran replié). Le corps est borné à `bodyMaxH` pour que la feuille pleine ne
-  // dépasse jamais l'écran ; au-delà, le corps scrolle.
+  // Rendu véhicule : scooter illustré ; vélo en icône (pas encore d'asset).
+  const vehicleArt = params.gammeId === 'velo'
+    ? <Icon name="bicycle" size={34} weight="fill" color={Colors.gray600} />
+    : undefined;
+
   const [sheetH, setSheetH] = useState(0);
   const [headerH, setHeaderH] = useState(0);
   const [bodyContentH, setBodyContentH] = useState(0);
   const bodyMaxH = Math.max(160, SCREEN_H - insets.top - headerH - 12);
-  // Le corps épouse son contenu (borné à l'écran) — un ScrollView ne se
-  // dimensionne pas seul dans un parent hug, on lui fixe donc min(contenu, max).
   const bodyH = Math.min(bodyContentH, bodyMaxH);
   const snaps = useMemo(() => {
     if (!sheetH || !headerH) return [0, 0, 0];
-    const peek = Math.max(1, Math.round(sheetH - headerH));   // ne montre que l'en-tête
-    const mid = Math.min(peek - 1, Math.round(sheetH * 0.44)); // ~ moitié haute
-    return [0, Math.max(1, mid), peek];                       // [étendu · milieu · replié]
+    const peek = Math.max(1, Math.round(sheetH - headerH));
+    const mid = Math.min(peek - 1, Math.round(sheetH * 0.44));
+    return [0, Math.max(1, mid), peek];
   }, [sheetH, headerH]);
 
   const { ty, snapTo, panHandlers } = useSnapSheet({ snaps, initial: SCREEN_H });
-  const expand = () => snapTo(0); // chevron prestataire → cran étendu
+  const expand = () => snapTo(0);
 
-  // Entrée : une fois tout mesuré, la feuille monte au cran milieu.
   const didEnter = useRef(false);
   useEffect(() => {
     if (sheetH > 0 && headerH > 0 && bodyContentH > 0 && !didEnter.current) {
@@ -150,7 +185,6 @@ export default function CourseActiveScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheetH, headerH, bodyContentH]);
 
-  // Progression des étapes — chaque avance lisse la hauteur de la feuille.
   useEffect(() => {
     if (step.duration === 0) return;
     const timer = setTimeout(() => {
@@ -160,18 +194,27 @@ export default function CourseActiveScreen() {
     return () => clearTimeout(timer);
   }, [stepIndex]);
 
+  // Remplissage continu du segment de jalons courant, calé sur la durée de
+  // l'étape (linéaire — c'est une barre de progression, pas un mouvement).
+  const segFill = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    let timer: ReturnType<typeof setInterval>;
-    if (step.key === 'arrived') {
-      timer = setInterval(() => setWaitSeconds((s) => s + 1), 1000);
-    } else {
-      setWaitSeconds(0);
-    }
-    return () => clearInterval(timer);
+    const plan = SEG_PLAN[step.key];
+    if (!plan) return;
+    segFill.setValue(plan.from);
+    const anim = Animated.timing(segFill, {
+      toValue: plan.to,
+      duration: step.duration,
+      easing: Easing.linear,
+      useNativeDriver: false,
+    });
+    anim.start();
+    return () => anim.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepIndex]);
 
   useEffect(() => {
-    if (step.key !== 'en_route') return;
+    if (step.key !== 'vers_collecte' && step.key !== 'vers_livraison') return;
+    setEtaSeconds(Math.round(step.duration / 1000));
     const timer = setInterval(() => setEtaSeconds((s) => Math.max(0, s - 1)), 1000);
     return () => clearInterval(timer);
   }, [stepIndex]);
@@ -180,11 +223,13 @@ export default function CourseActiveScreen() {
     if (step.key === 'finished') {
       setTimeout(() => {
         router.replace({
-          pathname: '/transport/cloture',
+          pathname: '/livraison/cloture',
           params: {
-            destName: params.destName, gammeLabel: params.gammeLabel, gammeId: params.gammeId,
-            finalPrice: currentPrice, paymentId: params.paymentId,
-            selectedOption: params.selectedOption, waitFrais,
+            destName: params.destName, gammeId: params.gammeId, gammeLabel: params.gammeLabel,
+            finalPrice: String(price), paymentId: params.paymentId,
+            selectedOption: params.selectedOption, mode: params.mode,
+            colisType: params.colisType, colisTaille: params.colisTaille,
+            destinataireName: params.destinataireName, tracking: params.tracking,
           },
         });
       }, 1200);
@@ -193,9 +238,17 @@ export default function CourseActiveScreen() {
 
   const mm = Math.floor(etaSeconds / 60);
   const etaLabel = mm >= 1 ? `environ ${mm} min` : "moins d'une minute";
-  const inGrace = waitSeconds <= GRACE_SECONDS_SIM;
-  const graceRemaining = Math.max(0, GRACE_SECONDS_SIM - waitSeconds);
-  const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  // Le code de remise devient utile dès que le colis roule vers le destinataire.
+  const showCode = step.key === 'vers_livraison' || step.key === 'remise';
+  const canCancel = step.key === 'vers_collecte';
+
+  const headerTitle = step.key === 'vers_collecte'
+    ? `Votre prestataire arrive dans ${etaLabel}`
+    : step.key === 'collecte'
+      ? 'Remettez votre colis'
+      : step.key === 'vers_livraison'
+        ? `Colis en route · arrivée dans ${etaLabel}`
+        : 'Remise au destinataire…';
 
   return (
     <View style={styles.container}>
@@ -216,7 +269,7 @@ export default function CourseActiveScreen() {
         style={[groupedSheetSurface, styles.snapSheet, { transform: [{ translateY: ty }] }]}
         onLayout={(e) => setSheetH(e.nativeEvent.layout.height)}
       >
-        {/* EN-TÊTE — zone de glissement (redimensionne) ; visible au cran replié. */}
+        {/* EN-TÊTE — statut + jalons ; zone de glissement, visible replié. */}
         <View
           style={styles.headerZone}
           {...panHandlers}
@@ -224,22 +277,23 @@ export default function CourseActiveScreen() {
         >
           <View style={styles.handleFloat} pointerEvents="none"><Handle /></View>
           <SheetCard style={styles.headerCard}>
-            {step.key === 'en_route' && (
-              <Text variant="heading2">Votre prestataire arrive dans {etaLabel}</Text>
-            )}
-            {step.key === 'arrived' && (
+            {step.key === 'collecte' ? (
               <View style={styles.titleRow}>
-                <Text variant="heading2" style={styles.flex1} numberOfLines={1}>Votre prestataire est arrivé</Text>
+                <Text variant="heading2" style={styles.flex1} numberOfLines={1}>{headerTitle}</Text>
                 <ActionPill label="J'arrive" icon="walk" onPress={() => {}} />
               </View>
+            ) : (
+              <Text variant="heading2">{headerTitle}</Text>
             )}
-            {step.key === 'in_progress' && (
-              <Text variant="heading2">En route vers votre destination</Text>
-            )}
+            <StepProgress
+              steps={JALONS}
+              activeIndex={JALON_INDEX[step.key]}
+              segmentProgress={segFill}
+            />
           </SheetCard>
         </View>
 
-        {/* CORPS — hug-content ; scrolle uniquement si le contenu dépasse l'écran. */}
+        {/* CORPS — hug-content ; scrolle si le contenu dépasse l'écran. */}
         <ScrollView
           style={[styles.body, { height: bodyH }]}
           contentContainerStyle={styles.bodyContent}
@@ -247,40 +301,74 @@ export default function CourseActiveScreen() {
           scrollEnabled={bodyContentH > bodyMaxH}
           showsVerticalScrollIndicator={false}
         >
-          {/* En-tête prestataire (+ bannière frais d'attente à l'arrivée, DANS la
-              carte comme la maquette 163:903, pas flottante sur le fond). */}
+          {/* Prestataire (+ consigne à la collecte). */}
           <SheetCard>
-            {step.key === 'arrived' && (
-              inGrace ? (
-                <InfoBanner icon="coins">
-                  Vous payez {WAIT_FEE_PER_MIN}F de frais d'attente dans {mmss(graceRemaining)}
-                </InfoBanner>
-              ) : (
-                <InfoBanner icon="coins" tone="warn">
-                  Frais d'attente en cours · {fmt(waitFrais)} F
-                </InfoBanner>
-              )
+            {step.key === 'collecte' && (
+              <InfoBanner icon="package">
+                Remettez le colis au prestataire — il enregistre le n° de suivi.
+              </InfoBanner>
             )}
-            <VehicleGroup driver={driver} illu={illu} onPress={expand} />
+            <VehicleGroup driver={driver} illu="livraison" art={vehicleArt} onPress={expand} />
           </SheetCard>
 
-          {/* InfosCourse — itinéraire + paiement (maquette 173:691). */}
+          {/* Colis — type · taille, n° de suivi, code de remise. */}
           <SheetCard>
-            <RouteCard departure="Ma position actuelle" destination={params.destName} />
+            <Text variant="heading2">Votre colis</Text>
+            {params.mode === 'groupee' && (
+              <InfoBanner icon="group">
+                Livraison groupée — votre colis voyage avec un colis voisin.
+              </InfoBanner>
+            )}
+            <View style={styles.colisRow}>
+              <View style={styles.colisThumb}>
+                <Icon name="package" size={22} weight="bold" color={Colors.primary} />
+              </View>
+              <View style={styles.flex1}>
+                <Text variant="label" numberOfLines={1}>
+                  {params.colisType} · Taille {params.colisTaille}
+                </Text>
+                {params.colisDesc ? (
+                  <Text variant="caption" color={Colors.textSecondary} numberOfLines={1}>{params.colisDesc}</Text>
+                ) : null}
+              </View>
+            </View>
+            <View style={styles.trackingRow}>
+              <Icon name="barcode" size={18} color={Colors.textSecondary} />
+              <Text variant="caption" color={Colors.textSecondary}>N° de suivi</Text>
+              <Text style={styles.trackingNum}>{params.tracking}</Text>
+            </View>
+            {showCode && (
+              <View style={styles.codeWrap}>
+                <CodePill code={params.codeRemise || '0000'} />
+                <Text variant="caption" color={Colors.textSecondary} align="center">
+                  Communiquez ce code à {params.destinataireName || 'votre destinataire'} — le prestataire le demandera à la remise.
+                </Text>
+                <Button label="Partager le code" icon="share" size="md" onPress={onShareCode} />
+              </View>
+            )}
+          </SheetCard>
+
+          {/* Détails — itinéraire + paiement. */}
+          <SheetCard>
+            <RouteCard
+              departure={params.departureName || 'Ma position actuelle'}
+              destination={`${params.destName} · ${params.destinataireName}`}
+              labels={{ from: 'Collecte', to: 'Livraison' }}
+              icons={{ from: 'package', to: 'flag' }}
+            />
             <View style={styles.paymentRow}>
               <View style={styles.paymentLeft}>
                 <Icon name="coins" size={20} color={Colors.textSecondary} />
                 <Text variant="label">Paiement</Text>
               </View>
               <View style={styles.paymentRight}>
-                <Text style={styles.paymentAmount}>{fmt(currentPrice)} F</Text>
+                <Text style={styles.paymentAmount}>{fmt(price)} F</Text>
                 <Image source={payIllustration(params.paymentId)} style={styles.paymentIllu} />
               </View>
             </View>
           </SheetCard>
 
-          {/* Actions — contacts, urgence, annulation. Dernière carte : blanc
-              jusqu'en bas (zone sûre absorbée), pas de vide gris. */}
+          {/* Actions — contacts, urgence, annulation (avant collecte uniquement). */}
           <SheetCard style={[styles.lastCard, { paddingBottom: 20 + insets.bottom }]}>
             <View style={styles.tilesRow}>
               <ActionTile icon="phone" label="Appeler" onPress={onCall} />
@@ -288,31 +376,32 @@ export default function CourseActiveScreen() {
               <ActionTile icon="share" label="Partager" onPress={onShare} />
               <ActionTile icon="sos" label="Urgence" danger onPress={onSos} />
             </View>
-            <Button
-              label="Annuler la course"
-              variant="destructive"
-              onPress={() => setCancelOpen(true)}
-            />
+            {canCancel && (
+              <Button
+                label="Annuler la livraison"
+                variant="destructive"
+                onPress={() => setCancelOpen(true)}
+              />
+            )}
           </SheetCard>
         </ScrollView>
       </Animated.View>
 
-      {/* Confirmation d'annulation — dissuade (prestataire déjà en route),
-          action primaire = garder, action destructive = annuler (façon Bolt/Uber). */}
+      {/* Confirmation d'annulation — gratuite avant la collecte. */}
       {cancelOpen && (
         <BottomSheet onClose={() => setCancelOpen(false)}>
           {(close) => (
             <View style={styles.cancelSheet}>
               <View style={styles.cancelBadge}>
-                <Icon name="car" size={28} weight="bold" color={Colors.error} />
+                <Icon name="package" size={28} weight="bold" color={Colors.error} />
               </View>
-              <Text variant="heading1" align="center">Annuler la course ?</Text>
+              <Text variant="heading1" align="center">Annuler la livraison ?</Text>
               <Text variant="body" color={Colors.textSecondary} align="center" style={styles.cancelText}>
-                Votre prestataire est déjà en route vers vous. Annuler maintenant peut allonger votre prochaine attente.
+                Votre prestataire est en route vers le point de collecte. L'annulation est gratuite tant que le colis n'a pas été collecté.
               </Text>
-              <Button label="Garder ma course" onPress={close} style={styles.cancelBtn} />
+              <Button label="Garder ma livraison" onPress={close} style={styles.cancelBtn} />
               <Button
-                label="Annuler la course"
+                label="Annuler la livraison"
                 variant="destructive"
                 onPress={() => { close(); router.replace('/home'); }}
                 style={styles.cancelBtn}
@@ -359,32 +448,44 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   flex1: { flex: 1 },
 
-  // Feuille de suivi à 3 crans — géométrie GroupedSheet (fond track, aucun padding
-  // de feuille, cartes pleine largeur), HUG-CONTENT (pas de hauteur fixe → aucun
-  // vide gris), décalée par `translateY` pour se replier.
   snapSheet: {
     position: 'absolute',
     left: 0, right: 0, bottom: 0,
   },
   headerZone: { zIndex: 1 },
-  // Poignée flottante décorative (le drag est capté par toute la zone d'en-tête).
   handleFloat: {
     position: 'absolute',
     top: 6, left: 0, right: 0,
     alignItems: 'center',
     zIndex: 2,
   },
-  // 1re carte : coins hauts alignés sur la feuille (28), comme GroupedSheet.
   headerCard: { borderTopLeftRadius: SHEET_RADIUS, borderTopRightRadius: SHEET_RADIUS },
-  // Dernière carte : coins bas carrés, blanc jusqu'au bord de l'écran.
   lastCard: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
-  // Corps — fond transparent pour laisser transparaître le `track` dans les gaps.
   body: { backgroundColor: 'transparent' },
   bodyContent: { paddingTop: CARD_GAP, gap: CARD_GAP },
 
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 
-  // Paiement (maquette 177:750) — libellé à gauche, montant + illustration à droite.
+  // Colis.
+  colisRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  colisThumb: {
+    width: 44, height: 44, borderRadius: Radii.md,
+    backgroundColor: Colors.primarySubtle,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  trackingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  trackingNum: {
+    fontFamily: Poppins.semibold, fontSize: 13, color: Colors.textPrimary,
+    letterSpacing: 0.5,
+  },
+  codeWrap: {
+    gap: 10,
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: Radii.lg,
+    borderWidth: 1, borderColor: Colors.borderSubtle,
+    padding: 14,
+  },
+
   paymentRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   paymentLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   paymentRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -400,7 +501,6 @@ const styles = StyleSheet.create({
   },
   tileDanger: { backgroundColor: Colors.errorSubtle },
 
-  // Confirmation d'annulation.
   cancelSheet: { alignItems: 'center', gap: 10, paddingTop: 4, paddingBottom: 8 },
   cancelBadge: {
     width: 56, height: 56, borderRadius: 28,
@@ -411,7 +511,6 @@ const styles = StyleSheet.create({
   cancelText: { maxWidth: 320, marginBottom: 6 },
   cancelBtn: { alignSelf: 'stretch' },
 
-  // SOS.
   sosSheet: { alignItems: 'center', gap: 14, paddingTop: 4, paddingBottom: 8 },
   sosBadge: {
     width: 56, height: 56, borderRadius: 28,

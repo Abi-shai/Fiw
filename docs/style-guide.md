@@ -155,20 +155,22 @@ Tout élément posé **par-dessus le fond cartographique** (boutons flottants, b
 
 **Forme** : **pill** (entièrement arrondi, `radius-pill`) sur toutes les variantes et tailles — cibles tactiles généreuses, style mobile moderne.
 **Pleine largeur** par défaut pour les CTA (le bouton s'étire dans son conteneur colonne).
-**Effet de press** : léger `scale 0.97` + bascule de couleur vers l'état pressé. Ombre `shadow-sm` sur les variantes pleines (primary/destructive).
+**Effet de press** : léger `scale 0.97` + bascule de couleur vers l'état pressé. Ombre `shadow-sm` sur les variantes pleines (`primary` / `destructiveFilled`).
 
 ### Variantes (couleurs par état)
+
+Deux familles : **pleine** (fond de couleur, pour le CTA) et **transparente** (sans fond — pour les actions secondaires, à même empreinte pilule, typo et spacing que le primary). Parmi les transparentes, seul `secondary` porte une bordure (neutre gris) ; `destructive` est **sans bordure** (texte rouge). Benchmark Mobbin : Wise, X, Duolingo, Lyft, Fabric.
 
 | Variante | Fond repos | Fond pressé | Texte | Bordure |
 |---|---|---|---|---|
 | `primary` | `color-primary` | `color-primary-pressed` | `#FFFFFF` | — |
-| `secondary` | `color-primary-subtle` | `blue-100` | `color-primary` | — |
-| `ghost` | transparent | `color-primary-subtle` | `color-primary` | `color-primary` (1.5px) |
-| `destructive` | `#EF4444` | `#DC2626` | `#FFFFFF` | — |
+| `secondary` | transparent | `color-bg` | `color-text-primary` | `color-border` (1.5px) |
+| `destructive` | transparent | `color-error-subtle` | `color-error` | — |
+| `destructiveFilled` | `#EF4444` | `#DC2626` | `#FFFFFF` | — |
 
 `disabled` : opacité 0.45 (toutes variantes). `loading` : spinner à la couleur du texte. Slots icône Phosphor leading/trailing sur toutes les variantes.
 
-> Pas de variante sans bordure dédiée : un lien discret destructif (ex. « Annuler (gratuit) ») = `ghost` à couleur `destructive`.
+> **Choix de variante.** `secondary` (contour neutre gris) = action secondaire courante. `destructive` (texte rouge, **sans bordure ni fond**) = **annulation / action dangereuse secondaire** (ex. « Annuler la commande », « Annuler (gratuit) ») — à privilégier sur toutes les pages présentant ce type d'action, plutôt qu'un lien texte ad hoc. `destructiveFilled` (plein rouge) est **réservé** au cas où l'action destructive EST le CTA de l'écran (ex. « Raccrocher »).
 
 ### Tailles (hauteurs pouce-friendly ≥ 48px)
 
@@ -211,7 +213,7 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 |---|---|---|
 | `Text` | Typographie | Variants sémantiques, mappe graisse→famille Poppins. Seul point d'entrée typo. |
 | `Icon` | Icône | Phosphor, sous-ensemble nommé, `regular`/`fill`. |
-| `Button` | Action | 4 variantes, tailles `lg`/`md`, slots icône, loading/disabled. |
+| `Button` | Action | 4 variantes (`primary` / `secondary` contour neutre / `destructive` contour Error / `destructiveFilled` plein rouge), tailles `lg`/`md`, slots icône, loading/disabled. |
 | `IconButton` | Bouton rond icône | `floating` (blanc + liseré + ombre, sur carte ; **icône gris foncé `gray-700`** — neutre, registre nav, pas le bleu marque) / `flat` (fond gris, dans sheet ; icône bleu marque). |
 | `SearchBar` | Recherche | Pilotée par prop : `asButton` (lanceur → navigue) ou `editable` (saisie). Slot trailing optionnel (carte, micro), bouton clear. |
 | `TopBar` | En-tête | Slots gauche/titre/droite. Variantes `solid` (gère safe-area) / `transparent` (réutilisée comme en-tête de sheet). **N'inclut pas** les boutons flottants sur carte (ce sont des `IconButton`). |
@@ -236,6 +238,13 @@ Basé sur `@gorhom/bottom-sheet`, enveloppé pour injecter les tokens (`radius-x
 **Physique du snap** (feuilles déplaçables, ex. accueil) : suit le doigt au 1:1, **rubber-band** aux bornes, et au lâcher un ressort qui **repart à la vélocité du doigt** (continuité de vélocité) — `SHEET_SPRING = stiffness 280 / damping 22 / mass 1` (vif, légèrement sous-amorti). Flick franc → cran suivant dans la direction ; drag lent → cran le plus proche.
 
 **Voile (scrim)** — composant `Scrim` : voile noir derrière la feuille dont l'opacité **suit la position de la feuille**. Nul quand la feuille est basse (`collapsed` / escamotée), net à `half`/medium (~0.38), marqué à `full`/expanded (~0.58) — pour assombrir la carte/le fond et concentrer l'attention sur la feuille. `pointerEvents="none"` (purement visuel, ne bloque pas le fond) et posé **entre le fond et les contrôles flottants** (les boutons carte restent nets). Comportement standard de toute bottom sheet montant aux niveaux hauts.
+
+### Formulaires
+
+- **Champ requis** : astérisque `color-error` sur le **label de groupe**, placé au-dessus de son contrôle (jamais de label flottant à gauche). Le rouge est strictement réservé au requis et aux erreurs — jamais décoratif ; le bleu marque signale l'action (une rangée requise vide se style en **rangée-action bleue**, ex. « Ajouter le destinataire * »).
+- **Champ optionnel** : toujours étiqueté « (facultatif) » en toutes lettres, visuellement affaibli (texte tertiaire, sans chevron), placé **après** les champs requis.
+- **Note contextuelle** : caption grise + icône info, ancrée directement **sous le champ qu'elle explique** — jamais orpheline en fin de carte.
+- La validation passe par le **CTA désactivé** tant que les requis manquent (pas de message d'erreur inline en v1).
 
 ---
 

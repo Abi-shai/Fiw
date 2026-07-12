@@ -15,6 +15,7 @@ import Scrim from '@/components/Scrim';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 import { Handle, SheetHeader, sheetSurface } from '@/components/Sheet';
+import { useSnapSheet, SHEET_SPRING } from '@/hooks/useSnapSheet';
 import { Colors, Radii, Poppins, Shadows } from '@/constants/tokens';
 import { DAKAR_CENTER, SUGGESTIONS, SAVED_PLACES, RECENT_PLACES } from '@/constants/data';
 
@@ -25,32 +26,15 @@ type ResultRow = { key: string; icon: IconName; accent?: boolean; title: string;
 const RECENTS: Place[] = [SUGGESTIONS[2], SUGGESTIONS[0]]; // Almadies, Aéroport AIBD
 
 const SCREEN_H = Dimensions.get('window').height;
-// Snap points expressed as the sheet's translateY (0 = covers full screen).
-// Larger translateY = lower / more collapsed.
-const PEEK_VISIBLE = 140;                       // Waze-like: only handle + heading peek out
-const TY_EXPANDED = Math.round(SCREEN_H * 0.08); // almost full
-const TY_DEFAULT = Math.round(SCREEN_H * 0.40);  // services visible
-const TY_COLLAPSED = SCREEN_H - PEEK_VISIBLE;    // collapsed to the bottom
+// Crans exprimés en translateY de la feuille (0 = couvre tout l'écran).
+// translateY plus grand = plus bas / plus replié. La mécanique de drag/snap est
+// dans le primitif partagé `useSnapSheet` (même logique côté course active).
+const PEEK_VISIBLE = 140;                       // façon Waze : seuls poignée + titre dépassent
+const TY_EXPANDED = Math.round(SCREEN_H * 0.08); // quasi plein écran
+const TY_DEFAULT = Math.round(SCREEN_H * 0.40);  // services visibles
+const TY_COLLAPSED = SCREEN_H - PEEK_VISIBLE;    // replié en bas
 const SNAPS = [TY_EXPANDED, TY_DEFAULT, TY_COLLAPSED]; // croissant : haut → bas
 const TAP_THRESHOLD = 6;
-const RUBBER = 0.4;   // résistance hors bornes (rubber-band façon Waze/Google Maps)
-const FLICK_V = 0.32; // px/ms : au-delà, le flick envoie au cran suivant dans sa direction
-// Ressort partagé (snap + entrée) : vif et légèrement sous-amorti pour un snap
-// vivant et perceptible (settle rapide + petit dépassement).
-const SPRING = { stiffness: 280, damping: 22, mass: 1 };
-
-// Cran le plus proche d'une position (drag lent).
-const nearestSnap = (pos: number) =>
-  SNAPS.reduce((a, b) => (Math.abs(b - pos) < Math.abs(a - pos) ? b : a));
-// Cran immédiatement au-dessus / en-dessous (flick décisif).
-const snapAbove = (pos: number) => {
-  const above = SNAPS.filter((s) => s < pos - 1);
-  return above.length ? Math.max(...above) : SNAPS[0];
-};
-const snapBelow = (pos: number) => {
-  const below = SNAPS.filter((s) => s > pos + 1);
-  return below.length ? Math.min(...below) : SNAPS[SNAPS.length - 1];
-};
 // Hauteur visible du sheet une fois étendu : borne le contenu de recherche
 // pour que la liste scrolle dans l'écran (le sheet fait toute la hauteur).
 const SEARCH_H = SCREEN_H - TY_EXPANDED;
@@ -66,10 +50,33 @@ type Service = {
 
 const SERVICES: Service[] = [
   { id: 'transport',  label: 'Transport',  tagline: 'Réservez une course', icon: 'car',       iconColor: Colors.primary,  active: true },
-  { id: 'livraison',  label: 'Livraison',  tagline: 'Envoyez un colis',    icon: 'package',   iconColor: Colors.primary,  active: false },
+  { id: 'livraison',  label: 'Livraison',  tagline: 'Envoyez un colis',    icon: 'package',   iconColor: Colors.primary,  active: true },
   { id: 'location',   label: 'Location',   tagline: 'Louez un véhicule',   icon: 'handshake', iconColor: Colors.primary,  active: false },
   { id: 'assistance', label: 'Assistance', tagline: 'Dépannage & secours', icon: 'lifebuoy',  iconColor: Colors.gray700,  active: false },
 ];
+
+// Services dont la recherche d'itinéraire est câblée. La même feuille de
+// recherche sert les deux : seuls les libellés et l'écran de configuration
+// d'arrivée changent (Transport → course, Livraison → colis).
+type SearchService = 'transport' | 'livraison';
+const SEARCH_COPY: Record<SearchService, {
+  title: string; fromLabel: string; toLabel: string;
+  fromPlaceholder: string; toPlaceholder: string;
+  pickFrom: string; pickTo: string;
+}> = {
+  transport: {
+    title: 'Indiquer votre itinéraire',
+    fromLabel: 'De', toLabel: 'À',
+    fromPlaceholder: 'Saisir un point de départ…', toPlaceholder: 'Où allez-vous ?',
+    pickFrom: 'Point de départ', pickTo: 'Destination',
+  },
+  livraison: {
+    title: 'Envoyer un colis',
+    fromLabel: 'Collecte', toLabel: 'Livraison',
+    fromPlaceholder: 'Adresse de collecte…', toPlaceholder: 'Où livrer votre colis ?',
+    pickFrom: 'Point de collecte', pickTo: 'Adresse de livraison',
+  },
+};
 
 // Illustrations 3D isométriques par service (maquette Figma) — rendent les
 // tuiles plus expressives que les icônes ligne.
@@ -103,9 +110,9 @@ const SERVICE_ILLOS: Record<string, IlloCfg> = {
   assistance: { size: 88,  left: '50%', top: '50%', baseX: -47,     baseY: -44, mirror: true }, // center 50%-3 / 50%, miroir
 };
 
-function openConfigure(place: Place, departureName: string) {
+function openConfigure(service: SearchService, place: Place, departureName: string) {
   router.push({
-    pathname: '/transport/configure',
+    pathname: service === 'livraison' ? '/livraison/configure' : '/transport/configure',
     params: {
       departureName,
       destName: place.name,
@@ -213,16 +220,36 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const mapRef = useRef<LeafletMapHandle>(null);
 
-  const ty = useRef(new Animated.Value(SCREEN_H)).current;
+  // Feuille à 3 crans — primitif partagé (même logique côté course active).
+  // L'accueil garde ses spécificités au lâcher : glisser-fermer en mode recherche
+  // et tap sur l'en-tête pour basculer replié ↔ défaut ; le reste (flick, cran le
+  // plus proche, rubber-band, continuité de vélocité) est géré par le primitif.
+  const { ty, tyValue, snapTo, panHandlers } = useSnapSheet({
+    snaps: SNAPS,
+    initial: SCREEN_H,
+    onRelease: ({ gesture: g, velocity: v, pos, snapTo: st }) => {
+      if (modeRef.current === 'search') {
+        if (g.dy > 80 || v > 0.5) closeSearch();
+        else st(TY_EXPANDED, v);
+        return true;
+      }
+      if (Math.abs(g.dy) < TAP_THRESHOLD && Math.abs(g.dx) < TAP_THRESHOLD) {
+        const mid = (TY_DEFAULT + TY_COLLAPSED) / 2;
+        st(pos >= mid ? TY_DEFAULT : TY_COLLAPSED);
+        return true;
+      }
+      return false; // → flick / cran le plus proche (défaut du primitif)
+    },
+  });
   const fade = useRef(new Animated.Value(0)).current;
   const controlsFade = useRef(new Animated.Value(0)).current;
-  const tyValue = useRef(SCREEN_H);
-  const dragOffset = useRef(0);
 
   // Mode de l'écran : grille de services ↔ recherche d'itinéraire (morph
   // in-place) ↔ choix d'un point sur la carte (pin fixe, carte mobile dessous).
   const [menuOpen, setMenuOpen] = useState(false);
   const [mode, setMode] = useState<'services' | 'search' | 'mappick'>('services');
+  // Service porté par la recherche en cours (Transport ou Livraison).
+  const [service, setService] = useState<SearchService>('transport');
   const [activeField, setActiveField] = useState<Field>('destination');
   // Centre courant de la carte pendant le choix sur carte (suivi via le webview).
   const [pinCenter, setPinCenter] = useState(DAKAR_CENTER);
@@ -232,12 +259,9 @@ export default function HomeScreen() {
   const [kbHeight, setKbHeight] = useState(0);
 
   // Paramètres reçus quand configure renvoie ici pour éditer l'itinéraire.
-  const editParams = useLocalSearchParams<{ editTs?: string; editDeparture?: string; editDest?: string }>();
-
-  useEffect(() => {
-    const id = ty.addListener(({ value }) => { tyValue.current = value; });
-    return () => ty.removeListener(id);
-  }, []);
+  const editParams = useLocalSearchParams<{
+    editTs?: string; editDeparture?: string; editDest?: string; editService?: string;
+  }>();
 
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', (e) => setKbHeight(e.endCoordinates.height));
@@ -247,25 +271,11 @@ export default function HomeScreen() {
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(ty, { toValue: TY_DEFAULT, ...SPRING, useNativeDriver: false }),
+      Animated.spring(ty, { toValue: TY_DEFAULT, ...SHEET_SPRING, useNativeDriver: false }),
       Animated.timing(fade, { toValue: 1, duration: 360, useNativeDriver: false }),
       Animated.timing(controlsFade, { toValue: 1, duration: 480, delay: 120, useNativeDriver: false }),
     ]).start();
   }, []);
-
-  // Le ressort REPART à la vitesse exacte du doigt (continuité de vélocité) —
-  // supprime le micro-arrêt au lâcher. Réglage vif et légèrement sous-amorti
-  // (ratio ≈ 0,66) : settle rapide + petit dépassement qu'on PERÇOIT.
-  const snapTo = (target: number, vy = 0) => {
-    Animated.spring(ty, {
-      toValue: target,
-      velocity: vy * 1000, // vy gesture en px/ms → Animated en px/s
-      ...SPRING,
-      restDisplacementThreshold: 0.3,
-      restSpeedThreshold: 0.3,
-      useNativeDriver: false,
-    }).start();
-  };
 
   const resetSearch = () => {
     setActiveField('destination');
@@ -277,6 +287,7 @@ export default function HomeScreen() {
   // `editTs` change à chaque appel pour re-déclencher l'effet à chaque édition.
   useEffect(() => {
     if (!editParams.editTs) return;
+    if (editParams.editService === 'livraison') setService('livraison');
     if (editParams.editDeparture) setDepartureName(editParams.editDeparture);
     setDestinationQuery(editParams.editDest ?? '');
     setActiveField('destination');
@@ -284,10 +295,12 @@ export default function HomeScreen() {
     snapTo(TY_EXPANDED);
   }, [editParams.editTs]);
 
-  // La tuile Transport se comporte comme la barre de recherche d'InDrive :
-  // le sheet déjà présent monte en plein écran et bascule en mode recherche.
-  const openSearch = () => {
+  // Les tuiles Transport/Livraison se comportent comme la barre de recherche
+  // d'InDrive : le sheet déjà présent monte en plein écran et bascule en mode
+  // recherche, aux couleurs du service choisi.
+  const openSearch = (svc: SearchService) => {
     Haptics.selectionAsync();
+    setService(svc);
     setMode('search');
     snapTo(TY_EXPANDED);
   };
@@ -306,14 +319,12 @@ export default function HomeScreen() {
     resetSearch();
     setMode('services');
     snapTo(TY_DEFAULT);
-    openConfigure(place, departureName);
+    openConfigure(service, place, departureName);
   };
 
-  // Refs pour que le PanResponder (créé une seule fois) lise l'état courant.
+  // Le `onRelease` du primitif lit le mode courant via cette ref.
   const modeRef = useRef(mode);
   modeRef.current = mode;
-  const actions = useRef({ closeSearch, snapTo });
-  actions.current = { closeSearch, snapTo };
 
   const menuOpenRef = useRef(menuOpen);
   menuOpenRef.current = menuOpen;
@@ -326,42 +337,6 @@ export default function HomeScreen() {
       !menuOpenRef.current && g.dx > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
     onPanResponderRelease: (_, g) => {
       if (g.dx > 20) openMenu.current();
-    },
-  })).current;
-
-  const panResponder = useRef(PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 4,
-    onPanResponderGrant: () => { dragOffset.current = tyValue.current; },
-    onPanResponderMove: (_, g) => {
-      // Suit le doigt au 1:1 dans les bornes ; résiste (rubber-band) au-delà.
-      let next = dragOffset.current + g.dy;
-      if (next < TY_EXPANDED) next = TY_EXPANDED - (TY_EXPANDED - next) * RUBBER;
-      else if (next > TY_COLLAPSED) next = TY_COLLAPSED + (next - TY_COLLAPSED) * RUBBER;
-      ty.setValue(next);
-    },
-    onPanResponderRelease: (_, g) => {
-      const v = g.vy; // px/ms (signe + = vers le bas)
-      // En mode recherche : glisser vers le bas ferme la recherche.
-      if (modeRef.current === 'search') {
-        if (g.dy > 80 || v > 0.5) actions.current.closeSearch();
-        else actions.current.snapTo(TY_EXPANDED, v);
-        return;
-      }
-      // Tap sur l'en-tête : bascule entre replié et état par défaut.
-      if (Math.abs(g.dy) < TAP_THRESHOLD && Math.abs(g.dx) < TAP_THRESHOLD) {
-        const mid = (TY_DEFAULT + TY_COLLAPSED) / 2;
-        actions.current.snapTo(tyValue.current >= mid ? TY_DEFAULT : TY_COLLAPSED);
-        return;
-      }
-      // Flick franc → cran suivant dans la direction ; drag lent → cran le plus
-      // proche (légère projection). La vélocité est transmise au ressort.
-      const pos = tyValue.current;
-      let target: number;
-      if (v < -FLICK_V) target = snapAbove(pos);
-      else if (v > FLICK_V) target = snapBelow(pos);
-      else target = nearestSnap(pos + v * 120);
-      actions.current.snapTo(target, v);
     },
   })).current;
 
@@ -378,7 +353,7 @@ export default function HomeScreen() {
 
   const onService = (s: Service) => {
     if (!s.active) return;
-    openSearch();
+    openSearch(s.id === 'livraison' ? 'livraison' : 'transport');
   };
 
   // Animation d'entrée « les véhicules arrivent en roulant et se garent » : chaque
@@ -488,8 +463,9 @@ export default function HomeScreen() {
         center={DAKAR_CENTER}
         zoom={14}
         markers={[{ lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'user', heading: 25 }]}
-        mapStyle="mapbox://styles/mapbox/streets-v12"
+        mapStyle="mapbox://styles/mapbox/light-v11"
         tintWater
+        declutter
         onCenterChange={mode === 'mappick' ? setPinCenter : undefined}
         style={styles.map}
       />
@@ -533,7 +509,7 @@ export default function HomeScreen() {
             </View>
             <View style={[styles.pickCard, { paddingBottom: insets.bottom + 16 }]}>
               <Text variant="caption" color={Colors.textTertiary} style={styles.pickKicker}>
-                {activeField === 'departure' ? 'Point de départ' : 'Destination'}
+                {activeField === 'departure' ? SEARCH_COPY[service].pickFrom : SEARCH_COPY[service].pickTo}
               </Text>
               <View style={styles.pickRow}>
                 <Icon name="location" size={22} color={Colors.primary} />
@@ -553,29 +529,29 @@ export default function HomeScreen() {
         {mode === 'search' ? (
           <View style={[styles.searchWrap, { height: SEARCH_H }]}>
             {/* Poignée déplaçable — glisser vers le bas ferme la recherche */}
-            <View {...panResponder.panHandlers} style={styles.searchHandleArea}>
+            <View {...panHandlers} style={styles.searchHandleArea}>
               <Handle />
             </View>
 
-            <SheetHeader title="Indiquer votre itinéraire" onClose={closeSearch} />
+            <SheetHeader title={SEARCH_COPY[service].title} onClose={closeSearch} />
 
-            {/* Champ « De » — icône personne (le passager) + géoloc si actif */}
+            {/* Champ « De » — passager (Transport) ou colis (Livraison) + géoloc si actif */}
             <TouchableOpacity
               style={[styles.field, activeField === 'departure' && styles.fieldActive]}
               activeOpacity={0.85}
               onPress={() => setActiveField('departure')}
             >
               <View style={styles.fieldIcon}>
-                <Icon name="walk" size={22} color={Colors.textSecondary} />
+                <Icon name={service === 'livraison' ? 'package' : 'walk'} size={22} color={Colors.textSecondary} />
               </View>
               <View style={styles.fieldBody}>
-                <Text variant="caption" color={Colors.textTertiary}>De</Text>
+                <Text variant="caption" color={Colors.textTertiary}>{SEARCH_COPY[service].fromLabel}</Text>
                 {activeField === 'departure' ? (
                   <TextInput
                     style={styles.fieldInput}
                     value={departureQuery}
                     onChangeText={setDepartureQuery}
-                    placeholder="Saisir un point de départ…"
+                    placeholder={SEARCH_COPY[service].fromPlaceholder}
                     placeholderTextColor={Colors.textTertiary}
                     autoFocus
                   />
@@ -596,13 +572,13 @@ export default function HomeScreen() {
                 <Icon name="search" size={20} color={Colors.textSecondary} />
               </View>
               <View style={styles.fieldBody}>
-                <Text variant="caption" color={Colors.textTertiary}>À</Text>
+                <Text variant="caption" color={Colors.textTertiary}>{SEARCH_COPY[service].toLabel}</Text>
                 <TextInput
                   style={styles.fieldInput}
                   value={destinationQuery}
                   onFocus={() => setActiveField('destination')}
                   onChangeText={setDestinationQuery}
-                  placeholder="Où allez-vous ?"
+                  placeholder={SEARCH_COPY[service].toPlaceholder}
                   placeholderTextColor={Colors.textTertiary}
                   autoFocus={activeField === 'destination'}
                 />
@@ -640,7 +616,7 @@ export default function HomeScreen() {
             </Animated.View>
 
             {/* Draggable header */}
-            <View {...panResponder.panHandlers} style={styles.sheetHeader}>
+            <View {...panHandlers} style={styles.sheetHeader}>
               <Handle style={styles.handle} />
               <Text variant="heading1" style={styles.heading}>Que voulez-vous faire ?</Text>
             </View>
@@ -672,7 +648,7 @@ export default function HomeScreen() {
                   title={r.name}
                   subtitle={r.detail}
                   trailing="chevronRight"
-                  onPress={() => openConfigure(r, departureName)}
+                  onPress={() => openConfigure('transport', r, departureName)}
                 />
               ))}
             </ScrollView>
@@ -745,7 +721,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 20,
     padding: 6,
-    backgroundColor: '#F2F3F5',
+    backgroundColor: Colors.track,
     borderWidth: 1,
     borderColor: 'rgba(242, 243, 245, 0.5)',
   },
