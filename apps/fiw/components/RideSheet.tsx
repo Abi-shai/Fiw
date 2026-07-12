@@ -223,8 +223,12 @@ export function DriverRow({ driver, onPress }: {
   );
 }
 
-/** VehicleBlock (Figma 163:811) — bloc `track` : modèle·couleur + plaque + rendu. */
-export function VehicleBlock({ driver, illu }: { driver: RideDriver; illu: IlluKey }) {
+/** VehicleBlock (Figma 163:811) — bloc `track` : modèle·couleur + plaque + rendu.
+ *  `art` remplace le rendu image quand le véhicule n'a pas d'illustration
+ *  (ex. Vélo Express, rendu en icône). */
+export function VehicleBlock({ driver, illu, art }: {
+  driver: RideDriver; illu?: IlluKey; art?: React.ReactNode;
+}) {
   return (
     <View style={styles.vehicleBlock}>
       <View style={styles.flex1}>
@@ -232,19 +236,21 @@ export function VehicleBlock({ driver, illu }: { driver: RideDriver; illu: IlluK
         <PlateChip plate={driver.plate} />
       </View>
       <View style={styles.vehicleRender}>
-        <Image source={gammeIllustration(illu)} style={styles.vehicleRenderImg} resizeMode="contain" />
+        {art ?? (
+          <Image source={gammeIllustration(illu ?? 'auto')} style={styles.vehicleRenderImg} resizeMode="contain" />
+        )}
       </View>
     </View>
   );
 }
 
 /** Groupe véhicule + prestataire (Figma 156:847) — cadre `surfaceAlt`. */
-export function VehicleGroup({ driver, illu, onPress }: {
-  driver: RideDriver; illu: IlluKey; onPress?: () => void;
+export function VehicleGroup({ driver, illu, art, onPress }: {
+  driver: RideDriver; illu?: IlluKey; art?: React.ReactNode; onPress?: () => void;
 }) {
   return (
     <View style={styles.vehicleGroup}>
-      <VehicleBlock driver={driver} illu={illu} />
+      <VehicleBlock driver={driver} illu={illu} art={art} />
       <DriverRow driver={driver} onPress={onPress} />
     </View>
   );
@@ -275,24 +281,29 @@ export function AltSuggestCard({ illu, title, subtitle, badgeLabel = 'Suggéré'
  *  drapeau relié par un trait + Départ/Arrivée, dans un cadre `surfaceAlt` bordé.
  *  Partagée entre la configuration et le suivi de course. `onEdit` ajoute l'icône
  *  crayon (édition) et rend la carte tappable. */
-export function RouteCard({ departure, destination, onEdit }: {
-  departure: string; destination: string; onEdit?: () => void;
+export function RouteCard({ departure, destination, labels, icons, onEdit }: {
+  departure: string; destination: string;
+  /** Libellés des deux points (défaut Départ/Arrivée ; Livraison : Collecte/Livraison). */
+  labels?: { from: string; to: string };
+  /** Icônes du rail (défaut walk/flag ; Livraison : package/flag). */
+  icons?: { from: IconName; to: IconName };
+  onEdit?: () => void;
 }) {
   const Wrapper: React.ComponentType<any> = onEdit ? TouchableOpacity : View;
   return (
     <Wrapper style={styles.routeCard} activeOpacity={onEdit ? 0.85 : 1} onPress={onEdit} disabled={!onEdit}>
       <View style={styles.routeRail}>
-        <Icon name="walk" size={20} weight="bold" color={Colors.textPrimary} />
+        <Icon name={icons?.from ?? 'walk'} size={20} weight="bold" color={Colors.textPrimary} />
         <View style={styles.routeLine} />
-        <Icon name="flag" size={20} weight="bold" color={Colors.textPrimary} />
+        <Icon name={icons?.to ?? 'flag'} size={20} weight="bold" color={Colors.textPrimary} />
       </View>
       <View style={styles.routeCol}>
         <View style={styles.routePoint}>
-          <Text variant="bodySmall" color={Colors.textSecondary}>Départ</Text>
+          <Text variant="bodySmall" color={Colors.textSecondary}>{labels?.from ?? 'Départ'}</Text>
           <Text variant="label" numberOfLines={1}>{departure}</Text>
         </View>
         <View style={styles.routePoint}>
-          <Text variant="bodySmall" color={Colors.textSecondary}>Arrivée</Text>
+          <Text variant="bodySmall" color={Colors.textSecondary}>{labels?.to ?? 'Arrivée'}</Text>
           <Text variant="label" numberOfLines={1}>{destination}</Text>
         </View>
       </View>

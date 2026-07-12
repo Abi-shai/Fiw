@@ -125,6 +125,117 @@ export const COVOITURAGE: typeof GAMMES[number] = {
 // destination — aucun détour. Trajet plus direct, donc tarif plus élevé.
 export const COVOITURAGE_NODETOUR_PRICE = 1150;
 
+// ——— Livraison (périmètre validé : Vélo Express / Moto Livraison) ———
+
+// Gammes Livraison. Même forme que GAMMES pour partager les patterns de carte.
+// `illu: null` = pas encore d'illustration isométrique (Vélo Express) : rendu en
+// icône `bicycle` sur plateforme, cf. écrans livraison.
+export const LIVRAISON_GAMMES: {
+  id: string; label: string; description: string; capacity: string;
+  basePrice: number; eta: string; illu: 'livraison' | null; icon: 'bicycle' | 'moto';
+}[] = [
+  {
+    id: 'velo',
+    label: 'Vélo Express',
+    description: 'Documents et petits colis',
+    capacity: 'Jusqu’à 5 kg',
+    basePrice: 700,
+    eta: '5 min',
+    illu: null,
+    icon: 'bicycle',
+  },
+  {
+    id: 'motoliv',
+    label: 'Moto Livraison',
+    description: 'Colis moyens, top-case sécurisé',
+    capacity: 'Jusqu’à 20 kg',
+    basePrice: 1200,
+    eta: '4 min',
+    illu: 'livraison',
+    icon: 'moto',
+  },
+];
+
+// Gamme Livraison complémentaire (état « Aucun prestataire ») : Vélo ↔ Moto.
+export const complementaryLivraisonGamme = (gammeId: string) =>
+  gammeId === 'velo'
+    ? LIVRAISON_GAMMES.find((g) => g.id === 'motoliv')!
+    : LIVRAISON_GAMMES.find((g) => g.id === 'velo')!;
+
+// Types de colis (chips, réf. Gojek/Grab — benchmark Livraison).
+export const COLIS_TYPES: { id: string; label: string; icon: string }[] = [
+  { id: 'document', label: 'Document', icon: 'document' },
+  { id: 'vetements', label: 'Vêtements', icon: 'tshirt' },
+  { id: 'medicaments', label: 'Médicaments', icon: 'pill' },
+  { id: 'electronique', label: 'Électronique', icon: 'device' },
+  { id: 'autre', label: 'Autre', icon: 'package' },
+];
+
+// Tailles de colis (tuiles S/M/L, réf. Grab/Shopee/Kakao T) — l'objet-repère
+// vit DANS la tuile : la signification des 3 tailles est lisible avant toute
+// sélection (bench IA du 12 juil.).
+export const COLIS_TAILLES: { id: string; label: string; hint: string }[] = [
+  { id: 's', label: 'S', hint: 'Tient dans une main' },
+  { id: 'm', label: 'M', hint: 'Comme un carton à chaussures' },
+  { id: 'l', label: 'L', hint: 'Se porte à deux mains' },
+];
+
+// Livraison groupée (Option B, cf. CONTEXT.md + Product Doc « B — Détection
+// automatique ») : PROPOSITION détectée par l'algorithme quand d'autres
+// Commandes existent dans le même cluster — jamais un réglage a priori.
+// Option A = livraison normale, prix standard, départ immédiat.
+// Option B = groupée, prix réduit, départ dès 2 commandes confirmées ;
+// si le seuil n'est pas atteint dans le délai → livraison simple, prix normal.
+export const GROUPEE_ECONOMIE = 250;       // réduction vs livraison normale (F CFA)
+export const GROUPAGE_MIN_COMMANDES = 2;   // seuil de déclenchement du groupage
+export const GROUPAGE_DELAI_MAX_MIN = 10;  // délai max d'attente (5–10 min)
+
+// Prestataires Livraison (mock). La plaque du vélo est un identifiant Fiw (pas
+// d'immatriculation) ; le scooter porte une vraie plaque.
+export const VELO_LIVREUR = {
+  name: 'Cheikh Mbaye',
+  vehicle: 'Vélo cargo',
+  color: 'Bleu',
+  plate: 'FIW-1042',
+  rating: 4.9,
+  trips: 435,
+  id: 'VEL-1042',
+  emoji: '🚴🏾',
+};
+
+export const MOTO_LIVREUR = {
+  name: 'Abdou Faye',
+  vehicle: 'Scooter TVS',
+  color: 'Bleu',
+  plate: 'DK-5310-E',
+  rating: 4.8,
+  trips: 1067,
+  id: 'LIV-5310',
+  emoji: '👨🏾',
+};
+
+// Répertoire du Client (mock) — le destinataire se choisit d'abord dans les
+// contacts, la saisie manuelle est le repli (retour user test du 12 juil. 2026).
+export const CONTACTS: { id: string; name: string; phone: string }[] = [
+  { id: 'c-1', name: 'Awa Diop', phone: '77 123 45 67' },
+  { id: 'c-2', name: 'Mamadou Ndiaye', phone: '78 456 12 30' },
+  { id: 'c-3', name: 'Fatou Sarr', phone: '76 890 22 14' },
+  { id: 'c-4', name: 'Ousmane Ba', phone: '70 334 55 89' },
+  { id: 'c-5', name: 'Aïda Fall', phone: '77 654 09 81' },
+];
+
+// Numéro de suivi d'une Commande livraison standard (préfixe LIV- ; YOB- est
+// réservé au Yobanté, cf. modèle conceptuel).
+export const makeTrackingNumber = () => {
+  const d = new Date();
+  const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+  return `LIV-${ymd}-${String(Math.floor(Math.random() * 900) + 100)}`;
+};
+
+// Code de remise à 4 chiffres (réf. inDrive Delivery protection) : le Client le
+// communique au destinataire ; le prestataire le demande à la remise.
+export const makeCodeRemise = () => String(Math.floor(1000 + Math.random() * 9000));
+
 export const PAYMENT_METHODS = [
   { id: 'wave', label: 'Wave', icon: '🌊', color: '#1EADFF' },
   { id: 'orange', label: 'Orange Money', icon: '🟠', color: '#FF6200' },

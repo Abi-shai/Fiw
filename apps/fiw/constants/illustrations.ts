@@ -8,6 +8,10 @@ export const GAMME_ILLUSTRATIONS = {
   auto: require('../assets/gamme-auto.png'),
   luxe: require('../assets/gamme-luxe.png'),
   covoiturage: require('../assets/gamme-covoit.png'),
+  // Scooter de livraison bleu (top-case) — gamme Moto Livraison. Le Vélo Express
+  // n'a pas encore d'illustration isométrique : il est rendu en icône `bicycle`
+  // sur plateforme (cf. écrans livraison) en attendant l'asset.
+  livraison: require('../assets/serv-livraison.png'),
 } as const;
 
 export type IlluKey = keyof typeof GAMME_ILLUSTRATIONS;

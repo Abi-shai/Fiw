@@ -12,8 +12,9 @@ import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import Button from '@/components/Button';
 import { GroupedSheet, SheetCard } from '@/components/RideSheet';
+import PaymentSheetContent from '@/components/PaymentSheet';
 import { Colors, Radii, Poppins, Shadows } from '@/constants/tokens';
-import { GAMMES, COVOITURAGE, COVOITURAGE_NODETOUR_PRICE, PAYMENT_METHODS, DAKAR_CENTER, WAIT_GRACE_MINUTES, WAIT_FEE_PER_MIN } from '@/constants/data';
+import { GAMMES, COVOITURAGE, COVOITURAGE_NODETOUR_PRICE, DAKAR_CENTER, WAIT_GRACE_MINUTES, WAIT_FEE_PER_MIN } from '@/constants/data';
 import { gammeIllustration, type IlluKey } from '@/constants/illustrations';
 
 // Séparateur de milliers façon FR/Sénégal (« 1.150 ») pour coller à la maquette.
@@ -80,58 +81,12 @@ function GammeCard({ gamme, selected, onPress }: {
   );
 }
 
-// Illustrations par moyen de paiement.
+// Illustrations par moyen de paiement (bouton de la barre de confirmation).
 const PAY_ILLUSTRATIONS: Record<string, ReturnType<typeof require>> = {
   cash: require('@/assets/argent.png'),
   wave: require('@/assets/pay-wave.png'),
   orange: require('@/assets/pay-orange.png'),
 };
-
-// Ligne moyen de paiement (façon Yango) : illustration + libellé + radio.
-function PayRow({ method, selected, onPress }: {
-  method: typeof PAYMENT_METHODS[number]; selected: boolean; onPress: () => void;
-}) {
-  const illustration = PAY_ILLUSTRATIONS[method.id];
-  return (
-    <TouchableOpacity style={styles.payRow} activeOpacity={0.85} onPress={onPress}>
-      {illustration ? (
-        <View style={styles.payIlloWrap}>
-          <Image source={illustration} style={styles.payIllo} />
-        </View>
-      ) : (
-        <View style={[styles.payLogo, { backgroundColor: method.color + '1A' }]}>
-          <Text style={styles.payEmoji}>{method.icon}</Text>
-        </View>
-      )}
-      <Text variant="label" style={styles.payName}
-        color={selected ? Colors.primary : Colors.textPrimary}>{method.label}</Text>
-      <View style={[styles.radio, selected && styles.radioSel]}>
-        {selected && <Icon name="tick" size={15} weight="bold" color={Colors.surface} />}
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-// Contenu de la feuille paiement (sélection validée à la fermeture, façon Yango).
-function PaymentSheetContent({ value, onChange, onDone }: {
-  value: string; onChange: (id: string) => void; onDone: () => void;
-}) {
-  return (
-    <View style={styles.payList}>
-      {PAYMENT_METHODS.map((m, i) => (
-        <View key={m.id}>
-          <PayRow
-            method={m}
-            selected={value === m.id}
-            onPress={() => { Haptics.selectionAsync(); onChange(m.id); }}
-          />
-          {i < PAYMENT_METHODS.length - 1 && <View style={styles.payDivider} />}
-        </View>
-      ))}
-      <Button label="Terminer" onPress={onDone} style={styles.payCta} />
-    </View>
-  );
-}
 
 export default function ConfigureScreen() {
   const insets = useSafeAreaInsets();
@@ -157,7 +112,7 @@ export default function ConfigureScreen() {
     ...COVOITURAGE,
     badge: noDetour ? 'Direct' : 'Partagé',
     basePrice: noDetour ? COVOITURAGE_NODETOUR_PRICE : COVOITURAGE.basePrice,
-    illu: (noDetour ? 'luxe' : 'covoiturage') as IlluKey,
+    illu: (noDetour ? 'luxe' : 'covoiturage') as 'luxe' | 'covoiturage',
   };
   const gamme = category === 'covoit'
     ? covoitGamme
@@ -520,20 +475,10 @@ const styles = StyleSheet.create({
   payImg: { width: 40, height: 40, borderRadius: 11 },
   cta: { flex: 1 },
 
-  // Feuille paiement.
-  payList: { paddingBottom: 4 },
-  payDivider: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.borderSubtle, marginLeft: 64 },
-  payRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12 },
-  payLogo: { width: 56, height: 56, borderRadius: Radii.lg, alignItems: 'center', justifyContent: 'center' },
-  payIlloWrap: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
-  payIllo: { width: 52, height: 52, borderRadius: 14 },
-  payEmoji: { fontSize: 28 },
-  payName: { flex: 1, fontSize: 16 },
   radio: {
     width: 26, height: 26, borderRadius: 13,
     borderWidth: 2, borderColor: Colors.textDisabled,
     alignItems: 'center', justifyContent: 'center',
   },
   radioSel: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  payCta: { marginTop: 16 },
 });

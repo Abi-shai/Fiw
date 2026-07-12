@@ -50,10 +50,33 @@ type Service = {
 
 const SERVICES: Service[] = [
   { id: 'transport',  label: 'Transport',  tagline: 'Réservez une course', icon: 'car',       iconColor: Colors.primary,  active: true },
-  { id: 'livraison',  label: 'Livraison',  tagline: 'Envoyez un colis',    icon: 'package',   iconColor: Colors.primary,  active: false },
+  { id: 'livraison',  label: 'Livraison',  tagline: 'Envoyez un colis',    icon: 'package',   iconColor: Colors.primary,  active: true },
   { id: 'location',   label: 'Location',   tagline: 'Louez un véhicule',   icon: 'handshake', iconColor: Colors.primary,  active: false },
   { id: 'assistance', label: 'Assistance', tagline: 'Dépannage & secours', icon: 'lifebuoy',  iconColor: Colors.gray700,  active: false },
 ];
+
+// Services dont la recherche d'itinéraire est câblée. La même feuille de
+// recherche sert les deux : seuls les libellés et l'écran de configuration
+// d'arrivée changent (Transport → course, Livraison → colis).
+type SearchService = 'transport' | 'livraison';
+const SEARCH_COPY: Record<SearchService, {
+  title: string; fromLabel: string; toLabel: string;
+  fromPlaceholder: string; toPlaceholder: string;
+  pickFrom: string; pickTo: string;
+}> = {
+  transport: {
+    title: 'Indiquer votre itinéraire',
+    fromLabel: 'De', toLabel: 'À',
+    fromPlaceholder: 'Saisir un point de départ…', toPlaceholder: 'Où allez-vous ?',
+    pickFrom: 'Point de départ', pickTo: 'Destination',
+  },
+  livraison: {
+    title: 'Envoyer un colis',
+    fromLabel: 'Collecte', toLabel: 'Livraison',
+    fromPlaceholder: 'Adresse de collecte…', toPlaceholder: 'Où livrer votre colis ?',
+    pickFrom: 'Point de collecte', pickTo: 'Adresse de livraison',
+  },
+};
 
 // Illustrations 3D isométriques par service (maquette Figma) — rendent les
 // tuiles plus expressives que les icônes ligne.
@@ -87,9 +110,9 @@ const SERVICE_ILLOS: Record<string, IlloCfg> = {
   assistance: { size: 88,  left: '50%', top: '50%', baseX: -47,     baseY: -44, mirror: true }, // center 50%-3 / 50%, miroir
 };
 
-function openConfigure(place: Place, departureName: string) {
+function openConfigure(service: SearchService, place: Place, departureName: string) {
   router.push({
-    pathname: '/transport/configure',
+    pathname: service === 'livraison' ? '/livraison/configure' : '/transport/configure',
     params: {
       departureName,
       destName: place.name,
@@ -225,6 +248,8 @@ export default function HomeScreen() {
   // in-place) ↔ choix d'un point sur la carte (pin fixe, carte mobile dessous).
   const [menuOpen, setMenuOpen] = useState(false);
   const [mode, setMode] = useState<'services' | 'search' | 'mappick'>('services');
+  // Service porté par la recherche en cours (Transport ou Livraison).
+  const [service, setService] = useState<SearchService>('transport');
   const [activeField, setActiveField] = useState<Field>('destination');
   // Centre courant de la carte pendant le choix sur carte (suivi via le webview).
   const [pinCenter, setPinCenter] = useState(DAKAR_CENTER);
@@ -234,7 +259,9 @@ export default function HomeScreen() {
   const [kbHeight, setKbHeight] = useState(0);
 
   // Paramètres reçus quand configure renvoie ici pour éditer l'itinéraire.
-  const editParams = useLocalSearchParams<{ editTs?: string; editDeparture?: string; editDest?: string }>();
+  const editParams = useLocalSearchParams<{
+    editTs?: string; editDeparture?: string; editDest?: string; editService?: string;
+  }>();
 
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', (e) => setKbHeight(e.endCoordinates.height));
@@ -260,6 +287,7 @@ export default function HomeScreen() {
   // `editTs` change à chaque appel pour re-déclencher l'effet à chaque édition.
   useEffect(() => {
     if (!editParams.editTs) return;
+    if (editParams.editService === 'livraison') setService('livraison');
     if (editParams.editDeparture) setDepartureName(editParams.editDeparture);
     setDestinationQuery(editParams.editDest ?? '');
     setActiveField('destination');
@@ -267,10 +295,12 @@ export default function HomeScreen() {
     snapTo(TY_EXPANDED);
   }, [editParams.editTs]);
 
-  // La tuile Transport se comporte comme la barre de recherche d'InDrive :
-  // le sheet déjà présent monte en plein écran et bascule en mode recherche.
-  const openSearch = () => {
+  // Les tuiles Transport/Livraison se comportent comme la barre de recherche
+  // d'InDrive : le sheet déjà présent monte en plein écran et bascule en mode
+  // recherche, aux couleurs du service choisi.
+  const openSearch = (svc: SearchService) => {
     Haptics.selectionAsync();
+    setService(svc);
     setMode('search');
     snapTo(TY_EXPANDED);
   };
@@ -289,7 +319,7 @@ export default function HomeScreen() {
     resetSearch();
     setMode('services');
     snapTo(TY_DEFAULT);
-    openConfigure(place, departureName);
+    openConfigure(service, place, departureName);
   };
 
   // Le `onRelease` du primitif lit le mode courant via cette ref.
@@ -323,7 +353,7 @@ export default function HomeScreen() {
 
   const onService = (s: Service) => {
     if (!s.active) return;
-    openSearch();
+    openSearch(s.id === 'livraison' ? 'livraison' : 'transport');
   };
 
   // Animation d'entrée « les véhicules arrivent en roulant et se garent » : chaque
@@ -479,7 +509,7 @@ export default function HomeScreen() {
             </View>
             <View style={[styles.pickCard, { paddingBottom: insets.bottom + 16 }]}>
               <Text variant="caption" color={Colors.textTertiary} style={styles.pickKicker}>
-                {activeField === 'departure' ? 'Point de départ' : 'Destination'}
+                {activeField === 'departure' ? SEARCH_COPY[service].pickFrom : SEARCH_COPY[service].pickTo}
               </Text>
               <View style={styles.pickRow}>
                 <Icon name="location" size={22} color={Colors.primary} />
@@ -503,25 +533,25 @@ export default function HomeScreen() {
               <Handle />
             </View>
 
-            <SheetHeader title="Indiquer votre itinéraire" onClose={closeSearch} />
+            <SheetHeader title={SEARCH_COPY[service].title} onClose={closeSearch} />
 
-            {/* Champ « De » — icône personne (le passager) + géoloc si actif */}
+            {/* Champ « De » — passager (Transport) ou colis (Livraison) + géoloc si actif */}
             <TouchableOpacity
               style={[styles.field, activeField === 'departure' && styles.fieldActive]}
               activeOpacity={0.85}
               onPress={() => setActiveField('departure')}
             >
               <View style={styles.fieldIcon}>
-                <Icon name="walk" size={22} color={Colors.textSecondary} />
+                <Icon name={service === 'livraison' ? 'package' : 'walk'} size={22} color={Colors.textSecondary} />
               </View>
               <View style={styles.fieldBody}>
-                <Text variant="caption" color={Colors.textTertiary}>De</Text>
+                <Text variant="caption" color={Colors.textTertiary}>{SEARCH_COPY[service].fromLabel}</Text>
                 {activeField === 'departure' ? (
                   <TextInput
                     style={styles.fieldInput}
                     value={departureQuery}
                     onChangeText={setDepartureQuery}
-                    placeholder="Saisir un point de départ…"
+                    placeholder={SEARCH_COPY[service].fromPlaceholder}
                     placeholderTextColor={Colors.textTertiary}
                     autoFocus
                   />
@@ -542,13 +572,13 @@ export default function HomeScreen() {
                 <Icon name="search" size={20} color={Colors.textSecondary} />
               </View>
               <View style={styles.fieldBody}>
-                <Text variant="caption" color={Colors.textTertiary}>À</Text>
+                <Text variant="caption" color={Colors.textTertiary}>{SEARCH_COPY[service].toLabel}</Text>
                 <TextInput
                   style={styles.fieldInput}
                   value={destinationQuery}
                   onFocus={() => setActiveField('destination')}
                   onChangeText={setDestinationQuery}
-                  placeholder="Où allez-vous ?"
+                  placeholder={SEARCH_COPY[service].toPlaceholder}
                   placeholderTextColor={Colors.textTertiary}
                   autoFocus={activeField === 'destination'}
                 />
@@ -618,7 +648,7 @@ export default function HomeScreen() {
                   title={r.name}
                   subtitle={r.detail}
                   trailing="chevronRight"
-                  onPress={() => openConfigure(r, departureName)}
+                  onPress={() => openConfigure('transport', r, departureName)}
                 />
               ))}
             </ScrollView>
