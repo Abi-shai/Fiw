@@ -9,6 +9,7 @@ import {
   SpeakerHigh, SpeakerSlash, Microphone, MicrophoneSlash, LockSimple,
   Bicycle, CalendarBlank, FileText, TShirt, Pill, DeviceMobile, Barcode, ShieldCheck,
   User, AddressBook, PaperPlaneTilt, UsersThree,
+  Gift, Question, UserCircleGear,
   type IconProps as PhosphorProps,
 } from 'phosphor-react-native';
 import { Colors } from '@/constants/tokens';
@@ -73,6 +74,10 @@ const REGISTRY = {
   contacts: AddressBook,
   send: PaperPlaneTilt,
   group: UsersThree,
+  // Menu latéral
+  account: UserCircleGear,
+  gift: Gift,
+  help: Question,
 } as const;
 
 export type IconName = keyof typeof REGISTRY;

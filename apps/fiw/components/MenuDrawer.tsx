@@ -16,24 +16,53 @@ const SPRING = { stiffness: 300, damping: 30, mass: 1, useNativeDriver: true };
 const CLOSE_DX = DRAWER_W * 0.30; // déplacement minimal pour déclencher la fermeture
 const CLOSE_VX = 0.5;              // vélocité minimale (px/ms) pour déclencher la fermeture
 
+// Proto : statut d'affiliation du Client. Bascule pour voir les deux états de
+// l'item Affiliation — mini CTA « Gagner de l'argent » (non affilié) ·
+// sous-lignes solde/recrutés (Affilié Réseau actif).
+const IS_AFFILIATE = true;
+
+type SubRow = { label: string; value: string };
 type MenuItemProps = {
   icon: IconName;
   label: string;
   badge?: string;
+  /** Ligne d'accroche sous le label (accent) — sert de CTA discret. */
+  subtitle?: string;
+  /** Lignes d'info indentées sous l'item (mini tableau de bord). */
+  subRows?: SubRow[];
   onPress?: () => void;
 };
 
-function MenuItem({ icon, label, badge, onPress }: MenuItemProps) {
+function MenuItem({ icon, label, badge, subtitle, subRows, onPress }: MenuItemProps) {
   return (
     <TouchableOpacity style={styles.item} onPress={onPress} activeOpacity={0.7}>
-      <Icon name={icon} size={22} color={Colors.textSecondary} />
-      <Text variant="body" style={styles.itemLabel}>{label}</Text>
-      {badge && (
-        <View style={styles.badgeWrap}>
-          <Text variant="caption" color={Colors.primary}>{badge}</Text>
+      <View style={styles.itemRow}>
+        <Icon name={icon} size={22} color={Colors.textSecondary} />
+        <View style={styles.itemLabel}>
+          <Text variant="body">{label}</Text>
+          {subtitle && (
+            <Text variant="caption" color={Colors.primary} style={styles.itemSubtitle}>
+              {subtitle}
+            </Text>
+          )}
+        </View>
+        {badge && (
+          <View style={styles.badgeWrap}>
+            <Text variant="caption" color={Colors.primary}>{badge}</Text>
+          </View>
+        )}
+        <Icon name="chevronRight" size={16} color={Colors.textTertiary} />
+      </View>
+      {subRows && subRows.length > 0 && (
+        <View style={styles.subRows}>
+          {subRows.map((r) => (
+            <View key={r.label} style={styles.subRow}>
+              <Text variant="caption" color={Colors.textSecondary}>{r.label}</Text>
+              <Text variant="caption" color={Colors.textPrimary}>{r.value}</Text>
+            </View>
+          ))}
         </View>
       )}
-      <Icon name="chevronRight" size={16} color={Colors.textTertiary} />
     </TouchableOpacity>
   );
 }
@@ -129,18 +158,32 @@ export default function MenuDrawer({ visible, onClose }: Props) {
 
         <View style={styles.divider} />
 
-        <MenuItem icon="rider" label="Mon compte & sécurité" />
+        <MenuItem icon="account" label="Mon compte & sécurité" />
         <MenuItem
           icon="clock"
           label="Historique"
           onPress={() => { onCloseRef.current(); router.push('/history'); }}
         />
-        <MenuItem icon="hail" label="Affiliation" />
-        <MenuItem icon="star" label="Fidélité" badge="240 pts" />
+        <MenuItem icon="gift" label="Fidélité" badge="240 pts" />
 
         <View style={styles.divider} />
 
-        <MenuItem icon="info" label="Aide & support" />
+        {IS_AFFILIATE ? (
+          <MenuItem
+            icon="group"
+            label="Affiliation"
+            subRows={[
+              { label: 'Solde', value: '4 200 F' },
+              { label: 'Personnes recrutées', value: '12' },
+            ]}
+          />
+        ) : (
+          <MenuItem icon="group" label="Affiliation" subtitle="Gagner de l'argent" />
+        )}
+
+        <View style={styles.divider} />
+
+        <MenuItem icon="help" label="Aide & support" />
       </Animated.View>
     </View>
   );
@@ -183,14 +226,31 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
     paddingHorizontal: 24,
     paddingVertical: 14,
   },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
   itemLabel: {
     flex: 1,
+  },
+  itemSubtitle: {
+    marginTop: 2,
+  },
+  // Sous-lignes indentées (mini tableau de bord) — alignées sous le label
+  // (largeur icône 22 + gap 14 = 36) et légèrement décalées vers la droite.
+  subRows: {
+    marginLeft: 36,
+    marginTop: 10,
+    gap: 7,
+  },
+  subRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   badgeWrap: {
     backgroundColor: Colors.primarySubtle,

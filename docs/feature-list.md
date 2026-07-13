@@ -138,11 +138,11 @@
 - Code Prestataire Unique : vérifier → confirmer comme prioritaire
 - Partage prestataire vers Affilié Partenaire (Réseau uniquement)
 - Historique commissions
-- Bannière phase test : commissions comptabilisées, paiement différé, statut « Partenaire Fondateur »
+- **Phase de lancement (« Partenaire Fondateur »)** : au démarrage, commissions comptabilisées mais **paiement différé** (retrait cash pas encore ouvert). Le retrait cash des **Gains** via Mobile Money est le **modèle cible** ; la date de bascule est une décision Blaise & Daniel *(à définir)*.
 
 ### Fidélité & Réductions
 - Solde de points (1 pt / 100 F CFA)
-- Historique gains
+- Historique des points
 - Conversion : course gratuite ou réduction
 - Niveau de fidélité
 

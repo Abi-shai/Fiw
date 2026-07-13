@@ -74,6 +74,14 @@ _Avoid_ : frais de retard, pénalité d'attente
 14 % du montant de chaque course, prélevés automatiquement sur le wallet du prestataire à la fin de chaque course.
 _Avoid_ : frais de plateforme, cut, pourcentage
 
+**Gains** :
+Argent accumulé par l'Affilié Réseau à partir de sa commission de 2 %, encaissable via Mobile Money. Réserve propre à l'Affilié Réseau, distincte du Wallet du Prestataire (flux inverse : le Wallet paie Fiw, les Gains sont retirés par l'affilié vers son Mobile Money).
+_Avoid_ : wallet affilié, cagnotte, portefeuille, commissions (le mécanisme, pas la somme)
+
+**Solde** :
+Terme transversal désignant le *montant courant* d'une réserve — ce qui est retirable / disponible maintenant. S'emploie pour le Wallet (Prestataire), les Gains (Affilié Réseau) et les Points Fidélité (Client). N'est jamais le nom d'une réserve : le conteneur garde son nom (Wallet, Gains, Fidélité) et « Solde » désigne seulement le nombre affiché dedans.
+_Avoid_ : employer « Solde » comme nom d'une réserve (dire « le Wallet » / « les Gains », pas « le Solde »)
+
 **Mobile Money** :
 Moyen de paiement principal. Comprend Wave, Orange Money et Free Money. Les frais de transaction Mobile Money sont supportés par le prestataire (pas par Fiw).
 _Avoid_ : paiement mobile, transfert mobile
