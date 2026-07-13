@@ -42,4 +42,11 @@ export const Colors = {
   online:     '#10B981',
   offline:    '#9CA3AF',
   walletLow:  '#EF4444',
+
+  // Utilitaires partagés avec le design system
+  gray600:    '#4B5563',
+  gray700:    '#374151',
+  hairline:   'rgba(17, 24, 39, 0.08)',
+  errorPressed: '#DC2626',
+  overlay:    'rgba(0, 0, 0, 0.5)',
 };
