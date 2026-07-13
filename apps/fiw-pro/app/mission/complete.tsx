@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, SafeAreaView
+  View, StyleSheet, TouchableOpacity,
+  ScrollView, SafeAreaView,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Colors } from '@/constants/colors';
+import { Colors, Spacing, Radii, Shadows, Poppins } from '@/constants/tokens';
+import Text from '@/components/Text';
+import Icon from '@/components/Icon';
 import Button from '@/components/Button';
 import { MISSION_INCOMING, PRESTATAIRE, COMMISSION_RATE } from '@/constants/data';
 
@@ -24,37 +26,37 @@ export default function CompleteScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Header */}
+        {/* En-tête */}
         <View style={styles.header}>
           <View style={styles.checkCircle}>
-            <Text style={styles.checkIcon}>✓</Text>
+            <Icon name="tick" size={36} color={Colors.textOnPrimary} />
           </View>
-          <Text style={styles.title}>Mission terminée</Text>
-          <Text style={styles.missionId}>{MISSION_INCOMING.id}</Text>
+          <Text variant="display" style={{ marginBottom: 4 }}>Mission terminée</Text>
+          <Text variant="caption" color={Colors.textTertiary}>{MISSION_INCOMING.id}</Text>
         </View>
 
         {/* Récapitulatif financier */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Récapitulatif</Text>
+          <Text variant="label" style={styles.cardTitle}>Récapitulatif</Text>
 
           <View style={styles.lineRow}>
-            <Text style={styles.lineLabel}>Montant brut</Text>
-            <Text style={styles.lineValue}>{montantBrut.toLocaleString('fr-FR')} F CFA</Text>
+            <Text variant="bodySmall" color={Colors.textSecondary}>Montant brut</Text>
+            <Text variant="label">{montantBrut.toLocaleString('fr-FR')} F CFA</Text>
           </View>
           <View style={styles.lineRow}>
-            <Text style={styles.lineLabel}>Commission Fiw (14 %)</Text>
-            <Text style={styles.lineValueNeg}>−{commission.toLocaleString('fr-FR')} F CFA</Text>
+            <Text variant="bodySmall" color={Colors.textSecondary}>Commission Fiw (14 %)</Text>
+            <Text variant="label" color={Colors.error}>−{commission.toLocaleString('fr-FR')} F CFA</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.lineRow}>
-            <Text style={styles.lineLabelBold}>Net perçu</Text>
-            <Text style={styles.lineValueBold}>{netPercu.toLocaleString('fr-FR')} F CFA</Text>
+            <Text variant="label" style={{ fontFamily: Poppins.semibold, fontSize: 16 }}>Net perçu</Text>
+            <Text variant="heading2" color={Colors.primary}>{netPercu.toLocaleString('fr-FR')} F CFA</Text>
           </View>
 
           <View style={styles.walletNotice}>
-            <Text style={styles.walletNoticeText}>
-              Commission débité de votre Wallet · Nouveau solde :{' '}
-              <Text style={styles.walletSoldeNew}>
+            <Text variant="caption" color={Colors.primary}>
+              Commission débitée de votre Wallet · Nouveau solde :{' '}
+              <Text variant="caption" color={Colors.primary} style={{ fontFamily: Poppins.bold }}>
                 {(PRESTATAIRE.walletSolde - commission).toLocaleString('fr-FR')} F
               </Text>
             </Text>
@@ -63,28 +65,31 @@ export default function CompleteScreen() {
 
         {/* Trajet */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Trajet</Text>
+          <Text variant="label" style={styles.cardTitle}>Trajet</Text>
           <View style={styles.routeRow}>
             <View style={[styles.routeDot, { backgroundColor: Colors.primary }]} />
-            <Text style={styles.routeText}>{MISSION_INCOMING.pickup.name}</Text>
+            <Text variant="bodySmall">{MISSION_INCOMING.pickup.name}</Text>
           </View>
           <View style={styles.routeLine} />
           <View style={styles.routeRow}>
             <View style={[styles.routeDot, { backgroundColor: Colors.error }]} />
-            <Text style={styles.routeText}>{MISSION_INCOMING.destination.name}</Text>
+            <Text variant="bodySmall">{MISSION_INCOMING.destination.name}</Text>
           </View>
-          <Text style={styles.routeMeta}>{MISSION_INCOMING.distance} · {MISSION_INCOMING.type}</Text>
+          <Text variant="caption" color={Colors.textTertiary} style={{ marginTop: Spacing[2] }}>
+            {MISSION_INCOMING.distance} · {MISSION_INCOMING.type}
+          </Text>
         </View>
 
         {/* ÉvaluationClient — privée */}
         <View style={styles.card}>
           <View style={styles.evalHeader}>
-            <Text style={styles.cardTitle}>Évaluation client</Text>
+            <Text variant="label" style={styles.cardTitle}>Évaluation client</Text>
             <View style={styles.privateBadge}>
-              <Text style={styles.privateText}>🔒 Privée</Text>
+              <Icon name="lock" size={11} color={Colors.textSecondary} />
+              <Text variant="caption" color={Colors.textSecondary} style={{ marginLeft: 4 }}>Privée</Text>
             </View>
           </View>
-          <Text style={styles.evalHint}>
+          <Text variant="bodySmall" color={Colors.textTertiary} style={{ marginBottom: Spacing[4] }}>
             Non visible par {MISSION_INCOMING.clientName}. Utilisée pour améliorer l'expérience globale.
           </Text>
 
@@ -96,13 +101,18 @@ export default function CompleteScreen() {
                 activeOpacity={0.7}
                 disabled={submitted}
               >
-                <Text style={[styles.star, star <= rating && styles.starActive]}>★</Text>
+                <Icon
+                  name="star"
+                  size={32}
+                  weight={star <= rating ? 'fill' : 'regular'}
+                  color={star <= rating ? Colors.warning : Colors.border}
+                />
               </TouchableOpacity>
             ))}
           </View>
 
           {rating > 0 && (
-            <Text style={styles.ratingLabel}>
+            <Text variant="bodySmall" color={Colors.textSecondary} align="center" style={{ marginTop: 4 }}>
               {['', 'Très mauvais', 'Mauvais', 'Correct', 'Bien', 'Excellent'][rating]}
             </Text>
           )}
@@ -110,7 +120,9 @@ export default function CompleteScreen() {
 
         {submitted ? (
           <View style={styles.successRow}>
-            <Text style={styles.successText}>Évaluation enregistrée · Retour au tableau de bord…</Text>
+            <Text variant="label" color={Colors.primary} align="center">
+              Évaluation enregistrée · Retour au tableau de bord…
+            </Text>
           </View>
         ) : (
           <Button
@@ -125,83 +137,79 @@ export default function CompleteScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  scroll: { padding: 24, paddingBottom: 48 },
-  header: { alignItems: 'center', marginBottom: 24 },
+  container: { flex: 1, backgroundColor: Colors.bg },
+  scroll: { padding: Spacing[6], paddingBottom: 48 },
+  header: { alignItems: 'center', marginBottom: Spacing[6] },
   checkCircle: {
     width: 72, height: 72,
     borderRadius: 36,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
+    marginBottom: Spacing[4],
+    ...Shadows.lg,
   },
-  checkIcon: { fontSize: 36, color: Colors.white, fontWeight: '700' },
-  title: { fontSize: 24, fontWeight: '800', color: Colors.black, marginBottom: 4 },
-  missionId: { fontSize: 13, color: Colors.textTertiary },
   card: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
+    backgroundColor: Colors.surface,
+    borderRadius: Radii.lg,
     padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    marginBottom: Spacing[4],
+    ...Shadows.sm,
   },
-  cardTitle: { fontSize: 14, fontWeight: '700', color: Colors.black, marginBottom: 14, textTransform: 'uppercase', letterSpacing: 0.5 },
-  lineRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  lineLabel: { fontSize: 14, color: Colors.textSecondary },
-  lineValue: { fontSize: 14, fontWeight: '600', color: Colors.black },
-  lineValueNeg: { fontSize: 14, fontWeight: '600', color: Colors.error },
-  lineLabelBold: { fontSize: 16, fontWeight: '700', color: Colors.black },
-  lineValueBold: { fontSize: 18, fontWeight: '800', color: Colors.primary },
+  cardTitle: {
+    fontFamily: Poppins.bold,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
+    marginBottom: 14,
+  },
+  lineRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   divider: { height: 1, backgroundColor: Colors.border, marginVertical: 10 },
   walletNotice: {
     marginTop: 12,
-    backgroundColor: Colors.primaryLight,
-    borderRadius: 10,
+    backgroundColor: Colors.primarySubtle,
+    borderRadius: Radii.sm,
     padding: 10,
   },
-  walletNoticeText: { fontSize: 12, color: Colors.primaryMid },
-  walletSoldeNew: { fontWeight: '700', color: Colors.primary },
   routeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
   routeDot: { width: 10, height: 10, borderRadius: 5 },
-  routeText: { fontSize: 14, fontWeight: '500', color: Colors.black },
   routeLine: {
     width: 2, height: 12,
     backgroundColor: Colors.border,
     marginLeft: 4, marginBottom: 4,
   },
-  routeMeta: { fontSize: 12, color: Colors.textTertiary, marginTop: 8 },
-  evalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  evalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
   privateBadge: {
-    backgroundColor: Colors.background,
-    borderRadius: 10,
-    paddingHorizontal: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.bg,
+    borderRadius: Radii.sm,
+    paddingHorizontal: Spacing[2],
     paddingVertical: 4,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  privateText: { fontSize: 11, color: Colors.textSecondary, fontWeight: '500' },
-  evalHint: { fontSize: 13, color: Colors.textTertiary, marginBottom: 16, lineHeight: 18 },
-  starsRow: { flexDirection: 'row', gap: 8, justifyContent: 'center', marginBottom: 8 },
-  star: { fontSize: 36, color: Colors.border },
-  starActive: { color: Colors.star },
-  ratingLabel: { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', marginTop: 4 },
-  submitBtn: { marginTop: 8 },
-  successRow: {
-    backgroundColor: Colors.primaryLight,
-    borderRadius: 14,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
+  starsRow: {
+    flexDirection: 'row',
+    gap: Spacing[2],
+    justifyContent: 'center',
+    marginBottom: Spacing[2],
   },
-  successText: { fontSize: 14, color: Colors.primary, fontWeight: '600', textAlign: 'center' },
+  submitBtn: { marginTop: Spacing[2] },
+  successRow: {
+    backgroundColor: Colors.primarySubtle,
+    borderRadius: Radii.md,
+    padding: Spacing[4],
+    alignItems: 'center',
+    marginTop: Spacing[2],
+  },
 });

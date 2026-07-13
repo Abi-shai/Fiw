@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, KeyboardAvoidingView,
-  Platform, TouchableOpacity, ScrollView
+  View, StyleSheet, TextInput, KeyboardAvoidingView,
+  Platform, TouchableOpacity, ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Colors } from '@/constants/colors';
+import { Colors, Spacing, Radii, Shadows, Poppins } from '@/constants/tokens';
+import Text from '@/components/Text';
 import Button from '@/components/Button';
 
 export default function OnboardingScreen() {
@@ -17,19 +18,26 @@ export default function OnboardingScreen() {
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Text style={styles.logoText}>fiw</Text>
-            <Text style={styles.logoPro}>pro</Text>
+          <View style={styles.logoBox}>
+            <Text style={{ fontFamily: Poppins.bold, fontSize: 32, color: Colors.textOnPrimary, letterSpacing: -1 }}>
+              fiw
+            </Text>
+            <Text style={{ fontFamily: Poppins.bold, fontSize: 14, color: Colors.primarySubtle, marginLeft: 4, marginBottom: 4, letterSpacing: 1 }}>
+              pro
+            </Text>
           </View>
-          <Text style={styles.tagline}>Votre espace prestataire</Text>
+          <Text variant="body" color={Colors.textSecondary}>Votre espace prestataire</Text>
         </View>
 
         <View style={styles.form}>
-          <Text style={styles.title}>Connexion</Text>
-          <Text style={styles.subtitle}>Entrez votre numéro pour continuer</Text>
+          <Text variant="display" style={{ marginBottom: Spacing[2] }}>Connexion</Text>
+          <Text variant="body" color={Colors.textSecondary} style={{ marginBottom: Spacing[8] }}>
+            Entrez votre numéro pour continuer
+          </Text>
 
           <View style={styles.inputWrapper}>
-            <Text style={styles.flag}>🇸🇳</Text>
+            {/* 🇸🇳 drapeau emoji — pas d'équivalent Phosphor */}
+            <Text style={{ fontSize: 22, marginRight: 10 }}>🇸🇳</Text>
             <TextInput
               style={styles.input}
               value={phone}
@@ -40,20 +48,22 @@ export default function OnboardingScreen() {
             />
           </View>
 
-          <Button
-            label="Continuer"
-            onPress={() => router.push('/otp')}
-            style={styles.btn}
-          />
+          <Button label="Continuer" onPress={() => router.push('/otp')} style={{ marginTop: Spacing[2] }} />
 
           <TouchableOpacity onPress={() => router.push('/otp')} style={styles.createLink}>
-            <Text style={styles.createText}>Pas encore inscrit ? <Text style={styles.createBold}>Créer un compte</Text></Text>
+            <Text variant="bodySmall" color={Colors.textSecondary} align="center">
+              Pas encore inscrit ?{' '}
+              <Text variant="bodySmall" color={Colors.primary} style={{ fontFamily: Poppins.semibold }}>
+                Créer un compte
+              </Text>
+            </Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>En continuant, vous acceptez les{' '}
-            <Text style={styles.footerLink}>Conditions d'utilisation</Text>
+          <Text variant="caption" color={Colors.textTertiary} align="center">
+            En continuant, vous acceptez les{' '}
+            <Text variant="caption" color={Colors.primary}>Conditions d'utilisation</Text>
           </Text>
         </View>
       </ScrollView>
@@ -62,54 +72,37 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
-  scroll: { flexGrow: 1, paddingHorizontal: 24 },
-  header: { alignItems: 'center', paddingTop: 80, paddingBottom: 48 },
-  logoContainer: {
+  container: { flex: 1, backgroundColor: Colors.surface },
+  scroll: { flexGrow: 1, paddingHorizontal: Spacing[6] },
+  header: { alignItems: 'center', paddingTop: 80, paddingBottom: Spacing[12] },
+  logoBox: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     backgroundColor: Colors.primary,
     paddingHorizontal: 18,
     paddingVertical: 14,
-    borderRadius: 24,
-    marginBottom: 16,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 8,
+    borderRadius: Radii.xl,
+    marginBottom: Spacing[4],
+    ...Shadows.lg,
   },
-  logoText: { fontSize: 32, fontWeight: '800', color: Colors.white, letterSpacing: -1 },
-  logoPro: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.primaryLight,
-    marginLeft: 4,
-    marginBottom: 4,
-    letterSpacing: 1,
-  },
-  tagline: { fontSize: 15, color: Colors.textSecondary },
   form: { flex: 1 },
-  title: { fontSize: 28, fontWeight: '700', color: Colors.black, marginBottom: 8 },
-  subtitle: { fontSize: 15, color: Colors.textSecondary, marginBottom: 32 },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background,
-    borderRadius: 14,
+    backgroundColor: Colors.bg,
+    borderRadius: Radii.md,
     borderWidth: 1.5,
     borderColor: Colors.border,
-    paddingHorizontal: 16,
-    marginBottom: 16,
+    paddingHorizontal: Spacing[4],
+    marginBottom: Spacing[4],
     height: 56,
   },
-  flag: { fontSize: 22, marginRight: 10 },
-  input: { flex: 1, fontSize: 17, color: Colors.black, fontWeight: '500' },
-  btn: { marginTop: 8 },
-  createLink: { marginTop: 20, alignItems: 'center' },
-  createText: { fontSize: 14, color: Colors.textSecondary },
-  createBold: { color: Colors.primary, fontWeight: '600' },
-  footer: { paddingVertical: 32, alignItems: 'center' },
-  footerText: { fontSize: 12, color: Colors.textTertiary, textAlign: 'center' },
-  footerLink: { color: Colors.primary },
+  input: {
+    flex: 1,
+    fontSize: 17,
+    color: Colors.textPrimary,
+    fontFamily: Poppins.medium,
+  },
+  createLink: { marginTop: Spacing[6], alignItems: 'center' },
+  footer: { paddingVertical: Spacing[8], alignItems: 'center' },
 });
