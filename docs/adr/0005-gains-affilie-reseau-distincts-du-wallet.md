@@ -30,5 +30,5 @@ Restait aussi ouvert : les commissions de l'affilié sont-elles dépensables in-
 
 - `CONTEXT.md` porte **Gains** et **Solde** ; **Wallet** reste réservé au Prestataire.
 - `conceptual-model.md` §AffiliéRéseau : attribut **Solde des Gains** + action **Retirer** (Gains → Mobile Money), sans entité propre (réserve scalaire portée par le compte).
-- Le retrait cash est le **modèle cible (long terme)**. Au lancement, le paiement sera vraisemblablement **différé** (phase « Partenaire Fondateur ») ; la date de bascule est une décision Blaise & Daniel, à définir.
+- Le retrait cash est le **modèle cible (long terme)**. Au lancement, le paiement sera vraisemblablement **différé** (phase « Affilié Fondateur », d'abord formulée « Partenaire Fondateur » — renommée pour éviter la collision avec Affilié Partenaire) ; la date de bascule est une décision Blaise & Daniel, à définir.
 - **Seuil minimum de retrait** : à définir (Blaise & Daniel).

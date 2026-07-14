@@ -145,7 +145,7 @@ Rôle activé par un Client ou un Prestataire depuis leur application respective
 
 **Actions :** Recruter, Retirer (Gains → Mobile Money — soumis à un seuil minimum de retrait *à définir par Blaise & Daniel*)
 
-**Modèle de données :** flag + dashboard sur le compte Client/Prestataire existant — pas d'entité propre, pas de relations supplémentaires à modéliser. Les Gains sont une réserve scalaire (solde + journal de mouvements) portée par le compte, pas un objet distinct. *Décidé en travaillant la sitemap : la bannière d'affiliation reste à l'intérieur du compte existant. Retrait cash via Mobile Money = **modèle cible (long terme)**, acté au meeting client du 27 juin 2026. **Au démarrage**, le paiement sera vraisemblablement **différé** (commissions comptabilisées sans versement, phase « Partenaire Fondateur ») ; la date de bascule vers le retrait ouvert est une décision Blaise & Daniel, à définir.*
+**Modèle de données :** flag + dashboard sur le compte Client/Prestataire existant — pas d'entité propre, pas de relations supplémentaires à modéliser. Les Gains sont une réserve scalaire (solde + journal de mouvements) portée par le compte, pas un objet distinct. *Décidé en travaillant la sitemap : la bannière d'affiliation reste à l'intérieur du compte existant. Retrait cash via Mobile Money = **modèle cible (long terme)**, acté au meeting client du 27 juin 2026. **Au démarrage**, le paiement sera vraisemblablement **différé** (commissions comptabilisées sans versement, phase « Affilié Fondateur » — d'abord formulée « Partenaire Fondateur », renommée pour éviter la collision avec Affilié Partenaire, cf. CONTEXT.md) ; la date de bascule vers le retrait ouvert est une décision Blaise & Daniel, à définir.*
 
 ---
 

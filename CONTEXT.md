@@ -18,6 +18,10 @@ _Avoid_ : chauffeur (trop restrictif), livreur (trop restrictif), conducteur
 Personne physique (particulier, étudiant, commerçant) qui recrute des clients et des prestataires et perçoit une commission de 2 % sur les courses générées. **Rôle**, pas un compte distinct — un flag activé sur le compte Client ou Prestataire existant, avec un tableau de bord dans le menu de l'app concernée. Pas d'application séparée, pas de connexion séparée.
 _Avoid_ : parrain, ambassadeur, apporteur d'affaires
 
+**Affilié Fondateur** :
+Statut de reconnaissance des Affiliés Réseau de la **cohorte de lancement** — ceux dont les Gains sont comptabilisés pendant la phase de paiement différé, avant l'ouverture du retrait cash. Distinction early-adopter, pas un rôle distinct de l'Affilié Réseau.
+_Avoid_ : **Partenaire Fondateur** — formulation d'origine (feature-list), conservée dans l'historique mais **plus employée** : le mot « Partenaire » collisionne avec **Affilié Partenaire** (entité entreprise, 4 %) et laisse croire à un changement de rôle. Aussi : Membre Fondateur, Pionnier, Ambassadeur Fondateur.
+
 **Affilié Partenaire** :
 Entreprise ou commerce (restaurant, hôtel, agence…) qui génère des courses depuis son point physique et perçoit une commission de 4 % sur ces courses. **Entité distincte**, pas un rôle sur un compte Client — une entreprise n'est pas une personne physique et peut avoir plusieurs membres accédant au même tableau de bord. Reste à l'intérieur de l'écosystème Fiw (pas d'app séparée à installer), mais avec son propre contexte de connexion/compte.
 _Avoid_ : partenaire commercial, point de vente

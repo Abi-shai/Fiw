@@ -21,6 +21,12 @@ const CLOSE_VX = 0.5;              // vélocité minimale (px/ms) pour déclench
 // sous-lignes solde/recrutés (Affilié Réseau actif).
 const IS_AFFILIATE = true;
 
+// Proto : phase de lancement « Affilié Fondateur » — les Gains s'accumulent
+// mais le retrait cash (Mobile Money) n'est pas encore ouvert. Passe à true
+// quand il l'est → le libellé redevient « Solde disponible » et la note
+// « Retrait bientôt disponible » disparaît.
+const RETRAIT_OUVERT = false;
+
 type SubRow = { label: string; value: string };
 type MenuItemProps = {
   icon: IconName;
@@ -30,10 +36,12 @@ type MenuItemProps = {
   subtitle?: string;
   /** Lignes d'info indentées sous l'item (mini tableau de bord). */
   subRows?: SubRow[];
+  /** Note discrète (icône + texte tertiaire) sous les sous-lignes — statut léger. */
+  note?: { icon?: IconName; text: string };
   onPress?: () => void;
 };
 
-function MenuItem({ icon, label, badge, subtitle, subRows, onPress }: MenuItemProps) {
+function MenuItem({ icon, label, badge, subtitle, subRows, note, onPress }: MenuItemProps) {
   return (
     <TouchableOpacity style={styles.item} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.itemRow}>
@@ -61,6 +69,12 @@ function MenuItem({ icon, label, badge, subtitle, subRows, onPress }: MenuItemPr
               <Text variant="caption" color={Colors.textPrimary}>{r.value}</Text>
             </View>
           ))}
+        </View>
+      )}
+      {note && (
+        <View style={styles.note}>
+          {note.icon && <Icon name={note.icon} size={13} color={Colors.textTertiary} />}
+          <Text variant="caption" color={Colors.textTertiary}>{note.text}</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -173,9 +187,10 @@ export default function MenuDrawer({ visible, onClose }: Props) {
             icon="group"
             label="Affiliation"
             subRows={[
-              { label: 'Solde', value: '4 200 F' },
+              { label: RETRAIT_OUVERT ? 'Solde disponible' : 'Solde', value: '4 200 F' },
               { label: 'Personnes recrutées', value: '12' },
             ]}
+            note={RETRAIT_OUVERT ? undefined : { icon: 'hourglass', text: 'Retrait bientôt disponible' }}
           />
         ) : (
           <MenuItem icon="group" label="Affiliation" subtitle="Gagner de l'argent" />
@@ -251,6 +266,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  // Note discrète sous les sous-lignes (ex. « Retrait bientôt disponible »)
+  note: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginLeft: 36,
+    marginTop: 8,
   },
   badgeWrap: {
     backgroundColor: Colors.primarySubtle,

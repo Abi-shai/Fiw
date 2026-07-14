@@ -138,7 +138,7 @@
 - Code Prestataire Unique : vérifier → confirmer comme prioritaire
 - Partage prestataire vers Affilié Partenaire (Réseau uniquement)
 - Historique commissions
-- **Phase de lancement (« Partenaire Fondateur »)** : au démarrage, commissions comptabilisées mais **paiement différé** (retrait cash pas encore ouvert). Le retrait cash des **Gains** via Mobile Money est le **modèle cible** ; la date de bascule est une décision Blaise & Daniel *(à définir)*.
+- **Phase de lancement (statut « Affilié Fondateur »)** : au démarrage, commissions comptabilisées mais **paiement différé** (retrait cash pas encore ouvert). Le retrait cash des **Gains** via Mobile Money est le **modèle cible** ; la date de bascule est une décision Blaise & Daniel *(à définir)*. *(Statut d'abord formulé « Partenaire Fondateur » ; renommé pour éviter la collision avec Affilié Partenaire — cf. `CONTEXT.md`.)*
 
 ### Fidélité & Réductions
 - Solde de points (1 pt / 100 F CFA)
