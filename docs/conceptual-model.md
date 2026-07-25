@@ -139,13 +139,13 @@ Demande de location longue durée d'une ressource (Véhicule ou Parking) apparte
 ---
 
 ### AffiliéRéseau
-Rôle activé par un Client ou un Prestataire depuis leur application respective. Permet de recruter d'autres clients et prestataires, et de percevoir 2 % de commission sur les Commandes générées. Ces commissions s'accumulent dans les **Gains** — réserve propre à l'affilié, **encaissable via Mobile Money uniquement**, jamais dépensable in-app (l'usage in-app de la valeur reste propre aux Points Fidélité).
+Rôle activé par un **Client** depuis l'app Fiw (Client uniquement — ADR 0005, modèle « 1 affilié = 1 app »). Permet de recruter d'autres clients et prestataires (les **Affiliés**), et de percevoir 2 % du montant brut sur les Commandes générées. Ces commissions s'accumulent dans les **Gains** — réserve propre à l'affilié, **encaissable via Mobile Money uniquement**, jamais dépensable in-app (l'usage in-app de la valeur reste propre aux Points Fidélité).
 
 **Attributs :** Solde des Gains (montant retirable), historique des mouvements (crédits = commissions perçues, débits = retraits)
 
 **Actions :** Recruter, Retirer (Gains → Mobile Money — soumis à un seuil minimum de retrait *à définir par Blaise & Daniel*)
 
-**Modèle de données :** flag + dashboard sur le compte Client/Prestataire existant — pas d'entité propre, pas de relations supplémentaires à modéliser. Les Gains sont une réserve scalaire (solde + journal de mouvements) portée par le compte, pas un objet distinct. *Décidé en travaillant la sitemap : la bannière d'affiliation reste à l'intérieur du compte existant. Retrait cash via Mobile Money = **modèle cible (long terme)**, acté au meeting client du 27 juin 2026. **Au démarrage**, le paiement sera vraisemblablement **différé** (commissions comptabilisées sans versement, phase « Affilié Fondateur » — d'abord formulée « Partenaire Fondateur », renommée pour éviter la collision avec Affilié Partenaire, cf. CONTEXT.md) ; la date de bascule vers le retrait ouvert est une décision Blaise & Daniel, à définir.*
+**Modèle de données :** flag + dashboard sur le compte Client existant — pas d'entité propre, pas de relations supplémentaires à modéliser. Les Gains sont une réserve scalaire (solde + journal de mouvements) portée par le compte, pas un objet distinct. *Décidé en travaillant la sitemap : la bannière d'affiliation reste à l'intérieur du compte existant. Un Prestataire ne peut pas activer ce rôle depuis Fiw Pro (ADR 0005). Retrait cash via Mobile Money = **modèle cible (long terme)**, acté au meeting client du 27 juin 2026. **Au démarrage**, le paiement sera vraisemblablement **différé** (commissions comptabilisées sans versement, phase « Affilié Fondateur » — d'abord formulée « Partenaire Fondateur », renommée pour éviter la collision avec Affilié Partenaire, cf. CONTEXT.md) ; la date de bascule vers le retrait ouvert est une décision Blaise & Daniel, à définir.*
 
 ---
 

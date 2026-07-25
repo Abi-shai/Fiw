@@ -49,4 +49,11 @@ export const Colors = {
   hairline:   'rgba(17, 24, 39, 0.08)',
   errorPressed: '#DC2626',
   overlay:    'rgba(0, 0, 0, 0.5)',
+
+  // Aliases (backward compat with existing screens)
+  white:        '#FFFFFF',
+  black:        '#1A1A1A',
+  primaryLight: '#D6EDFF',
+  background:   '#F9FAFB',
+  warningLight: '#FEF3C7',
 };

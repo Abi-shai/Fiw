@@ -36,6 +36,16 @@ export default function RootLayout() {
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', gestureEnabled: true }}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="choix-compte" />
+        <Stack.Screen name="(partenaire)" />
+        <Stack.Screen name="commander/nouveau" />
+        <Stack.Screen name="commander/confirmation" />
+        <Stack.Screen name="commander/recherche" />
+        <Stack.Screen name="commander/en-cours" />
+        <Stack.Screen name="wallet/recapitulatif" />
+        <Stack.Screen name="wallet/succes" />
+        <Stack.Screen name="qrcode" />
+        {/* Flow Prestataire (existant) */}
         <Stack.Screen name="otp" />
         <Stack.Screen name="dashboard" />
         <Stack.Screen name="mission/navigating" />

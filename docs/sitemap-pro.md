@@ -73,15 +73,7 @@
 
 ---
 
-## 8. AffiliéRéseau
-
-- **Découvrir l'affiliation** — explication : 2 % sur les courses des Prestataires recrutés
-- **Partager mon code** — QR code · code texte
-- **Tableau de bord AffiliéRéseau** — Prestataires actifs recrutés · courses générées · commissions
-
----
-
-## 9. AffiliéPartenaire
+## 8. AffiliéPartenaire
 
 > Absent de la user story map FigJam actuelle — à ajouter dans le FigJam avant de détailler les flows (ADR 0003).
 

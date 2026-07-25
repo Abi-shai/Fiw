@@ -250,12 +250,6 @@
 - Liste courses planifiées assignées
 - Intégration direction programmée
 
-### Affiliation *(recrutement prestataires)*
-- Section « Gagner de l'argent »
-- Tableau de bord : prestataires recrutés actifs, courses générées, commissions (2%)
-- QR code + code parrainage
-- Historique commissions
-
 ### Historique
 - Toutes missions terminées
 - Détail : service, distance, brut, commission, net

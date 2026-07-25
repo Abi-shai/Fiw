@@ -636,6 +636,22 @@ export default function HomeScreen() {
                     driveAnim={driveAnims[2]} dx={DRIVE_DX[2]} />
                 </View>
               </View>
+              {/* Entrée temporaire — parcours Affilié Réseau */}
+              <TouchableOpacity
+                style={[styles.card, styles.cardWide]}
+                activeOpacity={0.9}
+                onPress={() => router.push('/affilie/presentation')}
+              >
+                <View style={styles.wideTile}>
+                  <Icon name="coins" size={48} color={Colors.primary} weight="fill" />
+                </View>
+                <View style={styles.flex1}>
+                  <Text variant="label">Gagner de l'argent</Text>
+                  <Text variant="caption" color={Colors.textSecondary} style={styles.cardTagline}>Devenez Affilié Réseau</Text>
+                </View>
+                <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
+              </TouchableOpacity>
+
               <ServiceCard service={assistance} variant="wide" onPress={() => onService(assistance)}
                 driveAnim={driveAnims[3]} dx={DRIVE_DX[3]} />
 

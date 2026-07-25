@@ -15,16 +15,36 @@ Chauffeur ou livreur inscrit sur la plateforme. Utilise l'application **Fiw Pro*
 _Avoid_ : chauffeur (trop restrictif), livreur (trop restrictif), conducteur
 
 **Affilié Réseau** :
-Personne physique (particulier, étudiant, commerçant) qui recrute des clients et des prestataires et perçoit une commission de 2 % sur les courses générées. **Rôle**, pas un compte distinct — un flag activé sur le compte Client ou Prestataire existant, avec un tableau de bord dans le menu de l'app concernée. Pas d'application séparée, pas de connexion séparée.
+Personne physique (particulier, étudiant, commerçant) qui recrute des clients et des prestataires et perçoit une commission de 2 % du montant brut de chaque course générée par son réseau (prélevée sur la part Fiw). **Rôle activé sur un compte Client existant**, dans l'app **Fiw uniquement** — pas un compte distinct, pas d'application séparée, pas de connexion séparée. Modèle « 1 affilié = 1 app » : Affilié Réseau vit dans Fiw (Client), Affilié Partenaire vit dans Fiw Pro (Prestataire). Un Prestataire ne peut pas activer le rôle Affilié Réseau depuis Fiw Pro.
 _Avoid_ : parrain, ambassadeur, apporteur d'affaires
 
 **Affilié Fondateur** :
 Statut de reconnaissance des Affiliés Réseau de la **cohorte de lancement** — ceux dont les Gains sont comptabilisés pendant la phase de paiement différé, avant l'ouverture du retrait cash. Distinction early-adopter, pas un rôle distinct de l'Affilié Réseau.
 _Avoid_ : **Partenaire Fondateur** — formulation d'origine (feature-list), conservée dans l'historique mais **plus employée** : le mot « Partenaire » collisionne avec **Affilié Partenaire** (entité entreprise, 4 %) et laisse croire à un changement de rôle. Aussi : Membre Fondateur, Pionnier, Ambassadeur Fondateur.
 
+**Affilié** :
+La **personne recrutée** par un Affilié Réseau : un Client ou un Prestataire entré dans le réseau via son code/QR, et dont les courses génèrent la commission de 2 %. Terme UI + conceptuel pour un membre du réseau. **Règle de désambiguïsation** : le mot seul « Affilié » = un recruté ; les termes en deux mots `Affilié Réseau` (recruteur) et `Affilié Partenaire` (entreprise, Fiw Pro) désignent les rôles/entités et ne s'abrègent jamais en « Affilié ».
+_Avoid_ : filleul, parrainé, recrue
+
 **Affilié Partenaire** :
-Entreprise ou commerce (restaurant, hôtel, agence…) qui génère des courses depuis son point physique et perçoit une commission de 4 % sur ces courses. **Entité distincte**, pas un rôle sur un compte Client — une entreprise n'est pas une personne physique et peut avoir plusieurs membres accédant au même tableau de bord. Reste à l'intérieur de l'écosystème Fiw (pas d'app séparée à installer), mais avec son propre contexte de connexion/compte.
+Entreprise ou commerce (restaurant, hôtel, agence…) qui génère des courses depuis son point physique et perçoit une commission de 4 % sur ces courses. **Entité distincte**, pas un rôle sur un compte Client — une entreprise n'est pas une personne physique et peut avoir plusieurs membres accédant au même tableau de bord. Reste à l'intérieur de l'écosystème Fiw (pas d'app séparée à installer), mais avec son propre contexte de connexion/compte. Associé à exactement un Point Express (cardinalité 1 pour 1).
 _Avoid_ : partenaire commercial, point de vente
+
+**Point Express** :
+Adresse physique d'un Affilié Partenaire, enregistrée à l'inscription et invariable. Identifié par un QR code unique. Sert de point de départ fixe pour toutes les Commandes générées par cet Affilié Partenaire. Visible côté client via le QR ou le lien associé. Cardinalité : 1 Affilié Partenaire → 1 Point Express (jamais plusieurs).
+_Avoid_ : point de collecte, lieu de départ, adresse partenaire
+
+**Client sauvegardé** :
+Contact local (nom + téléphone) stocké par un Affilié Partenaire pour relancer rapidement une Commande. N'implique pas de compte Fiw — le lien éventuel avec un compte Client existant est résolu en arrière-plan par le système, sans contrainte visible côté Affilié Partenaire. Enregistré automatiquement à la première Commande passée pour ce contact.
+_Avoid_ : client enregistré, favori client, profil client
+
+**Code prestataire** :
+Code court unique (format `FIW-XXXXX`, 8 caractères) affiché dans le profil Fiw Pro d'un Prestataire. Permet à un Affilié Partenaire d'ajouter ce Prestataire à ses favoris sans connaître son identifiant technique de service (MOT-XXXX, etc.). Conçu pour être partagé de vive voix ou par SMS. Distinct des identifiants de service existants.
+_Avoid_ : identifiant prestataire, code d'accès, ID service
+
+**Membre Fondateur** :
+État du lifecycle d'un Affilié Réseau pendant la phase de lancement : ses gains sont **comptabilisés** dans le Wallet Affilié mais le **retrait reste bloqué** jusqu'au lancement officiel. Le passage Membre Fondateur → Actif est déclenché par Fiw côté admin (fin de phase test), avec notification push. À distinguer de l'état **Gelé** (suspension : retrait bloqué + invitation à contacter le support). « Partenaire Fondateur » est à éviter — collision avec Affilié Partenaire.
+_Avoid_ : partenaire fondateur, early adopter, bêta-testeur
 
 ### Services
 
@@ -53,8 +73,16 @@ Système visible par le prestataire dans Fiw Pro. Niveaux : Bronze, Argent, Or, 
 _Avoid_ : niveau, grade, rang
 
 **Wallet** :
-Compte virtuel intégré dans Fiw Pro, propre à chaque prestataire. Sert uniquement à payer la commission de 14 % prélevée automatiquement à chaque course terminée. Alimenté via Mobile Money. Wallet vide = accès bloqué.
+Compte virtuel intégré dans Fiw Pro, propre à chaque prestataire. Sert uniquement à payer la commission de 14 % prélevée automatiquement à chaque course terminée. Alimenté via Mobile Money. Wallet vide = accès bloqué. **Sens unique débit** (le prestataire l'alimente, Fiw le prélève). À ne pas confondre avec le **Wallet Affilié** (sens inverse : crédit + retrait).
 _Avoid_ : portefeuille, solde, compte
+
+**Wallet Réseau** :
+Compte de gains de l'Affilié Réseau dans l'app Fiw (Client). **Crédité** par les commissions de 2 % sur les courses générées par son réseau ; le solde est **retirable vers Mobile Money** à partir de 1 000 F CFA. Affiché « Mon Wallet » dans l'interface Client (Affilié Réseau). Mécanique inverse du `Wallet` Prestataire (qui est prépayé et débit-only). Wallet intermédiaire dans l'app : aucun versement Mobile Money direct sans passer par un retrait explicite.
+_Avoid_ : Wallet Affilié, cagnotte, portefeuille affilié, solde de parrainage
+
+**Wallet Partenaire** :
+Compte de gains de l'Affilié Partenaire dans Fiw Pro. **Crédité** par les commissions de 4 % sur chaque Commande générée depuis le Point Express ; le solde est **retirable vers Mobile Money** à partir de 1 000 F CFA. Affiché « Mon Wallet » dans l'interface Affilié Partenaire. État Gelé : retrait bloqué, solde visible. Wallet intermédiaire dans l'app : aucun versement Mobile Money direct sans retrait explicite.
+_Avoid_ : cagnotte, solde partenaire, wallet commission
 
 **Livraison groupée** :
 Service de livraison combinant plusieurs colis d'expéditeurs différents dans un même trajet, à l'intérieur d'un cluster géographique. Proposée comme Option B au client (prix réduit, léger délai d'attente).
@@ -103,7 +131,7 @@ _Avoid_ : point, crédit fidélité
 ## Vocabulaire commun (modèle conceptuel)
 
 **Commande** :
-Terme canonique interne désignant toute demande de service (transport, livraison, Yobanté, assistance, location). Affiché comme « Course » dans Fiw et comme « Mission » dans Fiw Pro. Réservé aux APIs, base de données et échanges techniques. « Course » et « Mission » sont des étiquettes UI, pas des concepts distincts.
+Terme canonique interne désignant toute demande de service (transport, livraison, Yobanté, assistance, location). Affiché comme « Course » dans Fiw (Client) et dans la section Affilié Partenaire de Fiw Pro (l'Affilié Partenaire commande *pour* des clients — il se place côté demande, pas côté offre). Affiché comme « Mission » dans Fiw Pro pour le Prestataire qui exécute. Réservé aux APIs, base de données et échanges techniques. « Course » et « Mission » sont des étiquettes UI, pas des concepts distincts.
 _Avoid_ : course (terme interne), mission (terme interne), order, request
 
 **ÉvaluationClient** :

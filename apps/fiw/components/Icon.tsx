@@ -10,6 +10,7 @@ import {
   Bicycle, CalendarBlank, FileText, TShirt, Pill, DeviceMobile, Barcode, ShieldCheck,
   User, AddressBook, PaperPlaneTilt, UsersThree,
   Gift, Question, UserCircleGear,
+  Copy, QrCode, Wallet, Bank, DownloadSimple, XCircle,
   type IconProps as PhosphorProps,
 } from 'phosphor-react-native';
 import { Colors } from '@/constants/tokens';
@@ -78,6 +79,14 @@ const REGISTRY = {
   account: UserCircleGear,
   gift: Gift,
   help: Question,
+  // Affilié
+  copy: Copy,
+  qr: QrCode,
+  wallet: Wallet,
+  users: UsersThree,
+  bank: Bank,
+  download: DownloadSimple,
+  xCircle: XCircle,
 } as const;
 
 export type IconName = keyof typeof REGISTRY;
