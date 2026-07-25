@@ -1,4 +1,4 @@
-# ADR 0005 — Gains de l'Affilié Réseau : réserve distincte du Wallet, encaissable uniquement
+# ADR 0007 — Gains de l'Affilié Réseau : réserve distincte du Wallet, encaissable uniquement
 
 **Date :** 2026-07-13
 **Statut :** Décidé
