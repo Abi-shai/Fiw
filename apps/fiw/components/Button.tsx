@@ -13,7 +13,14 @@ import Icon, { type IconName } from '@/components/Icon';
 //                      Même typo/spacing/empreinte pilule, juste sans bordure.
 // · destructiveFilled — plein rouge : réservé au cas où l'action destructive EST
 //                      le CTA de l'écran (ex. « Raccrocher »).
-type Variant = 'primary' | 'secondary' | 'destructive' | 'destructiveFilled';
+// · link             — texte-action bleu primary, sans fond ni bordure ni pilule
+//                      (ex. « Modifier », « Renvoyer le code »). Icône optionnelle,
+//                      empreinte compacte (inline dans une rangée, pas un CTA).
+// · linkDestructive  — même empreinte que `link`, texte rouge Error : action-lien
+//                      inline qui retire/supprime (ex. « Retirer » un compte
+//                      Mobile Money). Le pendant rouge de `link`, comme
+//                      `destructive` est le pendant rouge de `secondary`.
+type Variant = 'primary' | 'secondary' | 'destructive' | 'destructiveFilled' | 'link' | 'linkDestructive';
 type Size = 'lg' | 'md' | 'sm';
 
 interface Props {
@@ -36,6 +43,8 @@ const BG: Record<Variant, { rest: string; pressed: string }> = {
   secondary:        { rest: 'transparent',  pressed: Colors.bg },
   destructive:      { rest: 'transparent',  pressed: Colors.errorSubtle },
   destructiveFilled:{ rest: Colors.error,   pressed: Colors.errorPressed },
+  link:             { rest: 'transparent',  pressed: 'transparent' },
+  linkDestructive:  { rest: 'transparent',  pressed: 'transparent' },
 };
 
 // Couleur du texte + icône par variante.
@@ -44,6 +53,8 @@ const FG: Record<Variant, string> = {
   secondary: Colors.textPrimary,
   destructive: Colors.error,
   destructiveFilled: Colors.textOnPrimary,
+  link: Colors.primary,
+  linkDestructive: Colors.error,
 };
 
 // Bordure : seul `secondary` porte un contour (neutre gris). `destructive` est
@@ -67,6 +78,7 @@ export default function Button({
   const fg = FG[variant];
   const s = SIZING[size];
   const filled = variant === 'primary' || variant === 'destructiveFilled';
+  const isLink = variant === 'link' || variant === 'linkDestructive';
 
   const scale = useRef(new Animated.Value(1)).current;
   const press = (to: number) =>
@@ -81,13 +93,16 @@ export default function Button({
         disabled={isDisabled}
         style={({ pressed }) => [
           styles.base,
-          { height: s.height, paddingHorizontal: s.padX, borderRadius: Radii.pill },
+          isLink
+            ? styles.linkBox
+            : { height: s.height, paddingHorizontal: s.padX, borderRadius: Radii.pill },
           { backgroundColor: pressed ? BG[variant].pressed : BG[variant].rest },
           // Contour des variantes à fond transparent (secondary = gris neutre,
           // destructive = rouge Error).
           BORDER[variant] && { borderWidth: 1.5, borderColor: BORDER[variant] },
           filled && !isDisabled && Shadows.sm,
           isDisabled && styles.disabled,
+          isLink && pressed && styles.linkPressed,
         ]}
       >
         {loading ? (
@@ -95,7 +110,7 @@ export default function Button({
         ) : (
           <View style={[styles.content, { gap: s.gap }]}>
             {icon && <Icon name={icon} size={s.icon} color={fg} />}
-            <Text variant="label" color={fg} style={{ fontFamily: s.family, fontSize: s.font }}>{label}</Text>
+            <Text variant="label" color={fg} style={{ fontFamily: isLink ? Poppins.medium : s.family, fontSize: s.font }}>{label}</Text>
             {trailingIcon && <Icon name={trailingIcon} size={s.icon} color={fg} />}
           </View>
         )}
@@ -111,4 +126,7 @@ const styles = StyleSheet.create({
   },
   content: { flexDirection: 'row', alignItems: 'center' },
   disabled: { opacity: 0.45 },
+  // Variante `link` : texte-action sans fond ni pilule, empreinte compacte.
+  linkBox: { paddingVertical: 4 },
+  linkPressed: { opacity: 0.55 },
 });

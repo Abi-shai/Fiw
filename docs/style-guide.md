@@ -32,6 +32,72 @@
 | 900 | `#0D459B` |
 | 950 | `#0E2B5D` |
 
+### Jaune de marque
+
+Échelle calquée sur le bleu **par les rôles**, pas par les valeurs :
+
+| Token | Hex | TSL | Rôle | Pendant bleu |
+|---|---|---|---|---|
+| `color-brand-yellow` | `#FFE347` | `51° 100% 64%` | Plein du logo Fiw. **Pastilles**, tags, accents. | `color-primary` |
+| `color-brand-yellow-100` | `#F6E7A3` | `49° 82% 80%` | Clair. **Liserés** d'encart. | `blue-100` |
+| `color-brand-yellow-subtle` | `#FFFBE9` | `49° 100% 96%` | Subtil. **Fonds** d'encart. | `color-primary-subtle` |
+
+**Seuls jaunes autorisés.**
+
+> ⚠️ **Ne pas décalquer les luminosités du bleu.** Le jaune est **lumineux** : à
+> luminosité égale il paraît bien plus pâle. Chaque palier jaune descend donc **plus
+> bas** que son pendant bleu — `brand-yellow-100` est à **80%** là où `blue-100` est à
+> 92%, et il **se désature** (82%) pour exister comme liseré au lieu de se noyer dans
+> le fond. Un jaune construit « à la luminosité du bleu » donne un liseré invisible :
+> c'est l'erreur qu'on a faite au premier jet (`#FFF6C2`, L 88%, saturation 100%).
+> Valeurs reprises de la piste **B** de la planche « Devenir prestataire ».
+
+> **Paire fond + liseré.** Fond `subtle` + liseré au palier **`100`** (le clair —
+> **pas** le plein), motif de la carte « Devenir prestataire » (`MenuDrawer`). Ne
+> jamais poser un `subtle` sans son liseré : seul, il se fondrait sur le gris
+> `color-bg`. Le **plein** porte les accents — pastille pleine (carte sidebar) ou
+> glyphe d'icône (`Callout`).
+>
+> ⚠️ **Le jaune plein remplit, il ne dessine jamais.** `brand-yellow` sur
+> `brand-yellow-subtle` ne donne que **~1.2:1** : un glyphe **tracé** en jaune plein
+> est invisible sur son propre fond clair. Le plein ne sert qu'à **remplir une forme**
+> — pastille, tag, liseré — et c'est le **glyphe sombre posé dessus**
+> (`color-text-primary`) qui porte le contraste. C'est ce qui permet au jaune de
+> rester **éclatant** : il n'a pas à se détacher du fond, puisque ce n'est pas lui
+> qu'on lit. Motif : pastille de la carte « Devenir prestataire », repris par
+> `Callout`.
+>
+> Corollaire : sur un aplat de plein, le pendant de `color-primary-on` n'est **pas**
+> le blanc mais `color-text-primary` — le jaune plein est une couleur *claire*, un
+> glyphe blanc y est illisible.
+>
+> Piège Phosphor : en `weight="fill"`, une icône comme `info` est un **disque plein au
+> glyphe évidé** (c'est le fond qui transparaît dans l'évidement) — à ne pas mettre
+> dans une pastille, ça ferait un disque sur un disque. Dans une pastille, le glyphe
+> est en **`bold`** (tracé).
+>
+> Il n'y a **pas de palier foncé** dans l'échelle : avec le motif pastille, rien n'est
+> jamais tracé en jaune. Le jour où du *texte* devra tenir sur un fond jaune, il en
+> faudra un (≈ `49° 100% 30%` / `#998200` → 3.7:1) — surtout pas le plein.
+
+À ne pas confondre avec `color-warning` (`#F59E0B`) / `color-warning-subtle`
+(`#FEF3C7`), qui sont **fonctionnels** et disent « attention, quelque chose cloche ».
+`color-brand-yellow-subtle` est volontairement **plus clair** que `warning-subtle`
+pour qu'un encart de marque ne se lise pas comme une alerte.
+
+> **Répartition des rôles bleu / jaune.** Le **bleu marque un état** (sélectionné,
+> actif, par défaut, en cours) ; le **jaune appelle l'attention** (pédagogie, règle à
+> lire, accent ponctuel). Un encart explicatif est donc **jaune** (`Callout`), jamais
+> bleu — en bleu, il entrerait en concurrence avec les éléments dont il parle.
+>
+> **Corollaire : un bleu clair ne sert jamais de fond de mise en avant.**
+> `color-primary-subtle` (`#EDF7FF`) et le fond de page `color-bg` (`#F9FAFB`) sont
+> trop proches : l'élément teinté se **fond** au lieu de ressortir, et se lit comme un
+> trou dans la carte plutôt que comme l'élu. Pour marquer l'élu d'une liste, utiliser
+> un **liseré `color-primary`** (motif [Binance](https://mobbin.com/screens/8eb64cde-e589-48bd-9a0d-6e167e573166)
+> / [Plazo](https://mobbin.com/screens/dee51755-5ef4-40a3-ac33-424d53553765), cf.
+> `benchmark-compte-mobbin.md` D6) — un liseré tranche quel que soit le fond.
+
 ### Neutres
 
 Dérivés de l'échelle de gris Tailwind (gray-50 → gray-900) ; les tokens sont nommés sémantiquement, le palier d'origine est rappelé en commentaire.
@@ -159,7 +225,7 @@ Tout élément posé **par-dessus le fond cartographique** (boutons flottants, b
 
 ### Variantes (couleurs par état)
 
-Deux familles : **pleine** (fond de couleur, pour le CTA) et **transparente** (sans fond — pour les actions secondaires, à même empreinte pilule, typo et spacing que le primary). Parmi les transparentes, seul `secondary` porte une bordure (neutre gris) ; `destructive` est **sans bordure** (texte rouge). Benchmark Mobbin : Wise, X, Duolingo, Lyft, Fabric.
+Deux familles : **pleine** (fond de couleur, pour le CTA) et **transparente** (sans fond — pour les actions secondaires, à même empreinte pilule, typo et spacing que le primary). Parmi les transparentes, seul `secondary` porte une bordure (neutre gris) ; `destructive` est **sans bordure** (texte rouge). `link` fait exception aux deux familles : c'est un **texte-action** sans pilule (empreinte compacte, inline dans une rangée/formulaire). Benchmark Mobbin : Wise, X, Duolingo, Lyft, Fabric.
 
 | Variante | Fond repos | Fond pressé | Texte | Bordure |
 |---|---|---|---|---|
@@ -167,10 +233,12 @@ Deux familles : **pleine** (fond de couleur, pour le CTA) et **transparente** (s
 | `secondary` | transparent | `color-bg` | `color-text-primary` | `color-border` (1.5px) |
 | `destructive` | transparent | `color-error-subtle` | `color-error` | — |
 | `destructiveFilled` | `#EF4444` | `#DC2626` | `#FFFFFF` | — |
+| `link` | transparent | transparent (opacité 0.55) | `color-primary` | — |
+| `linkDestructive` | transparent | transparent (opacité 0.55) | `color-error` | — |
 
 `disabled` : opacité 0.45 (toutes variantes). `loading` : spinner à la couleur du texte. Slots icône Phosphor leading/trailing sur toutes les variantes.
 
-> **Choix de variante.** `secondary` (contour neutre gris) = action secondaire courante. `destructive` (texte rouge, **sans bordure ni fond**) = **annulation / action dangereuse secondaire** (ex. « Annuler la commande », « Annuler (gratuit) ») — à privilégier sur toutes les pages présentant ce type d'action, plutôt qu'un lien texte ad hoc. `destructiveFilled` (plein rouge) est **réservé** au cas où l'action destructive EST le CTA de l'écran (ex. « Raccrocher »).
+> **Choix de variante.** `secondary` (contour neutre gris) = action secondaire courante. `destructive` (texte rouge, **sans bordure ni fond**) = **annulation / action dangereuse secondaire** (ex. « Annuler la commande », « Annuler (gratuit) ») — à privilégier sur toutes les pages présentant ce type d'action, plutôt qu'un lien texte ad hoc. `destructiveFilled` (plein rouge) est **réservé** au cas où l'action destructive EST le CTA de l'écran (ex. « Raccrocher »). `link` (texte bleu primary, **sans fond ni bordure ni pilule**, empreinte compacte) = **action-lien inline** dans une rangée ou un formulaire (ex. « Modifier » un numéro, « Renvoyer le code ») — à privilégier plutôt qu'un `Text` + icône ad hoc. `linkDestructive` = le **pendant rouge de `link`** (même empreinte, texte `color-error`), pour l'action-lien qui retire/supprime dans une rangée (ex. « Retirer » un compte Mobile Money) — il permet d'opposer deux actions **de même forme** dans la même liste, seule la couleur changeant selon la portée (ex. slot rempli « Retirer » vs slot vide « Ajouter »).
 
 ### Tailles (hauteurs pouce-friendly ≥ 48px)
 
@@ -213,11 +281,17 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 |---|---|---|
 | `Text` | Typographie | Variants sémantiques, mappe graisse→famille Poppins. Seul point d'entrée typo. |
 | `Icon` | Icône | Phosphor, sous-ensemble nommé, `regular`/`fill`. |
-| `Button` | Action | 4 variantes (`primary` / `secondary` contour neutre / `destructive` contour Error / `destructiveFilled` plein rouge), tailles `lg`/`md`, slots icône, loading/disabled. |
+| `Button` | Action | 6 variantes (`primary` / `secondary` contour neutre / `destructive` texte Error / `destructiveFilled` plein rouge / `link` texte-action sans fond / `linkDestructive` idem en rouge), tailles `lg`/`md`/`sm`, slots icône, loading/disabled. |
 | `IconButton` | Bouton rond icône | `floating` (blanc + liseré + ombre, sur carte ; **icône gris foncé `gray-700`** — neutre, registre nav, pas le bleu marque) / `flat` (fond gris, dans sheet ; icône bleu marque). |
 | `SearchBar` | Recherche | Pilotée par prop : `asButton` (lanceur → navigue) ou `editable` (saisie). Slot trailing optionnel (carte, micro), bouton clear. |
 | `TopBar` | En-tête | Slots gauche/titre/droite. Variantes `solid` (gère safe-area) / `transparent` (réutilisée comme en-tête de sheet). **N'inclut pas** les boutons flottants sur carte (ce sont des `IconButton`). |
 | `PlaceRow` | Ligne de lieu | Cercle d'icône + titre + sous-titre + trailing. Récents, suggestions, lieux enregistrés. |
+| `PhoneField` | Saisie de numéro | Chip indicatif (drapeau + `+code` + caret) ouvrant le `CountryPicker`, numéro **formaté par pays** (`constants/countries.ts`). **Tous pays acceptés.** Point d'entrée unique de toute saisie de téléphone — changement de numéro **et onboarding** (cf. `sitemap-client.md` §1) : même saisie, même présentation. |
+| `CountryPicker` | Choix du pays | Feuille **3 crans** (`hooks/useSnapSheet`) + barre de recherche + liste monde triée. Drapeaux = **PNG plats locaux** (`assets/flags/`, map `constants/flags.ts`) rendus via `FlagChip` — **pas de SVG** (`SvgXml` plante sur les drapeaux à bloc `<style>`). |
+| `SettingsRow` | Ligne de réglage | Icône ligne + label + sous-titre + `value`/slot `right` + chevron. Variante `destructive` (label rouge). Page Compte et sous-écrans. **Volontairement pauvre** : un objet plus riche (logo de service, badge d'état, action sur une 2ᵉ ligne — cf. carte de `compte/paiement.tsx`) mérite **son propre composant**, pas des slots ajoutés ici un par un. |
+| `SettingsGroup` | Carte de réglages | Regroupe des `SettingsRow` (séparateurs auto), label de section en capitales + `footnote`. |
+| `Radio` | Pastille de sélection | Coché = fond bleu marque + tick blanc ; décoché = cercle vide `text-disabled`. Marque l'élu d'un ensemble à choix unique **dans une feuille de choix** (`PaymentSheet`). Non tappable en propre — c'est la rangée qui porte l'action. Dans une **liste persistante**, préférer `SettingsRow selected` + badge (voir ci-dessous). |
+| `Callout` | Encart d'information | Fond `brand-yellow-subtle` + liseré `brand-yellow-100` + **pastille `brand-yellow` à glyphe sombre** (structure de la carte « Devenir prestataire » — le jaune remplit, le glyphe dessus porte le contraste). Pour une **règle** ou une **affordance non devinable** que le Client doit lire. Jaune et **pas bleu** : cf. répartition des rôles bleu/jaune. **Un seul par écran** — au-delà, c'est un problème de hiérarchie. À distinguer du motif `infoRow` (icône + `caption` tertiaire **sans fond**), qui précise sans réclamer l'attention. |
 
 ### BottomSheet (organisme)
 

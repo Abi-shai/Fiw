@@ -88,6 +88,13 @@ export default function RootLayout() {
         <Stack.Screen name="affilie/retrait-traitement" />
         <Stack.Screen name="affilie/retrait-confirmation" />
         <Stack.Screen name="affilie/retrait-echec" />
+        <Stack.Screen name="compte/index" />
+        <Stack.Screen name="compte/profil" />
+        <Stack.Screen name="compte/numero" />
+        <Stack.Screen name="compte/paiement" />
+        <Stack.Screen name="compte/lieux" />
+        <Stack.Screen name="compte/securite" />
+        <Stack.Screen name="compte/preferences" />
       </Stack>
 
       {!splashGone && (

@@ -5,8 +5,25 @@ export const Colors = {
   primaryPressed: '#0D459B',
   primarySubtle:  '#EDF7FF',
   primaryOn:      '#FFFFFF',
-  // Jaune de marque (logo Fiw, accents ponctuels). Seul jaune autorisé.
-  brandYellow:    '#FFE347',
+  // Jaune de marque (logo Fiw, accents ponctuels). Seuls jaunes autorisés — à ne
+  // pas confondre avec `warning` (#F59E0B, ambre fonctionnel « ça cloche »).
+  // Échelle calquée sur le bleu, mêmes rôles (cf. carte « Devenir prestataire »,
+  // MenuDrawer : fond `primarySubtle` + liseré `blue100` + pastille `primary`) :
+  // même teinte (h 51°) et même saturation (100%) partout, seule la luminosité
+  // change — les trois se lisent comme une seule couleur.
+  // Le jaune est une couleur *lumineuse* : à luminosité égale il paraît bien plus
+  // pâle que le bleu. L'échelle ne décalque donc pas les luminosités du bleu —
+  // chaque palier descend plus bas que son pendant, et le `100` se désature (82%)
+  // pour exister comme liseré au lieu de se noyer dans le fond.
+  //
+  // Corollaire : le plein sur le subtil ne fait que 1.2:1. Le jaune plein
+  // **remplit une forme, il ne dessine jamais** — pastille + glyphe sombre par
+  // dessus (cf. `Callout`), pas de glyphe tracé en jaune. Il n'y a donc pas de
+  // palier foncé ici : le jour où du *texte* devra tenir sur un fond jaune, il en
+  // faudra un (≈ 49° 100% 30% / #998200 → 3.7:1) — surtout pas le plein.
+  brandYellow:       '#FFE347', // plein  (51° 100% 64%) — pastilles, tags    ≈ primary
+  brandYellow100:    '#F6E7A3', // clair  (49°  82% 80%) — liserés d'encart   ≈ blue100
+  brandYellowSubtle: '#FFFBE9', // subtil (49° 100% 96%) — fonds d'encart     ≈ primarySubtle
 
   // Blue scale
   blue50:  '#EDF7FF',

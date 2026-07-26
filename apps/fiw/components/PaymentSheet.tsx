@@ -2,8 +2,8 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Text from '@/components/Text';
-import Icon from '@/components/Icon';
 import Button from '@/components/Button';
+import Radio from '@/components/Radio';
 import { Colors, Radii } from '@/constants/tokens';
 import { PAYMENT_METHODS } from '@/constants/data';
 import { PAY_ILLUSTRATIONS } from '@/constants/illustrations';
@@ -26,9 +26,7 @@ function PayRow({ method, selected, onPress }: {
       )}
       <Text variant="label" style={styles.payName}
         color={selected ? Colors.primary : Colors.textPrimary}>{method.label}</Text>
-      <View style={[styles.radio, selected && styles.radioSel]}>
-        {selected && <Icon name="tick" size={15} weight="bold" color={Colors.surface} />}
-      </View>
+      <Radio selected={selected} />
     </TouchableOpacity>
   );
 }
@@ -64,11 +62,5 @@ const styles = StyleSheet.create({
   payIllo: { width: 52, height: 52, borderRadius: 14 },
   payEmoji: { fontSize: 28 },
   payName: { flex: 1, fontSize: 16 },
-  radio: {
-    width: 26, height: 26, borderRadius: 13,
-    borderWidth: 2, borderColor: Colors.textDisabled,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  radioSel: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   payCta: { marginTop: 16 },
 });

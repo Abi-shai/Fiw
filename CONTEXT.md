@@ -115,8 +115,8 @@ Terme transversal désignant le *montant courant* d'une réserve — ce qui est 
 _Avoid_ : employer « Solde » comme nom d'une réserve (dire « le Wallet » / « les Gains », pas « le Solde »)
 
 **Mobile Money** :
-Moyen de paiement principal. Comprend Wave, Orange Money et Free Money. Les frais de transaction Mobile Money sont supportés par le prestataire (pas par Fiw).
-_Avoid_ : paiement mobile, transfert mobile
+Moyen de paiement principal. Comprend **Wave** et **Orange Money** — et eux seuls. Le Client lie **au plus un compte par service** (1 Wave + 1 Orange Money), jamais une liste. Les frais de transaction Mobile Money sont supportés par le prestataire (pas par Fiw).
+_Avoid_ : paiement mobile, transfert mobile · **Free Money** — opérateur du marché, mais **pas un moyen de paiement Fiw** : ne pas le réintroduire dans la définition ni dans les écrans (décision 16 juillet 2026)
 
 ### Programme client
 
@@ -135,5 +135,17 @@ Terme canonique interne désignant toute demande de service (transport, livraiso
 _Avoid_ : course (terme interne), mission (terme interne), order, request
 
 **ÉvaluationClient** :
-Note interne donnée par le Prestataire sur le Client à la fin d'une Commande. Privée, non exposée dans l'interface Client. Distincte de l'**Avis** (public, soumis par le Client sur le Prestataire).
-_Avoid_ : note client, avis conducteur, rating client
+Évaluation **individuelle** (1–5) donnée par le Prestataire sur le Client à la fin d'une Commande. L'acte individuel est **privé** : le Client ne voit jamais qui l'a noté ni combien. Seule sa moyenne — la **Note du Client** — lui est affichée. Distincte de l'**Avis** (Client → Prestataire).
+_Avoid_ : note client, rating client (ambigus : dire **ÉvaluationClient** pour l'acte, **Note du Client** pour la moyenne)
+
+**Note du Client** :
+Moyenne agrégée de toutes les ÉvaluationClient d'un Client, affichée au Client dans son Profil (un seul chiffre en étoiles, ex. ★ 4,9). Les évaluations individuelles qui la composent restent privées. Miroir exact de la **Note du Prestataire**.
+_Avoid_ : **note d'utilisateur** (« utilisateur » est à éviter — cf. Client), score client, réputation
+
+**Note du Prestataire** :
+Moyenne agrégée des évaluations individuelles données par les Clients à un Prestataire, affichée au Prestataire dans Fiw Pro. Miroir de la **Note du Client** : l'acte individuel de chaque Client reste privé, seule la moyenne est visible. Alimente le **Statut prestataire** (« note moyenne reçue »).
+_Avoid_ : note chauffeur, rating prestataire, réputation prestataire
+
+**Lieu enregistré** :
+Adresse que le Client mémorise pour la réutiliser d'un tap. Deux emplacements spéciaux permanents — **Maison** et **Travail** — plus des lieux **libres** que le Client crée et nomme lui-même. Gérés depuis la page Compte, proposés comme destination dans la recherche d'itinéraire. Le libellé de section est « Lieux enregistrés ».
+_Avoid_ : favori, lieu favori, adresse enregistrée, raccourci

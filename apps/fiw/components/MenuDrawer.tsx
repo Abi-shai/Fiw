@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Animated, PanResponder, TouchableOpacity, TouchableWithoutFeedback,
+  Alert, Animated, PanResponder, TouchableOpacity, TouchableWithoutFeedback,
   View, StyleSheet, Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import Avatar from '@/components/Avatar';
 import Icon, { type IconName } from '@/components/Icon';
 import Text from '@/components/Text';
 import { Colors, Radii } from '@/constants/tokens';
+import { CLIENT } from '@/constants/data';
 
 const SCREEN_W = Dimensions.get('window').width;
 const DRAWER_W = Math.min(Math.round(SCREEN_W * 0.82), 320);
@@ -19,7 +20,7 @@ const CLOSE_VX = 0.5;              // vélocité minimale (px/ms) pour déclench
 // Proto : statut d'affiliation du Client. Bascule pour voir les deux états de
 // l'item Affiliation — mini CTA « Gagner de l'argent » (non affilié) ·
 // sous-lignes solde/recrutés (Affilié Réseau actif).
-const IS_AFFILIATE = true;
+const IS_AFFILIATE = false;
 
 // Proto : phase de lancement « Affilié Fondateur » — les Gains s'accumulent
 // mais le retrait cash (Mobile Money) n'est pas encore ouvert. Passe à true
@@ -96,6 +97,16 @@ export default function MenuDrawer({ visible, onClose }: Props) {
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
+  // L'en-tête profil ET l'item « Mon compte & sécurité » mènent au même écran :
+  // redondance VOLONTAIRE (cf. benchmark-compte-mobbin.md D3) — elle guide les
+  // Clients qui suivent les mots plutôt que l'affordance de l'avatar tappable.
+  // Ne pas « nettoyer » l'un des deux.
+  const goCompte = () => { onCloseRef.current(); router.push('/compte'); };
+  const onBecomePro = () => {
+    onCloseRef.current();
+    Alert.alert('Fiw Pro', 'Ouvrez ou installez l’application Fiw Pro pour devenir prestataire.');
+  };
+
   // Scrim dérivé de la position du panel : se synchronise automatiquement
   // pendant l'animation d'entrée/sortie ET pendant le swipe.
   const scrimOpacity = translateX.interpolate({
@@ -157,22 +168,23 @@ export default function MenuDrawer({ visible, onClose }: Props) {
         {...panResponder.panHandlers}
         style={[styles.panel, { transform: [{ translateX }], paddingBottom: insets.bottom + 24 }]}
       >
-        {/* En-tête identité */}
+        {/* En-tête identité — tap → page Compte */}
         <TouchableOpacity
           style={[styles.header, { paddingTop: insets.top + 28 }]}
           activeOpacity={0.75}
+          onPress={goCompte}
         >
-          <Avatar name="Mamadou Diallo" size={52} />
+          <Avatar name={CLIENT.name} size={52} />
           <View style={styles.headerText}>
-            <Text variant="label">Mamadou Diallo</Text>
-            <Text variant="caption" color={Colors.textSecondary}>+221 77 123 45 67</Text>
+            <Text variant="label">{CLIENT.name}</Text>
+            <Text variant="caption" color={Colors.textSecondary}>{CLIENT.phone}</Text>
           </View>
           <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
         </TouchableOpacity>
 
         <View style={styles.divider} />
 
-        <MenuItem icon="account" label="Mon compte & sécurité" />
+        <MenuItem icon="account" label="Mon compte & sécurité" onPress={goCompte} />
         <MenuItem
           icon="clock"
           label="Historique"
@@ -199,6 +211,23 @@ export default function MenuDrawer({ visible, onClose }: Props) {
         <View style={styles.divider} />
 
         <MenuItem icon="help" label="Aide & support" />
+
+        {/* Pousse le pied de menu tout en bas */}
+        <View style={styles.spacer} />
+
+        {/* Devenir prestataire — carte distincte (couleur Fiw Pro #084EC5), séparée
+            de la liste pour NE PAS entrer en collision avec le « Gagner de l'argent »
+            de l'Affiliation (benchmark-compte-mobbin.md D4). Renvoie vers Fiw Pro. */}
+        <TouchableOpacity style={styles.proCard} activeOpacity={0.85} onPress={onBecomePro}>
+          <View style={styles.proIcon}>
+            <Icon name="wheel" size={22} color={Colors.primaryOn} />
+          </View>
+          <View style={styles.proText}>
+            <Text variant="label">Devenir prestataire</Text>
+            <Text variant="caption" color={Colors.textSecondary}>Conduisez ou livrez avec Fiw Pro.</Text>
+          </View>
+          <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
+        </TouchableOpacity>
       </Animated.View>
     </View>
   );
@@ -234,11 +263,12 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  // Séparateur de section : pleine largeur (bord à bord) + plus d'air, pour une
+  // coupure nette entre groupes (option 1 retenue).
   divider: {
-    height: StyleSheet.hairlineWidth,
+    height: 1,
     backgroundColor: Colors.border,
-    marginHorizontal: 24,
-    marginVertical: 8,
+    marginVertical: 14,
   },
   item: {
     paddingHorizontal: 24,
@@ -281,4 +311,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
+  // Pied de menu épinglé
+  spacer: { flex: 1, minHeight: 16 },
+  proCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: 16,
+    marginTop: 8,
+    backgroundColor: Colors.primarySubtle, // carte claire, dans le mood de la sidebar
+    borderWidth: 1,
+    borderColor: Colors.blue100,
+    borderRadius: Radii.lg,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  proIcon: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: Colors.primary, // même bleu que les initiales de l'avatar (#0066FF)
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  proText: { flex: 1 },
 });

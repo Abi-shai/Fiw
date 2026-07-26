@@ -11,6 +11,7 @@ import {
   User, AddressBook, PaperPlaneTilt, UsersThree,
   Gift, Question, UserCircleGear,
   Copy, QrCode, Wallet, Bank, DownloadSimple, XCircle,
+  CreditCard, Bell, SignOut, Trash, SteeringWheel,
   type IconProps as PhosphorProps,
 } from 'phosphor-react-native';
 import { Colors } from '@/constants/tokens';
@@ -87,6 +88,13 @@ const REGISTRY = {
   bank: Bank,
   download: DownloadSimple,
   xCircle: XCircle,
+  card: CreditCard,
+  bell: Bell,
+  signOut: SignOut,
+  trash: Trash,
+  // Devenir prestataire — volant = « conduire ou livrer » (rôle générique,
+  // inclusif des livreurs, contrairement à `car`). Seul symbole abstrait du kit.
+  wheel: SteeringWheel,
 } as const;
 
 export type IconName = keyof typeof REGISTRY;

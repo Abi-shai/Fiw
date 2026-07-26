@@ -14,6 +14,16 @@ Accessible uniquement avant connexion.
 - **Signaler qui m'a recommandé** — code ou nom (recommandation orale traçable, non obligatoire)
 - **Se reconnecter** — login + récupération de mot de passe
 
+> **À la conception de l'onboarding — saisie du numéro.** Le champ téléphone doit
+> être **celui du changement de numéro** (`app/compte/numero.tsx`, atteint depuis
+> Profil → « Modifier ») : composant **`PhoneField`** — chip indicatif (drapeau +
+> `+code` + caret) ouvrant le **`CountryPicker`** (feuille 3 crans, barre de
+> recherche, liste monde), et numéro **formaté par pays** (`constants/countries.ts`).
+> **Tous les pays sont acceptés** — c'est déjà tranché côté profil, l'onboarding ne
+> doit pas re-restreindre à +221. À réutiliser tel quel, ne pas re-dessiner un champ
+> d'onboarding séparé : c'est la **même saisie**, elle doit se présenter pareil des
+> deux côtés.
+
 ---
 
 ## 2. Accueil
@@ -92,11 +102,12 @@ Point d'entrée post-connexion. Donne accès à tous les services.
 
 ## 7. Mon compte & Sécurité
 
-- **Profil** — modifier nom · téléphone · photo
+- **Profil** — modifier nom · téléphone · photo · voir sa **Note du Client** (moyenne affichée, lecture seule ; le détail par course reste privé — cf. CONTEXT.md)
 - **Moyens de paiement** — ajouter / supprimer comptes Mobile Money
+- **Lieux enregistrés** — Maison · Travail (emplacements permanents) + lieux libres nommés par le Client (créer / renommer / supprimer) ; proposés comme destination dans la recherche
 - **Contacts de confiance** — ajouter · modifier · activer notification automatique au départ
 - **Historique** — toutes les Commandes passées avec reçu (lien vers Mes réservations pour les locations)
-- **Préférences** — notifications
+- **Préférences** — notifications (langue / thème / unités différés — app en français, F CFA, km en v1 ; cf. benchmark-compte-mobbin.md D5)
 - **Déconnexion**
 - **Supprimer mon compte**
 
@@ -115,6 +126,11 @@ Accessible depuis le bouton hamburger en haut à gauche de l'Accueil.
 
 **Item utilitaire** (séparé par un divider) :
 - **Aide & support**
+
+**Pied de menu** (épinglé en bas, style distinct) :
+- **Devenir prestataire** → renvoie vers **Fiw Pro** (installer / ouvrir). Couleur distincte, séparé de la liste pour ne pas entrer en collision avec le « Gagner de l'argent » de l'Affiliation (benchmark-compte-mobbin.md D4).
+
+> **Redondance volontaire (D3)** : l'en-tête profil ET l'item « Mon compte & sécurité » mènent tous deux à la section 7. Ce n'est pas un oubli — la rangée nommée guide les Clients qui suivent les mots plutôt que l'affordance (invisible) de l'avatar tappable. Ne pas « nettoyer ».
 
 ---
 

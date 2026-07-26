@@ -19,6 +19,22 @@ export const SAVED_PLACES = [
   { id: 's-work', kind: 'work', label: 'Travail', detail: 'Plateau, Av. Léopold Sédar Senghor', lat: 14.6712, lng: -17.4382 },
 ];
 
+// Profil du Client connecté (mock). `note` = Note du Client, la MOYENNE affichée
+// (le détail par course — ÉvaluationClient — reste privé, cf. CONTEXT.md).
+export const CLIENT = {
+  name: 'Mamadou Diallo',
+  phone: '+221 77 123 45 67',
+  note: 4.9,
+  trips: 87,
+};
+
+// Contacts de confiance : reçoivent le trajet en temps réel au départ et peuvent
+// être alertés en cas d'urgence (cf. sitemap §7 / benchmark-compte-mobbin.md).
+export const TRUSTED_CONTACTS = [
+  { id: 't-1', name: 'Awa Diop', phone: '77 123 45 67', shareOnStart: true },
+  { id: 't-2', name: 'Oumar Diallo', phone: '78 990 11 22', shareOnStart: false },
+];
+
 // Destinations récentes (onglet « Suggéré »)
 export const RECENT_PLACES = [
   { id: 'r-1', name: 'Almadies', detail: 'Dakar Ouest', lat: 14.7320, lng: -17.5113 },
