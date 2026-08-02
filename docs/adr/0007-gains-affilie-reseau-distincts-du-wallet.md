@@ -1,7 +1,7 @@
 # ADR 0007 — Gains de l'Affilié Réseau : réserve distincte du Wallet, encaissable uniquement
 
 **Date :** 2026-07-13
-**Statut :** Décidé
+**Statut :** Décidé — **amendé le 2026-07-26** (voir « Mise à jour » en fin de document)
 
 ## Contexte
 
@@ -32,3 +32,15 @@ Restait aussi ouvert : les commissions de l'affilié sont-elles dépensables in-
 - `conceptual-model.md` §AffiliéRéseau : attribut **Solde des Gains** + action **Retirer** (Gains → Mobile Money), sans entité propre (réserve scalaire portée par le compte).
 - Le retrait cash est le **modèle cible (long terme)**. Au lancement, le paiement sera vraisemblablement **différé** (phase « Affilié Fondateur », d'abord formulée « Partenaire Fondateur » — renommée pour éviter la collision avec Affilié Partenaire) ; la date de bascule est une décision Blaise & Daniel, à définir.
 - **Seuil minimum de retrait** : à définir (Blaise & Daniel).
+
+## Mise à jour (2026-07-26)
+
+L'app est **commercialisée dès le lancement** — décision formalisée dans **ADR 0008**.
+La conséquence n°3 ci-dessus (« au lancement, paiement vraisemblablement **différé**,
+phase « Affilié Fondateur » ; date de bascule à définir ») est donc **caduque** : plus
+de paiement différé, plus de statut « Affilié Fondateur » / « Membre Fondateur »
+(termes retirés — cf. `CONTEXT.md`), lifecycle réduit à **Actif → Gelé**.
+
+Le reste de l'ADR (Gains ≠ Wallet, encaissables uniquement, Solde transversal) **reste
+valable**. Le **seuil de retrait** reste ouvert : le proto utilise 1 000 F CFA
+(convention de conception), la valeur définitive reste à confirmer (Blaise & Daniel).

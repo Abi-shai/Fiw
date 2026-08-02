@@ -143,9 +143,9 @@ Rôle activé par un **Client** depuis l'app Fiw (Client uniquement — ADR 0005
 
 **Attributs :** Solde des Gains (montant retirable), historique des mouvements (crédits = commissions perçues, débits = retraits)
 
-**Actions :** Recruter, Retirer (Gains → Mobile Money — soumis à un seuil minimum de retrait *à définir par Blaise & Daniel*)
+**Actions :** Recruter, Retirer (Gains → Mobile Money — soumis à un seuil minimum de retrait *(proto : 1 000 F CFA, convention de conception ; valeur définitive à confirmer par Blaise & Daniel)*)
 
-**Modèle de données :** flag + dashboard sur le compte Client existant — pas d'entité propre, pas de relations supplémentaires à modéliser. Les Gains sont une réserve scalaire (solde + journal de mouvements) portée par le compte, pas un objet distinct. *Décidé en travaillant la sitemap : la bannière d'affiliation reste à l'intérieur du compte existant. Un Prestataire ne peut pas activer ce rôle depuis Fiw Pro (ADR 0005). Retrait cash via Mobile Money = **modèle cible (long terme)**, acté au meeting client du 27 juin 2026. **Au démarrage**, le paiement sera vraisemblablement **différé** (commissions comptabilisées sans versement, phase « Affilié Fondateur » — d'abord formulée « Partenaire Fondateur », renommée pour éviter la collision avec Affilié Partenaire, cf. CONTEXT.md) ; la date de bascule vers le retrait ouvert est une décision Blaise & Daniel, à définir.*
+**Modèle de données :** flag + dashboard sur le compte Client existant — pas d'entité propre, pas de relations supplémentaires à modéliser. Les Gains sont une réserve scalaire (solde + journal de mouvements) portée par le compte, pas un objet distinct. *Décidé en travaillant la sitemap : la bannière d'affiliation reste à l'intérieur du compte existant. Un Prestataire ne peut pas activer ce rôle depuis Fiw Pro (ADR 0005). Retrait cash via Mobile Money, acté au meeting client du 27 juin 2026 et **ouvert dès le lancement** — l'app est commercialisée dès le départ (décision 26 juillet 2026, cf. ADR 0007). Plus de phase de paiement différé ni de statut « Fondateur ».*
 
 ---
 

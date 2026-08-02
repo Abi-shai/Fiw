@@ -10,7 +10,6 @@
 | « Affilié Réseau » | Affilié Réseau | Client qui a activé le rôle de recrutement. Si un Client recrute, il devient Affilié Réseau. |
 | « Affilié » | Affilié | Personne recrutée (Client ou Prestataire) entrée dans le réseau via le code/QR de l'Affilié Réseau. |
 | « Mon Wallet » | Wallet Réseau | Compte de gains : crédité par les commissions, retirable vers Mobile Money (≥ 1 000 F). |
-| badge « Fondateur » | Membre Fondateur | État de lancement : gains comptabilisés, retrait bloqué jusqu'au lancement officiel. |
 
 ---
 
@@ -63,14 +62,16 @@ Section Affilié Réseau (« Mon espace Affilié Réseau »)
 
 ### 4. Lifecycle
 
-États : **Activation → Membre Fondateur → Actif → Gelé**
+> **Mise à jour (26 juillet 2026)** : l'app est **commercialisée dès le lancement**
+> — le retrait est ouvert dès le premier jour. L'état **Membre Fondateur** (paiement
+> différé) et le badge « Fondateur » sont **retirés** (cf. `CONTEXT.md`, ADR 0007).
+> Le lifecycle se réduit à **Actif → Gelé**.
 
-- **Membre Fondateur → Actif** : déclenché par Fiw côté admin (fin de phase test), notification push envoyée à l'Affilié Réseau.
+États : **Activation → Actif → Gelé**
 
 | État | Wallet Réseau | Retrait | Activité |
 |---|---|---|---|
-| Membre Fondateur | visible | **bloqué** (jusqu'au lancement officiel) | reste actif |
-| Actif | visible | **disponible** | tout actif |
+| Actif | visible | **disponible** (≥ 1 000 F) | tout actif |
 | Gelé | visible | **bloqué** (suspension → support) | reste actif |
 
 ### 5. Wallet Réseau
@@ -84,8 +85,7 @@ Section Affilié Réseau (« Mon espace Affilié Réseau »)
 - Chaque **liste vide** affiche un message qui dit quoi faire ensuite — jamais d'écran vide muet.
 - Chaque **chemin d'échec** a un écran qui diagnostique, explique et propose une action de récupération.
 - Tout **mouvement d'argent** passe par un récapitulatif explicite avant le point de non-retour.
-- Le badge **« Fondateur »** est toujours accompagné d'une phrase qui explique pourquoi les commissions sont encore gelées.
-- Le bouton « Retirer » est **désactivé** (grisé) en état Membre Fondateur et Gelé — pas d'écran intermédiaire bloquant.
+- Le bouton « Retirer » est **désactivé** (grisé) en état Gelé — pas d'écran intermédiaire bloquant.
 
 ---
 
@@ -102,10 +102,9 @@ Section Affilié Réseau (« Mon espace Affilié Réseau »)
 - Retour → Présentation du programme
 - [ contrat d'affiliation ]
 
-**Tableau de bord (premier accès — état Membre Fondateur)**
+**Tableau de bord (premier accès)**
 - « Voir mes outils » → Mes Outils
-- [ badge « Fondateur » + phrase : « Vous faites partie des fondateurs. Vos gains sont comptabilisés dès maintenant et seront débloqués au lancement officiel. »
-  / métriques à zéro avec messages d'accompagnement
+- [ métriques à zéro avec messages d'accompagnement
   / EMPTY STATE : « Votre réseau est encore vide — partagez votre code pour inviter vos premières personnes » + bouton vers Mes Outils ]
 
 ### JS2 — Recruter quelqu'un
@@ -140,7 +139,6 @@ Section Affilié Réseau (« Mon espace Affilié Réseau »)
 **Tableau de bord → bouton « Retirer »**
 - [si Actif + solde ≥ 1 000 F] → Choix méthode + montant
 - [si Actif + solde < 1 000 F] → bouton désactivé + caption : « Minimum 1 000 F »
-- [si Membre Fondateur] → bouton désactivé + caption : « Retrait disponible au lancement officiel »
 - [si Gelé] → bouton désactivé + caption : « Retraits suspendus — contactez le support »
 
 **Choix méthode + montant**

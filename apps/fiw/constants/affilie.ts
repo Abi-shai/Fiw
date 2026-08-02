@@ -1,11 +1,12 @@
 // Données factices pour le parcours Affilié Réseau.
 // Proto de calage visuel — voir docs/breadboard-affilie-reseau.md.
 
-export type AffilieState = 'fondateur' | 'actif' | 'gele';
+export type AffilieState = 'actif' | 'gele';
 export type MemberKind = 'chauffeur' | 'livreur' | 'client';
 
-/** État global du compte. 'actif' pour rendre le flux de retrait navigable ;
- *  le dashboard témoin illustre séparément l'état 'fondateur'. */
+/** État global du compte. 'actif' par défaut (retrait ouvert dès le lancement —
+ *  l'app est commercialisée dès le départ) ; 'gele' = suspension (retrait
+ *  bloqué, contacter le support). */
 export const AMBASSADEUR = {
   name: 'Awa Diop',
   code: 'AWA2024',

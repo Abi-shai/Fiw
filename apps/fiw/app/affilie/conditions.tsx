@@ -14,7 +14,6 @@ import { Colors, Radii, Spacing } from '@/constants/tokens';
 const CLAUSES = [
   'Vous touchez 2 % du montant brut de chaque course réalisée par les personnes inscrites avec votre code.',
   'Les commissions sont créditées sur votre Wallet et retirables vers Mobile Money à partir de 1 000 F.',
-  'Pendant la phase de lancement, vos gains sont comptabilisés mais le retrait est différé (statut Membre Fondateur).',
   'Fiw peut suspendre les retraits en cas d’usage frauduleux du programme.',
   'Le programme peut évoluer ; vous serez notifié de tout changement des règles de commission.',
 ];

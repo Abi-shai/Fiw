@@ -18,9 +18,9 @@ _Avoid_ : chauffeur (trop restrictif), livreur (trop restrictif), conducteur
 Personne physique (particulier, étudiant, commerçant) qui recrute des clients et des prestataires et perçoit une commission de 2 % du montant brut de chaque course générée par son réseau (prélevée sur la part Fiw). **Rôle activé sur un compte Client existant**, dans l'app **Fiw uniquement** — pas un compte distinct, pas d'application séparée, pas de connexion séparée. Modèle « 1 affilié = 1 app » : Affilié Réseau vit dans Fiw (Client), Affilié Partenaire vit dans Fiw Pro (Prestataire). Un Prestataire ne peut pas activer le rôle Affilié Réseau depuis Fiw Pro.
 _Avoid_ : parrain, ambassadeur, apporteur d'affaires
 
-**Affilié Fondateur** :
-Statut de reconnaissance des Affiliés Réseau de la **cohorte de lancement** — ceux dont les Gains sont comptabilisés pendant la phase de paiement différé, avant l'ouverture du retrait cash. Distinction early-adopter, pas un rôle distinct de l'Affilié Réseau.
-_Avoid_ : **Partenaire Fondateur** — formulation d'origine (feature-list), conservée dans l'historique mais **plus employée** : le mot « Partenaire » collisionne avec **Affilié Partenaire** (entité entreprise, 4 %) et laisse croire à un changement de rôle. Aussi : Membre Fondateur, Pionnier, Ambassadeur Fondateur.
+**Affilié Fondateur / Membre Fondateur** _(termes retirés — 26 juillet 2026)_ :
+Désignaient la phase de lancement à **paiement différé** : Gains comptabilisés mais retrait cash bloqué jusqu'au lancement officiel. **Abandonnés** — l'app est **commercialisée dès le départ**, les Gains et les commissions sont perçus **et retirables dès le lancement** (au-dessus du seuil de 1 000 F CFA). Plus de statut ni de badge « Fondateur » ; le lifecycle de l'Affilié Réseau se réduit à **Actif → Gelé** (Gelé = suspension, retrait bloqué + contact support).
+_Avoid_ : Fondateur, Affilié Fondateur, Membre Fondateur, Partenaire Fondateur, phase de lancement (paiement différé), Pionnier, Ambassadeur Fondateur
 
 **Affilié** :
 La **personne recrutée** par un Affilié Réseau : un Client ou un Prestataire entré dans le réseau via son code/QR, et dont les courses génèrent la commission de 2 %. Terme UI + conceptuel pour un membre du réseau. **Règle de désambiguïsation** : le mot seul « Affilié » = un recruté ; les termes en deux mots `Affilié Réseau` (recruteur) et `Affilié Partenaire` (entreprise, Fiw Pro) désignent les rôles/entités et ne s'abrègent jamais en « Affilié ».
@@ -41,10 +41,6 @@ _Avoid_ : client enregistré, favori client, profil client
 **Code prestataire** :
 Code court unique (format `FIW-XXXXX`, 8 caractères) affiché dans le profil Fiw Pro d'un Prestataire. Permet à un Affilié Partenaire d'ajouter ce Prestataire à ses favoris sans connaître son identifiant technique de service (MOT-XXXX, etc.). Conçu pour être partagé de vive voix ou par SMS. Distinct des identifiants de service existants.
 _Avoid_ : identifiant prestataire, code d'accès, ID service
-
-**Membre Fondateur** :
-État du lifecycle d'un Affilié Réseau pendant la phase de lancement : ses gains sont **comptabilisés** dans le Wallet Affilié mais le **retrait reste bloqué** jusqu'au lancement officiel. Le passage Membre Fondateur → Actif est déclenché par Fiw côté admin (fin de phase test), avec notification push. À distinguer de l'état **Gelé** (suspension : retrait bloqué + invitation à contacter le support). « Partenaire Fondateur » est à éviter — collision avec Affilié Partenaire.
-_Avoid_ : partenaire fondateur, early adopter, bêta-testeur
 
 ### Services
 

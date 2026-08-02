@@ -138,7 +138,7 @@
 - Code Prestataire Unique : vérifier → confirmer comme prioritaire
 - Partage prestataire vers Affilié Partenaire (Réseau uniquement)
 - Historique commissions
-- **Phase de lancement (statut « Affilié Fondateur »)** : au démarrage, commissions comptabilisées mais **paiement différé** (retrait cash pas encore ouvert). Le retrait cash des **Gains** via Mobile Money est le **modèle cible** ; la date de bascule est une décision Blaise & Daniel *(à définir)*. *(Statut d'abord formulé « Partenaire Fondateur » ; renommé pour éviter la collision avec Affilié Partenaire — cf. `CONTEXT.md`.)*
+- **Gains perçus et retirables dès le lancement** : l'app est **commercialisée dès le départ** — commissions et Gains sont crédités **et** retirables vers Mobile Money dès le premier jour (au-dessus du seuil de 1 000 F CFA), sans phase de paiement différé. *(Remplace l'ancien statut « Affilié Fondateur » / paiement différé, abandonné le 26 juillet 2026 — cf. `CONTEXT.md` et ADR 0007.)*
 
 ### Fidélité & Réductions
 - Solde de points (1 pt / 100 F CFA)

@@ -5,10 +5,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import Avatar from '@/components/Avatar';
 import Icon, { type IconName } from '@/components/Icon';
 import Text from '@/components/Text';
-import { Colors, Radii } from '@/constants/tokens';
+import { Colors, Radii, Shadows } from '@/constants/tokens';
 import { CLIENT } from '@/constants/data';
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -17,16 +18,19 @@ const SPRING = { stiffness: 300, damping: 30, mass: 1, useNativeDriver: true };
 const CLOSE_DX = DRAWER_W * 0.30; // déplacement minimal pour déclencher la fermeture
 const CLOSE_VX = 0.5;              // vélocité minimale (px/ms) pour déclencher la fermeture
 
-// Proto : statut d'affiliation du Client. Bascule pour voir les deux états de
-// l'item Affiliation — mini CTA « Gagner de l'argent » (non affilié) ·
-// sous-lignes solde/recrutés (Affilié Réseau actif).
-const IS_AFFILIATE = false;
-
-// Proto : phase de lancement « Affilié Fondateur » — les Gains s'accumulent
-// mais le retrait cash (Mobile Money) n'est pas encore ouvert. Passe à true
-// quand il l'est → le libellé redevient « Solde disponible » et la note
-// « Retrait bientôt disponible » disparaît.
-const RETRAIT_OUVERT = false;
+// Proto : statut d'affiliation du Client, piloté par l'interrupteur de démo
+// (facilitateur) au niveau de la section Affiliation — invisible en production,
+// même langage que le « Démo · … » de l'écran searching. Cycle les deux états
+// de l'item Affiliation :
+//  · none  → non affilié : mini CTA « Gagner de l'argent »
+//  · actif → Affilié Réseau actif : Solde disponible + recrutés (le retrait est
+//            ouvert dès le lancement — l'app est commercialisée dès le départ).
+type AffiliationState = 'none' | 'actif';
+const AFFILIATION_ORDER: AffiliationState[] = ['none', 'actif'];
+const AFFILIATION_DEMO_LABEL: Record<AffiliationState, string> = {
+  none: 'Non affilié',
+  actif: 'Actif',
+};
 
 type SubRow = { label: string; value: string };
 type MenuItemProps = {
@@ -37,12 +41,10 @@ type MenuItemProps = {
   subtitle?: string;
   /** Lignes d'info indentées sous l'item (mini tableau de bord). */
   subRows?: SubRow[];
-  /** Note discrète (icône + texte tertiaire) sous les sous-lignes — statut léger. */
-  note?: { icon?: IconName; text: string };
   onPress?: () => void;
 };
 
-function MenuItem({ icon, label, badge, subtitle, subRows, note, onPress }: MenuItemProps) {
+function MenuItem({ icon, label, badge, subtitle, subRows, onPress }: MenuItemProps) {
   return (
     <TouchableOpacity style={styles.item} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.itemRow}>
@@ -72,12 +74,6 @@ function MenuItem({ icon, label, badge, subtitle, subRows, note, onPress }: Menu
           ))}
         </View>
       )}
-      {note && (
-        <View style={styles.note}>
-          {note.icon && <Icon name={note.icon} size={13} color={Colors.textTertiary} />}
-          <Text variant="caption" color={Colors.textTertiary}>{note.text}</Text>
-        </View>
-      )}
     </TouchableOpacity>
   );
 }
@@ -91,6 +87,15 @@ export default function MenuDrawer({ visible, onClose }: Props) {
   const insets = useSafeAreaInsets();
   const translateX = useRef(new Animated.Value(-DRAWER_W)).current;
   const [interactive, setInteractive] = useState(false);
+
+  // Interrupteur de démo (facilitateur) : cycle les états de l'item Affiliation.
+  const [affiliation, setAffiliation] = useState<AffiliationState>('none');
+  const isAffiliate = affiliation !== 'none';
+  const cycleAffiliation = () => {
+    Haptics.selectionAsync();
+    const next = AFFILIATION_ORDER[(AFFILIATION_ORDER.indexOf(affiliation) + 1) % AFFILIATION_ORDER.length];
+    setAffiliation(next);
+  };
 
   // Ref stable pour que le PanResponder (créé une seule fois) lise toujours
   // le onClose courant sans être recréé à chaque render.
@@ -194,15 +199,14 @@ export default function MenuDrawer({ visible, onClose }: Props) {
 
         <View style={styles.divider} />
 
-        {IS_AFFILIATE ? (
+        {isAffiliate ? (
           <MenuItem
             icon="group"
             label="Affiliation"
             subRows={[
-              { label: RETRAIT_OUVERT ? 'Solde disponible' : 'Solde', value: '4 200 F' },
+              { label: 'Solde disponible', value: '4 200 F' },
               { label: 'Personnes recrutées', value: '12' },
             ]}
-            note={RETRAIT_OUVERT ? undefined : { icon: 'hourglass', text: 'Retrait bientôt disponible' }}
           />
         ) : (
           <MenuItem icon="group" label="Affiliation" subtitle="Gagner de l'argent" />
@@ -214,6 +218,16 @@ export default function MenuDrawer({ visible, onClose }: Props) {
 
         {/* Pousse le pied de menu tout en bas */}
         <View style={styles.spacer} />
+
+        {/* Interrupteur de démo (facilitateur) : flotte au-dessus du pied, hors du
+            flux de la liste — même chip que l'écran searching. Cycle les états
+            d'Affiliation. Invisible en production. */}
+        <View style={styles.demoRow}>
+          <TouchableOpacity style={styles.demoChip} onPress={cycleAffiliation} activeOpacity={0.85}>
+            <Icon name="lightning" size={12} weight="bold" color={Colors.textSecondary} />
+            <Text variant="caption" color={Colors.textSecondary}>Démo · {AFFILIATION_DEMO_LABEL[affiliation]}</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Devenir prestataire — carte distincte (couleur Fiw Pro #084EC5), séparée
             de la liste pour NE PAS entrer en collision avec le « Gagner de l'argent »
@@ -297,19 +311,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  // Note discrète sous les sous-lignes (ex. « Retrait bientôt disponible »)
-  note: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginLeft: 36,
-    marginTop: 8,
-  },
   badgeWrap: {
     backgroundColor: Colors.primarySubtle,
     borderRadius: 20,
     paddingHorizontal: 8,
     paddingVertical: 2,
+  },
+  // Interrupteur de démo : flotte au-dessus de la carte du pied, aligné sur son
+  // bord droit (même marge horizontale, 16).
+  demoRow: { alignItems: 'flex-end', paddingHorizontal: 16, marginBottom: 10 },
+  demoChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: Colors.surface,
+    borderRadius: Radii.pill,
+    paddingVertical: 8, paddingHorizontal: 12,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: Colors.hairline,
+    ...Shadows.float,
   },
   // Pied de menu épinglé
   spacer: { flex: 1, minHeight: 16 },

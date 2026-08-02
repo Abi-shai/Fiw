@@ -35,10 +35,8 @@ export default function AffilieDashboard() {
   const insets = useSafeAreaInsets();
   const { state, balance } = AMBASSADEUR;
 
-  const locked = state === 'fondateur' || state === 'gele';
-  const lockCaption = state === 'fondateur'
-    ? 'Retrait disponible au lancement officiel'
-    : state === 'gele'
+  const locked = state === 'gele';
+  const lockCaption = state === 'gele'
     ? 'Retraits suspendus — contactez le support'
     : balance < WITHDRAW_MIN
     ? `Minimum ${fcfa(WITHDRAW_MIN)}`
