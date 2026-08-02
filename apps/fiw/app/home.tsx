@@ -17,7 +17,8 @@ import Icon, { type IconName } from '@/components/Icon';
 import { Handle, SheetHeader, sheetSurface } from '@/components/Sheet';
 import { useSnapSheet, SHEET_SPRING } from '@/hooks/useSnapSheet';
 import { Colors, Radii, Poppins, Shadows } from '@/constants/tokens';
-import { DAKAR_CENTER, SUGGESTIONS, SAVED_PLACES, RECENT_PLACES } from '@/constants/data';
+import { DAKAR_CENTER, SUGGESTIONS, RECENT_PLACES } from '@/constants/data';
+import { usePlaces } from '@/stores/places';
 
 type Place = { name: string; detail: string; lat: number; lng: number };
 type Field = 'departure' | 'destination';
@@ -384,6 +385,9 @@ export default function HomeScreen() {
   // --- Résultats de recherche : une seule liste qui suit la saisie du champ
   //     actif. Vide → lieux enregistrés + récents ; en train de saisir →
   //     correspondances filtrées. Plus d'onglets.
+  // Les lieux viennent du store : ceux que le Client ajoute depuis son compte
+  // apparaissent ici sans autre câblage.
+  const savedPlaces = usePlaces();
   const query = activeField === 'departure' ? departureQuery : destinationQuery;
   const matches = (text: string) => text.toLowerCase().includes(query.trim().toLowerCase());
   const searching = query.trim().length > 0;
@@ -393,9 +397,11 @@ export default function HomeScreen() {
         .filter((s) => matches(s.name) || matches(s.detail))
         .map((s) => ({ key: s.id, icon: 'location', title: s.name, subtitle: s.detail, place: s }))
     : [
-        ...SAVED_PLACES.map((s) => ({
+        // Un emplacement vidé de son adresse (Maison après un déménagement) n'a
+        // rien à proposer ici — il ne réapparaît qu'une fois rempli.
+        ...savedPlaces.filter((s) => s.detail).map((s) => ({
           key: s.id,
-          icon: (s.kind === 'home' ? 'home' : 'work') as IconName,
+          icon: (s.kind === 'home' ? 'home' : s.kind === 'work' ? 'work' : 'location') as IconName,
           accent: true,
           title: s.label,
           subtitle: s.detail,

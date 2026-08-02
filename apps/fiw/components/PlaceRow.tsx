@@ -11,6 +11,9 @@ type Props = {
   subtitle?: string;
   /** Teinte le cercle d'icône avec l'accent primaire (lieu enregistré, action). */
   accent?: boolean;
+  /** Sous-titre en bleu marque : la seconde ligne n'est plus une information
+   *  mais une invitation à agir (ex. un emplacement encore sans adresse). */
+  subtitleAccent?: boolean;
   /** Icône de fin de ligne (ex. chevronRight). */
   trailing?: IconName;
   onPress?: () => void;
@@ -20,7 +23,7 @@ type Props = {
 /** Ligne de lieu réutilisable : cercle d'icône + titre + sous-titre.
  *  Utilisée pour les récents (accueil), les suggestions et les lieux
  *  enregistrés (itinéraire) afin d'unifier l'aspect et le comportement. */
-export default function PlaceRow({ icon, title, subtitle, accent, trailing, onPress, style }: Props) {
+export default function PlaceRow({ icon, title, subtitle, accent, subtitleAccent, trailing, onPress, style }: Props) {
   return (
     <TouchableOpacity
       style={[styles.row, style]}
@@ -33,7 +36,9 @@ export default function PlaceRow({ icon, title, subtitle, accent, trailing, onPr
       </View>
       <View style={styles.text}>
         <Text variant="body" style={styles.title}>{title}</Text>
-        {subtitle ? <Text variant="bodySmall" color={Colors.textSecondary}>{subtitle}</Text> : null}
+        {subtitle ? (
+          <Text variant="bodySmall" color={subtitleAccent ? Colors.primary : Colors.textSecondary}>{subtitle}</Text>
+        ) : null}
       </View>
       {trailing ? <Icon name={trailing} size={18} color={Colors.textTertiary} /> : null}
     </TouchableOpacity>

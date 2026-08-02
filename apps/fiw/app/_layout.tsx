@@ -93,6 +93,7 @@ export default function RootLayout() {
         <Stack.Screen name="compte/numero" />
         <Stack.Screen name="compte/paiement" />
         <Stack.Screen name="compte/lieux" />
+        <Stack.Screen name="compte/lieu" />
         <Stack.Screen name="compte/securite" />
         <Stack.Screen name="compte/preferences" />
       </Stack>
