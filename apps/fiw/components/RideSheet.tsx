@@ -441,7 +441,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
-  vehicleRenderImg: { width: 56, height: 56 },
+  // 48 et non 56 : les illustrations `mobility option` sont rognées au plus près
+  // du dessin, donc `contain` les fait remplir la boîte — à 56 le véhicule
+  // dépassait les 52 de hauteur du cadre et se faisait rogner.
+  vehicleRenderImg: { width: 48, height: 48 },
 
   // VehicleGroup (cadre surfaceAlt).
   vehicleGroup: {

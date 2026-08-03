@@ -18,7 +18,7 @@ import {
 } from '@/components/RideSheet';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
 import { Colors, Radii, Poppins } from '@/constants/tokens';
-import { VELO_LIVREUR, MOTO_LIVREUR, DAKAR_CENTER } from '@/constants/data';
+import { VELO_LIVREUR, MOTO_LIVREUR, DAKAR_CENTER, livraisonGamme } from '@/constants/data';
 import { payIllustration } from '@/constants/illustrations';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -120,13 +120,14 @@ function getMapConfig(stepKey: StepKey, destLat: number, destLng: number) {
 export default function LivraisonSuiviScreen() {
   const params = useLocalSearchParams<{
     departureName?: string; destName: string; destLat: string; destLng: string;
-    colisType: string; colisTaille: string; colisDesc: string;
+    colisDesc: string;
     destinataireName: string; destinatairePhone: string;
     gammeId: string; gammeLabel: string; finalPrice: string; paymentId: string;
     selectedOption: string; mode: string; tracking: string; codeRemise: string;
   }>();
 
   const driver = params.gammeId === 'velo' ? VELO_LIVREUR : MOTO_LIVREUR;
+  const gamme = livraisonGamme(params.gammeId);
   const price = parseInt(params.finalPrice || '700', 10);
   const destLat = parseFloat(params.destLat || String(DAKAR_CENTER.lat));
   const destLng = parseFloat(params.destLng || String(DAKAR_CENTER.lng));
@@ -155,11 +156,6 @@ export default function LivraisonSuiviScreen() {
 
   const step = STEPS[stepIndex];
   const mapConfig = getMapConfig(step.key, destLat, destLng);
-
-  // Rendu véhicule : scooter illustré ; vélo en icône (pas encore d'asset).
-  const vehicleArt = params.gammeId === 'velo'
-    ? <Icon name="bicycle" size={34} weight="fill" color={Colors.gray600} />
-    : undefined;
 
   const [sheetH, setSheetH] = useState(0);
   const [headerH, setHeaderH] = useState(0);
@@ -228,7 +224,7 @@ export default function LivraisonSuiviScreen() {
             destName: params.destName, gammeId: params.gammeId, gammeLabel: params.gammeLabel,
             finalPrice: String(price), paymentId: params.paymentId,
             selectedOption: params.selectedOption, mode: params.mode,
-            colisType: params.colisType, colisTaille: params.colisTaille,
+            colisDesc: params.colisDesc,
             destinataireName: params.destinataireName, tracking: params.tracking,
           },
         });
@@ -308,10 +304,11 @@ export default function LivraisonSuiviScreen() {
                 Remettez le colis au prestataire — il enregistre le n° de suivi.
               </InfoBanner>
             )}
-            <VehicleGroup driver={driver} illu="livraison" art={vehicleArt} onPress={expand} />
+            <VehicleGroup driver={driver} illu={gamme.illu} onPress={expand} />
           </SheetCard>
 
-          {/* Colis — type · taille, n° de suivi, code de remise. */}
+          {/* Colis — description libre (seule info saisie), n° de suivi, code
+              de remise. Le type et la taille ne sont plus demandés (2 août). */}
           <SheetCard>
             <Text variant="heading2">Votre colis</Text>
             {params.mode === 'groupee' && (
@@ -324,12 +321,12 @@ export default function LivraisonSuiviScreen() {
                 <Icon name="package" size={22} weight="bold" color={Colors.primary} />
               </View>
               <View style={styles.flex1}>
-                <Text variant="label" numberOfLines={1}>
-                  {params.colisType} · Taille {params.colisTaille}
+                <Text variant="label" numberOfLines={2}>
+                  {params.colisDesc || 'Colis sans description'}
                 </Text>
-                {params.colisDesc ? (
-                  <Text variant="caption" color={Colors.textSecondary} numberOfLines={1}>{params.colisDesc}</Text>
-                ) : null}
+                <Text variant="caption" color={Colors.textSecondary} numberOfLines={1}>
+                  {params.gammeLabel}
+                </Text>
               </View>
             </View>
             <View style={styles.trackingRow}>

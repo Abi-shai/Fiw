@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, StyleSheet, TouchableOpacity, TextInput, Animated, Keyboard,
-  ScrollView, Dimensions,
+  ScrollView, Dimensions, Image,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,32 +13,33 @@ import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import Button from '@/components/Button';
 import Avatar from '@/components/Avatar';
-import ChipGroup from '@/components/ChipGroup';
+import PaymentSheetContent from '@/components/PaymentSheet';
 import { Handle, SHEET_RADIUS } from '@/components/Sheet';
 import { groupedSheetSurface, SheetCard, RouteCard, CARD_GAP } from '@/components/RideSheet';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
 import { Colors, Radii, Poppins } from '@/constants/tokens';
-import { COLIS_TYPES, COLIS_TAILLES, CONTACTS, DAKAR_CENTER } from '@/constants/data';
-import type { IconName } from '@/components/Icon';
+import {
+  CONTACTS, DAKAR_CENTER, livraisonGamme, makeTrackingNumber, makeCodeRemise,
+} from '@/constants/data';
+import { gammeIllustration, payIllustration } from '@/constants/illustrations';
 
 const SCREEN_H = Dimensions.get('window').height;
-
-/** Label de groupe requis — au-dessus du contrôle, astérisque `error` (le rouge
- *  est réservé au requis/erreur ; le bleu signale l'action). Réf. bench IA :
- *  Grab « Size* », Gojek « What kind of package?* », Shopee. */
-function FieldLabel({ label }: { label: string }) {
-  return (
-    <Text variant="bodySmall" color={Colors.textSecondary}>
-      {label} <Text variant="bodySmall" color={Colors.error}>*</Text>
-    </Text>
-  );
-}
+const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/[\s  ]/g, '.');
 
 /**
- * Livraison — étape 1 : le colis et son destinataire (réf. benchmark : hub
- * « Delivery Details » de Grab, chips de type Gojek). L'expéditeur est le compte
- * connecté. Le destinataire vit AVEC les détails du colis (retour user test) et
- * se choisit d'abord dans les contacts, la saisie manuelle en repli.
+ * Livraison — étape 2 : les détails de la livraison et le paiement.
+ *
+ * Ordre de priorité tranché au croquis du 2 août : **où** (point de collecte et
+ * de livraison) → **comment et combien** (moyen de livraison et prix) → **pour
+ * qui** (destinataire) → **quoi** (description facultative) → paiement +
+ * confirmation. Une carte par bloc, séparées par l'espacement de section de la
+ * feuille (`CARD_GAP`, l'interstice `track`) — les deux premières rappellent ce
+ * qui est déjà décidé et restent modifiables, les deux suivantes sont ce qu'il
+ * reste à saisir.
+ *
+ * Le colis n'est plus décrit que par la description libre — ni type ni taille
+ * (décision du 2 août). L'expéditeur est le compte connecté ; le destinataire se
+ * choisit d'abord dans les contacts, la saisie manuelle en repli.
  *
  * Feuille à 3 crans hug-content (pattern course-active/suivi) : le contenu est
  * plus haut qu'une feuille statique ne le permet — l'en-tête se glisse pour
@@ -49,16 +50,17 @@ export default function LivraisonConfigureScreen() {
   const params = useLocalSearchParams<{
     departureName: string;
     destName: string; destDetail: string; destLat: string; destLng: string;
+    gammeId: string; gammeLabel: string; gammePrice: string;
   }>();
 
   const departureName = params.departureName || 'Ma position actuelle';
+  // Méthode retenue à l'étape précédente — relue depuis le seul `gammeId` (la
+  // mise en relation peut la remplacer par la gamme complémentaire).
+  const gamme = livraisonGamme(params.gammeId);
   const destLat = parseFloat(params.destLat || String(DAKAR_CENTER.lat));
   const destLng = parseFloat(params.destLng || String(DAKAR_CENTER.lng));
   const mapCenter = { lat: (DAKAR_CENTER.lat + destLat) / 2, lng: (DAKAR_CENTER.lng + destLng) / 2 };
 
-  // Colis : type requis (validation Gojek), taille pré-réglée S (friction minimale).
-  const [typeId, setTypeId] = useState<string | null>(null);
-  const [tailleId, setTailleId] = useState('s');
   const [description, setDescription] = useState('');
   const [descOpen, setDescOpen] = useState(false);
   const [descDraft, setDescDraft] = useState('');
@@ -71,6 +73,11 @@ export default function LivraisonConfigureScreen() {
   const [contactQuery, setContactQuery] = useState('');
   const [nameDraft, setNameDraft] = useState('');
   const [phoneDraft, setPhoneDraft] = useState('');
+
+  // Paiement : dernier réglage avant confirmation (feuille partagée Transport).
+  const [selectedPayment, setSelectedPayment] = useState('cash');
+  const [pendingPayment, setPendingPayment] = useState('cash');
+  const [payOpen, setPayOpen] = useState(false);
 
   // Les feuilles modales contiennent des champs : on remonte leur contenu au
   // clavier (même pattern que la recherche de l'accueil).
@@ -110,8 +117,9 @@ export default function LivraisonConfigureScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheetH, headerH, bodyContentH]);
 
+  // Seul requis de l'écran : le destinataire (le colis n'est plus décrit que par
+  // la description libre, facultative).
   const destinataireOk = destinataireName.trim().length > 0 && destinatairePhone.trim().length >= 9;
-  const canContinue = typeId !== null && destinataireOk;
 
   const openDest = () => {
     Haptics.selectionAsync();
@@ -147,20 +155,48 @@ export default function LivraisonConfigureScreen() {
     });
   };
 
-  const continuer = () => {
+  const openPay = () => {
     Haptics.selectionAsync();
-    const type = COLIS_TYPES.find((t) => t.id === typeId)!;
-    const taille = COLIS_TAILLES.find((t) => t.id === tailleId)!;
+    setPendingPayment(selectedPayment);
+    setPayOpen(true);
+  };
+
+  // Retour à l'étape méthode. `dismissTo` (et non `back`) : la mise en relation
+  // peut avoir réatterri ici en sautant l'étape 1 (« Passer en Moto Livraison »).
+  const editMethode = () => {
+    Haptics.selectionAsync();
+    router.dismissTo({
+      pathname: '/livraison/methode',
+      params: {
+        departureName,
+        destName: params.destName ?? '',
+        destDetail: params.destDetail ?? '',
+        destLat: params.destLat ?? '',
+        destLng: params.destLng ?? '',
+        preselectGamme: gamme.id,
+      },
+    });
+  };
+
+  // Le prix définitif se joue en mise en relation (groupage détecté, frais de
+  // rapprochement — Product Doc « B — Détection automatique ») : on confirme sur
+  // le prix standard de la gamme, sans total figé.
+  const confirmer = () => {
+    Haptics.selectionAsync();
     router.push({
-      pathname: '/livraison/options',
+      pathname: '/livraison/searching',
       params: {
         ...params,
         departureName,
-        colisType: type.label,
-        colisTaille: taille.label,
+        gammeId: gamme.id,
+        gammeLabel: gamme.label,
+        gammePrice: String(gamme.basePrice),
         colisDesc: description,
         destinataireName: destinataireName.trim(),
         destinatairePhone: destinatairePhone.trim(),
+        paymentId: selectedPayment,
+        tracking: makeTrackingNumber(),
+        codeRemise: makeCodeRemise(),
       },
     });
   };
@@ -218,7 +254,7 @@ export default function LivraisonConfigureScreen() {
           scrollEnabled={bodyContentH > bodyMaxH}
           showsVerticalScrollIndicator={false}
         >
-          {/* Itinéraire Collecte → Livraison. */}
+          {/* 1 — Point de collecte et de livraison. */}
           <SheetCard>
             <RouteCard
               departure={departureName}
@@ -229,53 +265,28 @@ export default function LivraisonConfigureScreen() {
             />
           </SheetCard>
 
-          {/* Le colis ET son destinataire (une seule section — décision produit).
-              IA issue du bench multi-agents (12 juil.) : les 3 requis d'abord
-              (Type* → Taille* → Destinataire*), l'optionnel affaibli en dernier. */}
+          {/* 2 — Moyen de livraison et prix. Colle à l'itinéraire : les deux
+              forment le cadre de la commande, décidé à l'étape précédente. */}
           <SheetCard>
-            <Text variant="heading2">Votre colis</Text>
-
-            {/* Type de colis (requis) — une seule ligne, coupée au bord (Grab/Shopee). */}
-            <View style={styles.fieldBlock}>
-              <FieldLabel label="Type de colis" />
-              <ChipGroup
-                items={COLIS_TYPES.map((t) => ({ id: t.id, label: t.label, icon: t.icon as IconName }))}
-                value={typeId}
-                onChange={setTypeId}
-                scrollable
-                bleed={16}
-              />
-            </View>
-
-            {/* Taille (requis) — l'objet-repère vit DANS chaque tuile. */}
-            <View style={styles.fieldBlock}>
-              <FieldLabel label="Taille" />
-              <View style={styles.tailleTiles}>
-                {COLIS_TAILLES.map((t) => {
-                  const active = tailleId === t.id;
-                  return (
-                    <TouchableOpacity
-                      key={t.id}
-                      style={[styles.tailleTile, active && styles.tailleTileActive]}
-                      activeOpacity={0.85}
-                      onPress={() => { Haptics.selectionAsync(); setTailleId(t.id); }}
-                    >
-                      <Text variant="heading2" color={active ? Colors.primary : Colors.textPrimary}>
-                        {t.label}
-                      </Text>
-                      <Text variant="caption" color={Colors.textSecondary} align="center" numberOfLines={2}>
-                        {t.hint}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+            <TouchableOpacity style={styles.methodeRow} onPress={editMethode} activeOpacity={0.85}>
+              <View style={styles.methodeThumb}>
+                <Image source={gammeIllustration(gamme.illu)} style={styles.methodeImg} resizeMode="contain" />
               </View>
-            </View>
+              <View style={styles.flex1}>
+                <Text variant="label" numberOfLines={1}>{gamme.label}</Text>
+                <Text variant="caption" color={Colors.textSecondary} numberOfLines={1}>
+                  {gamme.eta} · {gamme.capacity.toLowerCase()}
+                </Text>
+              </View>
+              <Text variant="heading2" color={Colors.primary}>{fmt(gamme.basePrice)} F</Text>
+              <Icon name="chevronRight" size={16} color={Colors.textTertiary} />
+            </TouchableOpacity>
+          </SheetCard>
 
-            <View style={styles.hairline} />
 
-            {/* Destinataire (requis) — rangée-ACTION tant que vide (Grab hub),
-                résumé compact une fois rempli. La note SMS est SON helper. */}
+          {/* 3 — Destinataire (le seul requis) : rangée-ACTION tant qu'il est
+              vide, résumé compact une fois rempli. La note SMS est SON helper. */}
+          <SheetCard>
             <TouchableOpacity style={styles.fieldRow} onPress={openDest} activeOpacity={0.85}>
               <Icon name="user" size={18} color={Colors.primary} />
               {destinataireOk ? (
@@ -296,8 +307,11 @@ export default function LivraisonConfigureScreen() {
                 Le destinataire reçoit un SMS pour suivre sa livraison.
               </Text>
             </View>
+          </SheetCard>
 
-            {/* Description (facultatif) — affaiblie, en dernier, sans chevron. */}
+
+          {/* 4 — Description du colis, facultative : affaiblie, en dernier. */}
+          <SheetCard>
             <TouchableOpacity style={styles.fieldRow} onPress={openDesc} activeOpacity={0.85}>
               <Icon name="edit" size={18} color={description ? Colors.textSecondary : Colors.textTertiary} />
               {description ? (
@@ -313,9 +327,19 @@ export default function LivraisonConfigureScreen() {
             </TouchableOpacity>
           </SheetCard>
 
-          {/* Continuer vers les options (gamme, mode, paiement). */}
+          {/* Paiement + confirmation — dernière étape avant la mise en relation. */}
           <SheetCard style={[styles.lastCard, { paddingBottom: 20 + insets.bottom }]}>
-            <Button label="Continuer" onPress={continuer} disabled={!canContinue} />
+            <View style={styles.footerRow}>
+              <TouchableOpacity style={styles.payBtn} onPress={openPay} activeOpacity={0.85}>
+                <Image source={payIllustration(selectedPayment)} style={styles.payImg} />
+              </TouchableOpacity>
+              <Button
+                label="Confirmer la livraison"
+                onPress={confirmer}
+                disabled={!destinataireOk}
+                style={styles.cta}
+              />
+            </View>
           </SheetCard>
         </ScrollView>
       </Animated.View>
@@ -344,6 +368,18 @@ export default function LivraisonConfigureScreen() {
                 onPress={() => { setDescription(descDraft.trim()); close(); }}
               />
             </View>
+          )}
+        </BottomSheet>
+      )}
+
+      {/* Moyen de paiement — feuille modale partagée. */}
+      {payOpen && (
+        <BottomSheet
+          title="Modes de paiement"
+          onClose={() => { setSelectedPayment(pendingPayment); setPayOpen(false); }}
+        >
+          {(close) => (
+            <PaymentSheetContent value={pendingPayment} onChange={setPendingPayment} onDone={close} />
           )}
         </BottomSheet>
       )}
@@ -489,6 +525,8 @@ const styles = StyleSheet.create({
   headerCard: { borderTopLeftRadius: SHEET_RADIUS, borderTopRightRadius: SHEET_RADIUS },
   lastCard: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
   body: { backgroundColor: 'transparent' },
+  // `CARD_GAP` EST l'espacement de section de la feuille : l'interstice `track`
+  // entre deux cartes blanches. Pas de spacer supplémentaire à empiler dessus.
   bodyContent: { paddingTop: CARD_GAP, gap: CARD_GAP },
 
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -498,23 +536,21 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  // Bloc de champ : label de groupe au-dessus de son contrôle.
-  fieldBlock: { gap: 8 },
-  hairline: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.border },
-
-  // Tuiles de taille — lettre + objet-repère intégré (bench : Shopee/Kakao T).
-  tailleTiles: { flexDirection: 'row', gap: 8 },
-  tailleTile: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 2,
-    paddingVertical: 12,
-    paddingHorizontal: 6,
+  // Rappel de la méthode retenue — vignette illustrée sur plateforme `track`,
+  // même langage que la carte gamme de l'étape précédente.
+  methodeRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: Radii.lg,
-    borderWidth: 1.5, borderColor: Colors.border,
-    backgroundColor: Colors.surface,
+    borderWidth: 1, borderColor: Colors.borderSubtle,
+    paddingHorizontal: 12, paddingVertical: 10,
   },
-  tailleTileActive: { borderColor: Colors.primary, backgroundColor: Colors.primarySubtle },
+  methodeThumb: {
+    width: 48, height: 48, borderRadius: Radii.md,
+    backgroundColor: Colors.track,
+    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+  },
+  methodeImg: { width: 42, height: 42 },
 
   // Ligne d'ouverture d'une saisie (description, destinataire) — cadre surfaceAlt.
   fieldRow: {
@@ -588,4 +624,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   sheetCta: { marginTop: 4 },
+
+  // Pied : moyen de paiement + confirmation (même gabarit que Transport).
+  footerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  payBtn: { padding: 4 },
+  payImg: { width: 40, height: 40, borderRadius: 11 },
+  cta: { flex: 1 },
 });

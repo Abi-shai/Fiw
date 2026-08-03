@@ -19,8 +19,8 @@ import LivraisonModeChoice, { type LivraisonMode } from '@/components/LivraisonM
 import { Colors, Poppins, Radii, Shadows } from '@/constants/tokens';
 import {
   DAKAR_CENTER, FRAIS_RAPPROCHEMENT, VELO_LIVREUR, MOTO_LIVREUR,
-  complementaryLivraisonGamme, GROUPEE_ECONOMIE, GROUPAGE_MIN_COMMANDES,
-  GROUPAGE_DELAI_MAX_MIN,
+  livraisonGamme, complementaryLivraisonGamme, GROUPEE_ECONOMIE,
+  GROUPAGE_MIN_COMMANDES, GROUPAGE_DELAI_MAX_MIN,
 } from '@/constants/data';
 import { gammeIllustration } from '@/constants/illustrations';
 
@@ -89,7 +89,7 @@ export default function LivraisonSearchingScreen() {
   const params = useLocalSearchParams<{
     departureName?: string; destName: string; destDetail?: string;
     destLat: string; destLng: string;
-    colisType: string; colisTaille: string; colisDesc: string;
+    colisDesc: string;
     destinataireName: string; destinatairePhone: string;
     gammeId: string; gammeLabel: string; gammePrice: string;
     paymentId: string; tracking: string; codeRemise: string;
@@ -118,6 +118,7 @@ export default function LivraisonSearchingScreen() {
   const finalPrice = (isFar ? base + frais : base) - (groupee ? GROUPEE_ECONOMIE : 0);
 
   const driver = params.gammeId === 'velo' ? VELO_LIVREUR : MOTO_LIVREUR;
+  const gamme = livraisonGamme(params.gammeId);
   const alt = complementaryLivraisonGamme(params.gammeId || 'velo');
 
   const revealEta = isFar ? '5 min' : '4 min';
@@ -136,17 +137,11 @@ export default function LivraisonSearchingScreen() {
       [-0.0070, -0.0030], [0.0052, 0.0020], [-0.0024, -0.0066],
     ].map(([dlat, dlng]) => ({ lat: o.lat + dlat, lng: o.lng + dlng }));
   }, []);
-  // Tous les prestataires Livraison sont rendus avec le scooter (le vélo n'a pas
-  // encore d'illustration isométrique).
+  // Les prestataires sur la carte portent le véhicule de la gamme demandée.
   const providerIcon = useMemo(
-    () => Image.resolveAssetSource(gammeIllustration('livraison')).uri,
-    [],
+    () => Image.resolveAssetSource(gammeIllustration(gamme.illu)).uri,
+    [gamme.illu],
   );
-
-  // Rendu véhicule : scooter illustré ; vélo en icône sur fond neutre.
-  const vehicleArt = params.gammeId === 'velo'
-    ? <Icon name="bicycle" size={34} weight="fill" color={Colors.gray600} />
-    : undefined;
 
   const scrimFade = useRef(new Animated.Value(0)).current;
   const sheetY = useRef(new Animated.Value(700)).current;
@@ -262,11 +257,20 @@ export default function LivraisonSearchingScreen() {
     setRunId((r) => r + 1);
   };
 
+  // Bascule vers la gamme complémentaire : le colis, le destinataire et le
+  // paiement sont déjà saisis — on repose seulement sur l'écran de confirmation,
+  // avec la nouvelle méthode et son prix (`dismissTo` remplace l'entrée existante
+  // au lieu d'en empiler une seconde).
   const changeGamme = () => {
     Haptics.selectionAsync();
-    router.replace({
-      pathname: '/livraison/options',
-      params: { ...params, preselectGamme: alt.id },
+    router.dismissTo({
+      pathname: '/livraison/configure',
+      params: {
+        ...params,
+        gammeId: alt.id,
+        gammeLabel: alt.label,
+        gammePrice: String(alt.basePrice),
+      },
     });
   };
 
@@ -305,7 +309,7 @@ export default function LivraisonSearchingScreen() {
       {phase === 'searching' && (
         <View style={[styles.banner, { top: insets.top + 8 }]} pointerEvents="none">
           <View style={styles.bannerThumb}>
-            <Image source={gammeIllustration('livraison')} style={styles.bannerImg} resizeMode="contain" />
+            <Image source={gammeIllustration(gamme.illu)} style={styles.bannerImg} resizeMode="contain" />
           </View>
           <Text variant="label" style={styles.bannerText} numberOfLines={2}>
             Recherche en cours pour votre livraison {params.gammeLabel || ''}
@@ -425,7 +429,7 @@ export default function LivraisonSearchingScreen() {
                   </Text>
                 </View>
                 <AltSuggestCard
-                  illu="livraison"
+                  illu={alt.illu}
                   title={`Passer en ${alt.label}`}
                   subtitle={`Souvent disponible · dès ${fmt(alt.basePrice)} F`}
                   onPress={changeGamme}
@@ -451,7 +455,7 @@ export default function LivraisonSearchingScreen() {
                   </InfoBanner>
                 )}
                 <Text variant="heading2">Votre prestataire arrive dans environ {revealEta}</Text>
-                <VehicleGroup driver={driver} illu="livraison" art={vehicleArt} />
+                <VehicleGroup driver={driver} illu={gamme.illu} />
               </SheetCard>
               <TotalBar amount={finalPrice} />
             </>
