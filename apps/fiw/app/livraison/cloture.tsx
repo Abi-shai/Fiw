@@ -27,7 +27,7 @@ export default function LivraisonClotureScreen() {
   const params = useLocalSearchParams<{
     destName: string; gammeId: string; gammeLabel: string;
     finalPrice: string; paymentId: string; selectedOption: string; mode: string;
-    colisType: string; colisTaille: string; destinataireName: string; tracking: string;
+    colisDesc: string; destinataireName: string; tracking: string;
   }>();
 
   const driver = params.gammeId === 'velo' ? VELO_LIVREUR : MOTO_LIVREUR;
@@ -95,7 +95,7 @@ export default function LivraisonClotureScreen() {
           rows={[
             { label: 'Destinataire', value: params.destinataireName || '—' },
             { label: 'N° de suivi', value: params.tracking || '—' },
-            { label: 'Colis', value: `${params.colisType} · Taille ${params.colisTaille}` },
+            ...(params.colisDesc ? [{ label: 'Colis', value: params.colisDesc }] : []),
             { label: 'Service', value: params.gammeLabel },
             { label: 'Paiement', value: payment.label },
           ]}

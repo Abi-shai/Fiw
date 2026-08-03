@@ -259,7 +259,7 @@ Livraison) doit donc les honorer aussi :
 
 > ⚠️ **État des lieux au 16 juillet 2026 : rien de tout ça n'est câblé.** Chaque écran
 > tient son propre état — `compte/paiement.tsx` a `{numbers, defaultId}` en `useState`
-> local, `transport/configure.tsx` et `livraison/options.tsx` ont `useState('cash')`
+> local, `transport/configure.tsx` et `livraison/configure.tsx` ont `useState('cash')`
 > **en dur**. Il n'existe aucune source de vérité partagée, donc la feuille ne peut
 > ni connaître les états ni honorer le défaut : **poser un moyen par défaut n'a
 > aujourd'hui aucun effet sur une commande.** Le préalable est de sortir l'état de

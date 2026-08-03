@@ -11,75 +11,19 @@ import IconButton from '@/components/IconButton';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import Button from '@/components/Button';
+import GammeCard from '@/components/GammeCard';
 import { GroupedSheet, SheetCard } from '@/components/RideSheet';
 import PaymentSheetContent from '@/components/PaymentSheet';
 import { Colors, Radii, Poppins, Shadows } from '@/constants/tokens';
 import { GAMMES, COVOITURAGE, COVOITURAGE_NODETOUR_PRICE, DAKAR_CENTER, WAIT_GRACE_MINUTES, WAIT_FEE_PER_MIN } from '@/constants/data';
-import { gammeIllustration, type IlluKey } from '@/constants/illustrations';
+import { gammeIllustration } from '@/constants/illustrations';
 
-// Séparateur de milliers façon FR/Sénégal (« 1.150 ») pour coller à la maquette.
-const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/[\s  ]/g, '.');
-
-// Ressort doux propre à la bascule de gamme : transition en fondu.
-const GAMME_SPRING = { stiffness: 220, damping: 22, mass: 1 };
-
-// Carte gamme (maquette 118-525) : plateforme colorée (bleue si choisie), badge
-// ETA en débord, libellé + tarif. Sélection animée via `progress` (0 → 1).
-function GammeCard({ gamme, selected, onPress }: {
-  gamme: typeof GAMMES[number]; selected: boolean; onPress: () => void;
-}) {
-  const tag = gamme.badge;
-  const progress = useRef(new Animated.Value(selected ? 1 : 0)).current;
-
-  useEffect(() => {
-    Animated.spring(progress, {
-      toValue: selected ? 1 : 0, ...GAMME_SPRING, useNativeDriver: false,
-    }).start();
-  }, [selected]);
-
-  const cardBg = progress.interpolate({ inputRange: [0, 1], outputRange: [Colors.surfaceAlt, Colors.primarySubtle] });
-  const cardOpacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] });
-  const platformBg = progress.interpolate({ inputRange: [0, 1], outputRange: [Colors.track, Colors.primary] });
-  const platformScale = progress.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] });
-  const idleOpacity = progress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
-
-  return (
-    <TouchableOpacity style={styles.gCard} onPress={onPress} activeOpacity={0.9}>
-      <Animated.View style={[StyleSheet.absoluteFillObject, styles.gCardBg, { backgroundColor: cardBg }]} />
-      <Animated.View style={[styles.gContent, { opacity: cardOpacity }]}>
-        <Animated.View style={[styles.gPlatform, { backgroundColor: platformBg, transform: [{ scale: platformScale }] }]}>
-          <Image source={gammeIllustration(gamme.illu)} style={styles.gIllo} resizeMode="contain" />
-          <View style={[styles.gEta, selected && styles.gEtaSel]}>
-            <Icon name="timer" size={12} weight="bold" color={Colors.textPrimary} />
-            <Text variant="caption" style={styles.gEtaText}>{gamme.eta}</Text>
-          </View>
-        </Animated.View>
-        <View style={styles.gInfo}>
-          <View style={styles.gLabelRow}>
-            <Text variant="label" numberOfLines={1} style={styles.gLabel}>{gamme.label}</Text>
-            {tag && (
-              <View style={styles.gTag}>
-                <Text variant="caption" style={styles.gTagText}>{tag}</Text>
-              </View>
-            )}
-          </View>
-          <View style={styles.gPrice}>
-            <Animated.View style={{ opacity: idleOpacity }}>
-              <Text variant="heading2" align="center" style={styles.gPriceText} color={Colors.textPrimary}>
-                {fmt(gamme.basePrice)} FCFA
-              </Text>
-            </Animated.View>
-            <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: progress }]}>
-              <Text variant="heading2" align="center" style={styles.gPriceText} color={Colors.primary}>
-                {fmt(gamme.basePrice)} FCFA
-              </Text>
-            </Animated.View>
-          </View>
-        </View>
-      </Animated.View>
-    </TouchableOpacity>
-  );
-}
+// Carte gamme : composant partagé avec la Livraison (`components/GammeCard`).
+// Les gammes Transport n'ont pas de ligne secondaire — libellé, pastille de
+// gamme éventuelle, prix.
+const gammeCardProps = (g: typeof GAMMES[number]) => ({
+  label: g.label, eta: g.eta, price: g.basePrice, illu: g.illu, badge: g.badge,
+});
 
 // Illustrations par moyen de paiement (bouton de la barre de confirmation).
 const PAY_ILLUSTRATIONS: Record<string, ReturnType<typeof require>> = {
@@ -286,7 +230,7 @@ export default function ConfigureScreen() {
               {category === 'covoit' ? (
                 <>
                   <View style={styles.covoitRow}>
-                    <GammeCard gamme={covoitGamme} selected onPress={() => {}} />
+                    <GammeCard {...gammeCardProps(covoitGamme)} selected onPress={() => {}} />
                     <View style={styles.covoitInfo}>
                       <Text variant="label" style={styles.covoitTitle}>
                         {noDetour ? 'Trajet sans détour' : 'Trajet partagé'}
@@ -322,7 +266,7 @@ export default function ConfigureScreen() {
                   keyExtractor={g => g.id}
                   contentContainerStyle={styles.gList}
                   renderItem={({ item }) => (
-                    <GammeCard gamme={item} selected={selectedGamme === item.id} onPress={() => handleGammeSelect(item.id)} />
+                    <GammeCard {...gammeCardProps(item)} selected={selectedGamme === item.id} onPress={() => handleGammeSelect(item.id)} />
                   )}
                 />
               )}
@@ -430,42 +374,8 @@ const styles = StyleSheet.create({
     borderRadius: Radii.lg,
   },
 
-  // Cartes gamme.
+  // Rangée de gammes (la carte elle-même vit dans `components/GammeCard`).
   gList: { gap: 10, paddingTop: 12, paddingRight: 4 },
-  gCard: { width: 138, height: 133, padding: 8, borderRadius: Radii.lg },
-  gCardBg: { borderRadius: Radii.lg },
-  gContent: { flex: 1, gap: 12 },
-  gPlatform: {
-    flex: 1, width: '100%',
-    borderRadius: Radii.md,
-    alignItems: 'flex-end', justifyContent: 'center',
-    paddingRight: 12,
-    overflow: 'visible',
-  },
-  gIllo: { width: 68, height: 68 },
-  gInfo: { gap: 4 },
-  gLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
-  gLabel: { fontSize: 12 },
-  gPrice: { width: '100%' },
-  gPriceText: { fontFamily: Poppins.bold, width: '100%' },
-  gTag: {
-    backgroundColor: Colors.brandYellow,
-    borderRadius: Radii.pill,
-    borderWidth: 1, borderColor: Colors.primarySubtle,
-    paddingHorizontal: 6, paddingVertical: 2,
-  },
-  gTagText: { fontFamily: Poppins.medium, color: Colors.textPrimary },
-  gEta: {
-    position: 'absolute',
-    bottom: -8, left: 0,
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.pill,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
-    paddingHorizontal: 8, paddingVertical: 3,
-  },
-  gEtaSel: { borderColor: Colors.primarySubtle },
-  gEtaText: { fontFamily: Poppins.medium, color: Colors.textPrimary },
 
   // Carte confirmation.
   confirmCard: { gap: 12 },

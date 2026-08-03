@@ -143,13 +143,15 @@ export const COVOITURAGE_NODETOUR_PRICE = 1150;
 
 // ——— Livraison (périmètre validé : Vélo Express / Moto Livraison) ———
 
-// Gammes Livraison. Même forme que GAMMES pour partager les patterns de carte.
-// `illu: null` = pas encore d'illustration isométrique (Vélo Express) : rendu en
-// icône `bicycle` sur plateforme, cf. écrans livraison.
-export const LIVRAISON_GAMMES: {
+// Gammes Livraison. Même forme que GAMMES pour partager la carte gamme — chacune
+// porte sa variante du jeu `mobility option` (`illu`) : le véhicule prime sur le
+// service, la Moto Livraison montre donc la même moto que le Taxi Moto.
+export type LivraisonGamme = {
   id: string; label: string; description: string; capacity: string;
-  basePrice: number; eta: string; illu: 'livraison' | null; icon: 'bicycle' | 'moto';
-}[] = [
+  basePrice: number; eta: string; illu: 'velo' | 'moto';
+};
+
+export const LIVRAISON_GAMMES: LivraisonGamme[] = [
   {
     id: 'velo',
     label: 'Vélo Express',
@@ -157,8 +159,7 @@ export const LIVRAISON_GAMMES: {
     capacity: 'Jusqu’à 5 kg',
     basePrice: 700,
     eta: '5 min',
-    illu: null,
-    icon: 'bicycle',
+    illu: 'velo',
   },
   {
     id: 'motoliv',
@@ -167,10 +168,14 @@ export const LIVRAISON_GAMMES: {
     capacity: 'Jusqu’à 20 kg',
     basePrice: 1200,
     eta: '4 min',
-    illu: 'livraison',
-    icon: 'moto',
+    illu: 'moto',
   },
 ];
+
+// Gamme Livraison choisie à l'étape « méthode », relue par les écrans suivants
+// (détails, mise en relation, suivi) à partir du seul `gammeId` transporté.
+export const livraisonGamme = (gammeId?: string) =>
+  LIVRAISON_GAMMES.find((g) => g.id === gammeId) ?? LIVRAISON_GAMMES[0];
 
 // Gamme Livraison complémentaire (état « Aucun prestataire ») : Vélo ↔ Moto.
 export const complementaryLivraisonGamme = (gammeId: string) =>
@@ -178,23 +183,11 @@ export const complementaryLivraisonGamme = (gammeId: string) =>
     ? LIVRAISON_GAMMES.find((g) => g.id === 'motoliv')!
     : LIVRAISON_GAMMES.find((g) => g.id === 'velo')!;
 
-// Types de colis (chips, réf. Gojek/Grab — benchmark Livraison).
-export const COLIS_TYPES: { id: string; label: string; icon: string }[] = [
-  { id: 'document', label: 'Document', icon: 'document' },
-  { id: 'vetements', label: 'Vêtements', icon: 'tshirt' },
-  { id: 'medicaments', label: 'Médicaments', icon: 'pill' },
-  { id: 'electronique', label: 'Électronique', icon: 'device' },
-  { id: 'autre', label: 'Autre', icon: 'package' },
-];
-
-// Tailles de colis (tuiles S/M/L, réf. Grab/Shopee/Kakao T) — l'objet-repère
-// vit DANS la tuile : la signification des 3 tailles est lisible avant toute
-// sélection (bench IA du 12 juil.).
-export const COLIS_TAILLES: { id: string; label: string; hint: string }[] = [
-  { id: 's', label: 'S', hint: 'Tient dans une main' },
-  { id: 'm', label: 'M', hint: 'Comme un carton à chaussures' },
-  { id: 'l', label: 'L', hint: 'Se porte à deux mains' },
-];
+// Type et taille de colis : retirés de la commande le 2 août 2026 (croquis
+// « Détails de livraison »). Le colis n'est plus décrit que par la description
+// libre, facultative — la capacité annoncée par la gamme (5 kg / 20 kg) suffit à
+// cadrer ce qui est acceptable. Les jeux `COLIS_TYPES` / `COLIS_TAILLES` et leurs
+// tuiles S/M/L sont dans l'historique git si la saisie structurée revient.
 
 // Livraison groupée (Option B, cf. CONTEXT.md + Product Doc « B — Détection
 // automatique ») : PROPOSITION détectée par l'algorithme quand d'autres

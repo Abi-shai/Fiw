@@ -62,8 +62,11 @@ Point d'entrée post-connexion. Donne accès à tous les services.
 
 ### 4.1 Préparation & configuration
 - Saisir adresse de collecte et adresse de livraison
-- Décrire le colis
-- Choisir le mode : Express (Option A) · Livraison groupée (Option B — prix réduit, léger délai)
+- **Choisir la méthode : Vélo Express · Moto Livraison** (avant les détails — elle porte le prix et la capacité)
+- Détails de la livraison, dans cet ordre : point de collecte et de livraison → moyen de livraison et prix → **destinataire** (seul champ requis) → **description du colis, facultative**
+- Choisir le moyen de paiement, puis confirmer
+- _Ni type ni taille de colis (2 août 2026) : la capacité annoncée par la gamme cadre ce qui est acceptable._
+- Le mode Express (Option A) / Livraison groupée (Option B — prix réduit, léger délai) est **proposé pendant la mise en relation**, quand l'algorithme détecte un colis voisin — jamais réglé a priori
 - Planifier une livraison (date et heure)
 
 ### 4.2 Yobanté (interrégional)

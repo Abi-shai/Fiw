@@ -96,7 +96,9 @@ const getMapHTML = (
        Calibre Yango : petit marqueur lisible sans masquer la carto. */
     .provider-icon { width: 32px; height: 32px; pointer-events: none; }
     .provider-icon img {
-      width: 100%; height: 100%; display: block;
+      /* Les illustrations mobility option sont rognées au plus près du dessin :
+         sans object-fit elles seraient étirées dans le carré du marqueur. */
+      width: 100%; height: 100%; display: block; object-fit: contain;
       filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25));
       transition: opacity 0.2s ease;
     }

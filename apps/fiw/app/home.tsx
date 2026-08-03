@@ -113,7 +113,7 @@ const SERVICE_ILLOS: Record<string, IlloCfg> = {
 
 function openConfigure(service: SearchService, place: Place, departureName: string) {
   router.push({
-    pathname: service === 'livraison' ? '/livraison/configure' : '/transport/configure',
+    pathname: service === 'livraison' ? '/livraison/methode' : '/transport/configure',
     params: {
       departureName,
       destName: place.name,
