@@ -143,5 +143,9 @@ Moyenne agrégée des évaluations individuelles données par les Clients à un 
 _Avoid_ : note chauffeur, rating prestataire, réputation prestataire
 
 **Lieu enregistré** :
-Adresse que le Client mémorise pour la réutiliser d'un tap. Deux emplacements spéciaux permanents — **Maison** et **Travail** — plus des lieux **libres** que le Client crée et nomme lui-même. Gérés depuis la page Compte, proposés comme destination dans la recherche d'itinéraire. Le libellé de section est « Lieux enregistrés ».
+Adresse que le Client mémorise pour la réutiliser d'un tap, avec le **Repère** qui va avec. Deux emplacements spéciaux permanents — **Maison** et **Travail** — plus des lieux **libres** que le Client crée et nomme lui-même. Gérés depuis la page Compte, proposés comme destination dans la recherche d'itinéraire. Le libellé de section est « Lieux enregistrés ».
 _Avoid_ : favori, lieu favori, adresse enregistrée, raccourci
+
+**Repère** :
+Texte libre décrivant comment reconnaître le point exact d'une Commande au sol. **Le contenu est entièrement ouvert** — tout ce qui aide un Prestataire à trouver l'endroit fait un Repère ; les exemples qui circulent (un portail de couleur, une boutique en face, un numéro de villa, une ruelle à prendre, un arbre, un chantier) sont des illustrations, jamais une liste de valeurs possibles, et surtout jamais des champs de formulaire. Porté par un point — départ ou arrivée — de la Commande et lu par le Prestataire dans Fiw Pro ; un Lieu enregistré le mémorise pour éviter de le retaper à chaque Commande. Ne décrit pas l'intérieur d'un bâtiment (étage, appartement) : ni le chauffeur ni le livreur ne montent.
+_Avoid_ : note (collision avec **Note du Client**), indication, consigne, instruction, complément d'adresse, point de repère (collision de famille avec Point Express / Point Fidélité)

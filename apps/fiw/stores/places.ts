@@ -7,8 +7,13 @@ import { SAVED_PLACES } from '@/constants/data';
 export type Place = {
   id: string;
   kind: 'home' | 'work' | 'custom';
+  /** Nom donné par le Client — privé, ne sort jamais de son app. */
   label: string;
+  /** L'adresse : ce que la carte sait trouver. */
   detail: string;
+  /** Le Repère (cf. CONTEXT.md) — mémorisé ici, lu par le Prestataire une fois
+   *  recopié sur le point de la Commande. Vide tant que le Client n'en a pas mis. */
+  repere: string;
   lat: number;
   lng: number;
 };
@@ -17,7 +22,11 @@ export type Place = {
 // fiche d'édition (`compte/lieu`) et la recherche d'itinéraire (`home`) doivent
 // voir la même chose. Store de module + abonnement — pas de Context à câbler
 // dans `_layout`, et le proto n'a rien à persister.
-let places: Place[] = SAVED_PLACES.map((p) => ({ ...p, kind: p.kind as Place['kind'] }));
+let places: Place[] = SAVED_PLACES.map((p) => ({
+  ...p,
+  kind: p.kind as Place['kind'],
+  repere: p.repere ?? '',
+}));
 
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
@@ -54,7 +63,8 @@ export function removePlace(id: string) {
  *  liste, vidé de son adresse (`detail` vide = « à remplir »). Un Client qui
  *  déménage peut retirer l'ancienne adresse sans connaître encore la nouvelle. */
 export function clearAddress(id: string) {
-  places = places.map((p) => (p.id === id ? { ...p, detail: '' } : p));
+  // Le Repère décrit un point précis : sans adresse il ne décrit plus rien.
+  places = places.map((p) => (p.id === id ? { ...p, detail: '', repere: '' } : p));
   emit();
 }
 

@@ -26,6 +26,17 @@
 
 ## 3. Mission active — Transport & Covoiturage
 
+> ⚠️ **À prendre en compte au chantier Fiw Pro — le Repère** (cf. `CONTEXT.md` et
+> [ADR 0009](adr/0009-le-repere-voyage-jusquau-prestataire.md)). Le Client peut
+> attacher à chaque point d'une Commande — départ **et** arrivée — une ligne de
+> texte décrivant comment reconnaître l'endroit au sol (« Villa 214, portail vert
+> en face de la boutique »). À Dakar c'est ce qui remplace l'adresse de rue. Le
+> modèle de mission doit **porter** ce Repère et l'écran de mission doit
+> **l'afficher** — aujourd'hui `MISSION_INCOMING.pickup` n'a que `{ name, detail,
+> lat, lng }` et n'a nulle part où le mettre. Tant que ce n'est pas fait, le
+> Client saisit un Repère que personne ne lit. Vaut aussi pour la section 4
+> (Livraison), où il s'applique à la collecte comme à la livraison.
+
 - **Naviguer vers le Client** — guidage GPS vers le point de collecte
 - **Signaler mon arrivée** — déclenche le compteur de Frais d'attente
 - **Communiquer avec le Client** — appel masqué · chat in-app

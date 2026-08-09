@@ -315,6 +315,32 @@ Basé sur `@gorhom/bottom-sheet`, enveloppé pour injecter les tokens (`radius-x
 
 ### Formulaires
 
+- **Champ au repos : jamais bleu.** Un champ, vide ou rempli, ne marque **aucun
+  état** — il n'est ni sélectionné, ni actif, ni par défaut. Le peindre en
+  `color-primary-subtle` + liseré `color-primary` lui donne le poids d'un élu qu'il
+  n'est pas, et le met en concurrence avec le CTA, seule action réelle de l'écran.
+  Traitement de base : fond `color-surface`, liseré `color-border` 1 px, même rayon
+  que les autres blocs. **Sur un écran de formulaire, le bleu n'appartient qu'aux
+  CTA** (bouton primaire, lien-action). Le **focus clavier**, lui, peut se marquer en
+  bleu : c'est un état. _(Règle née de la fiche de Lieu enregistré, 9 août 2026 :
+  deux champs en bleu plein criaient plus fort qu'un bouton « Enregistrer »
+  désactivé — la couleur d'état servait de décoration.)_
+- **Ne jamais pré-remplir un champ avec une valeur déjà visible ailleurs sur
+  l'écran.** Pré-remplir « Nom du lieu » avec le quartier qu'on venait de choisir
+  affichait « Almadies » deux fois — une fois comme adresse, une fois comme nom — et
+  transformait une vraie question en **redondance à valider** : le champ avait l'air
+  inutile alors qu'il porte l'idée entière de l'objet. Un exemple en `placeholder`
+  montre quoi écrire sans rien affirmer ; le champ reste vide, la question reste
+  ouverte, et le CTA reste honnêtement désactivé tant qu'on n'y a pas répondu.
+  _(9 août 2026, fiche de Lieu enregistré.)_
+- **Une note grise par écran, pas une par champ.** Une caption sous chaque contrôle
+  finit par occuper autant de hauteur que les contrôles eux-mêmes et se lit comme du
+  bruit. Ne garder la note que sur les champs dont l'usage **n'est pas devinable** ;
+  ailleurs, un libellé clair plus un exemple en `placeholder` suffisent.
+- **Un seul traitement de bloc par écran.** Carte, champ et encadré qui se suivent
+  partagent le même rayon et le **même liseré**. Trois bordures différentes empilées
+  se lisent comme des blocs déposés sans intention, même quand chacune est correcte
+  prise isolément.
 - **Champ requis** : astérisque `color-error` sur le **label de groupe**, placé au-dessus de son contrôle (jamais de label flottant à gauche). Le rouge est strictement réservé au requis et aux erreurs — jamais décoratif ; le bleu marque signale l'action (une rangée requise vide se style en **rangée-action bleue**, ex. « Ajouter le destinataire * »).
 - **Champ optionnel** : toujours étiqueté « (facultatif) » en toutes lettres, visuellement affaibli (texte tertiaire, sans chevron), placé **après** les champs requis.
 - **Note contextuelle** : caption grise + icône info, ancrée directement **sous le champ qu'elle explique** — jamais orpheline en fin de carte.

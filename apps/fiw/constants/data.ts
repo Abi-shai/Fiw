@@ -11,12 +11,25 @@ export const SUGGESTIONS = [
   { id: '8', name: 'HLM Grand Yoff', detail: 'Dakar', lat: 14.7112, lng: -17.4556 },
   { id: '9', name: 'Marché Sandaga', detail: 'Dakar Centre', lat: 14.6866, lng: -17.4428 },
   { id: '10', name: 'Université Cheikh Anta Diop', detail: 'Fann', lat: 14.6928, lng: -17.4628 },
+  // Codes d'adresse dakarois (quartier abrégé + numéro de parcelle). Yango et
+  // inDrive les résolvent déjà : la recherche Fiw doit le faire aussi (cf.
+  // feature-list.md « Recherche d'adresse »). Ces deux entrées ne sont là que
+  // pour rendre le comportement visible dans le proto — la vraie résolution
+  // viendra du géocodeur, qui reste à choisir sur ce critère.
+  { id: '11', name: 'GY 182', detail: 'Grand Yoff', lat: 14.7135, lng: -17.4602 },
+  { id: '12', name: 'AAB 07', detail: 'Almadies', lat: 14.7351, lng: -17.5089 },
 ];
 
-// Lieux enregistrés par le client (onglet « Enregistré »)
+// Lieux enregistrés par le client (onglet « Enregistré »).
+// `detail` = l'adresse, ce que la carte sait trouver (un quartier, une avenue).
+// `repere` = le Repère (cf. CONTEXT.md) : comment reconnaître le point au sol.
+// « Villa 214 » est un Repère, pas une adresse — aucune carte ne le connaît.
+// Travail est volontairement sans Repère : les deux états doivent se voir.
 export const SAVED_PLACES = [
-  { id: 's-home', kind: 'home', label: 'Maison', detail: 'Sacré-Cœur 3, Villa 214', lat: 14.7225, lng: -17.4688 },
-  { id: 's-work', kind: 'work', label: 'Travail', detail: 'Plateau, Av. Léopold Sédar Senghor', lat: 14.6712, lng: -17.4382 },
+  { id: 's-home', kind: 'home', label: 'Maison', detail: 'Sacré-Cœur, Mermoz',
+    repere: 'Villa 214, portail vert en face de la boutique', lat: 14.7225, lng: -17.4688 },
+  { id: 's-work', kind: 'work', label: 'Travail', detail: 'Plateau, Av. Léopold Sédar Senghor',
+    repere: '', lat: 14.6712, lng: -17.4382 },
 ];
 
 // Profil du Client connecté (mock). `note` = Note du Client, la MOYENNE affichée
@@ -245,10 +258,13 @@ export const makeTrackingNumber = () => {
 // communique au destinataire ; le prestataire le demande à la remise.
 export const makeCodeRemise = () => String(Math.floor(1000 + Math.random() * 9000));
 
+// Même ordre que la page Moyens de paiement : Espèces en tête (moyen le plus
+// utilisé du marché dakarois, et défaut de départ). Les deux listes doivent
+// rester alignées — un ordre différent d'un écran à l'autre se lit comme un bug.
 export const PAYMENT_METHODS = [
+  { id: 'cash', label: 'Espèces', icon: '💵', color: '#6B7280' },
   { id: 'wave', label: 'Wave', icon: '🌊', color: '#1EADFF' },
   { id: 'orange', label: 'Orange Money', icon: '🟠', color: '#FF6200' },
-  { id: 'cash', label: 'Espèces', icon: '💵', color: '#6B7280' },
 ];
 
 export const FRAIS_RAPPROCHEMENT = 350;

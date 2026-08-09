@@ -35,6 +35,20 @@
 - Bandeau persistant si course/livraison en cours
 - Cloche de notifications
 
+### Recherche d'adresse (transversal — Transport, Livraison, Lieux enregistrés)
+- **La recherche doit accepter les codes d'adresse dakarois** — quartier abrégé +
+  numéro de parcelle, du type `GY 182`, `AAB 07` — et permettre de **commander
+  depuis ce point**. **Yango et inDrive le font déjà à Dakar** : c'est un acquis du
+  marché, pas un bonus. Une recherche qui n'accepterait que des noms de quartiers ou
+  de POI serait en retrait de la concurrence.
+- Conséquence sur le choix du géocodeur : le critère de sélection n'est pas la
+  couverture des noms de rue mais la **résolution de ces codes**. À tester sur de
+  vraies adresses avant de choisir un fournisseur (le proto tourne aujourd'hui sur
+  Mapbox en affichage seul, sans géocodage branché).
+- Le **Repère** (cf. `CONTEXT.md`, ADR 0009) reste nécessaire au-delà : un code
+  résout une parcelle, pas un portail, ni « en face de la boutique », ni « appelez
+  en arrivant ».
+
 ### Transport — Taxi Voiture
 - Saisie destination (adresse + pin carte)
 - Sélection gamme : Simple/Économique, Confort/Climatisé, Prestige/Luxe

@@ -1,5 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { View, StyleSheet, TextInput, TouchableOpacity, FlatList, ScrollView, Alert } from 'react-native';
+import {
+  View, StyleSheet, TextInput, TouchableOpacity, ScrollView, Keyboard, Alert,
+} from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Radii, Shadows, Poppins } from '@/constants/tokens';
@@ -16,16 +18,18 @@ import { getPlace, savePlace, removePlace, clearAddress, newPlaceId } from '@/st
 /**
  * Fiche d'un Lieu enregistré — création et édition par le même écran.
  *
- * Trois temps, dans l'ordre que suivent Bolt, Careem, Grab et Zomato : on
- * cherche l'adresse, on ajuste le pin, on nomme en dernier. Le nom vient
- * toujours après parce qu'on ne sait pas comment appeler un lieu qu'on n'a pas
- * encore choisi — et l'étape carte existe parce qu'à Dakar la recherche tombe
- * rarement pile sur la bonne porte.
+ * Deux temps : on montre, puis on écrit.
+ *
+ * 1. LA CARTE porte sa propre loupe. Chercher « Mermoz » y amène la carte, le
+ *    pin s'ajuste ensuite à la ruelle près. Un écran de recherche séparé ne
+ *    ferait rien que la carte ne sache faire.
+ * 2. LES DÉTAILS regroupent ce qui se tape au clavier — le Repère, qui
+ *    s'adresse au Prestataire, et le Nom, qui ne regarde que le Client.
  *
  * Sans paramètre → création d'un lieu libre. Avec `?id=` → édition, et on entre
- * directement à l'étape « nom », l'adresse étant déjà connue.
+ * directement aux détails (sauf emplacement vidé de son adresse : retour carte).
  */
-type Step = 'search' | 'pin' | 'name';
+type Step = 'map' | 'details';
 
 export default function LieuScreen() {
   const insets = useSafeAreaInsets();
@@ -36,39 +40,38 @@ export default function LieuScreen() {
   const isFixed = existing?.kind === 'home' || existing?.kind === 'work';
 
   const mapRef = useRef<LeafletMapHandle>(null);
-  // On entre par le nom quand l'adresse est déjà connue ; un emplacement vidé
-  // (Maison sans adresse) ouvre directement sur la recherche — c'est ce qu'on
-  // vient y faire.
-  const [step, setStep] = useState<Step>(existing?.detail ? 'name' : 'search');
+  const [step, setStep] = useState<Step>(existing?.detail ? 'details' : 'map');
   const [query, setQuery] = useState('');
   const [address, setAddress] = useState(existing?.detail ?? '');
+  const [repere, setRepere] = useState(existing?.repere ?? '');
   const [coords, setCoords] = useState({
     lat: existing?.lat ?? DAKAR_CENTER.lat,
     lng: existing?.lng ?? DAKAR_CENTER.lng,
   });
+  // Le nom n'est jamais pré-rempli depuis le lieu choisi : ça produisait un
+  // écran qui affichait deux fois « Almadies » (une fois comme adresse, une fois
+  // comme nom) et faisait passer le champ pour une redondance à valider. Comme
+  // pour le Repère, c'est un exemple en placeholder qui montre quoi écrire.
   const [label, setLabel] = useState(existing?.label ?? '');
-  // Tant que le Client n'a pas écrit lui-même, le nom suit le lieu choisi ; dès
-  // qu'il tape, il reprend la main et le pin ne l'écrase plus.
-  const [labelTouched, setLabelTouched] = useState(Boolean(existing));
 
-  // `mapCenter` est figé à l'entrée dans l'étape carte (il pilote le centrage
-  // initial) ; `pinCenter` suit ensuite chaque déplacement de la carte.
-  const [mapCenter, setMapCenter] = useState(coords);
+  // Le centre de départ de la carte est figé une fois pour toutes : le prop
+  // `center` est recompilé dans le HTML de la webview, en changer la rechargerait
+  // à chaque recherche. Les déplacements passent donc par `recenter()`.
+  const [initialCenter] = useState(coords);
   const [pinCenter, setPinCenter] = useState(coords);
 
-  const openPin = (c: { lat: number; lng: number }) => {
-    setMapCenter(c);
+  // --- Recherche, posée sur la carte ---
+  const searching = query.trim().length > 0;
+  const matches = (text: string) => text.toLowerCase().includes(query.trim().toLowerCase());
+  const results = SUGGESTIONS.filter((s) => matches(s.name) || matches(s.detail));
+
+  const goTo = (c: { lat: number; lng: number }) => {
+    Keyboard.dismiss();
+    setQuery('');
     setPinCenter(c);
-    setStep('pin');
+    mapRef.current?.recenter(c, 16);
   };
 
-  // --- Recherche ---
-  const matches = (text: string) => text.toLowerCase().includes(query.trim().toLowerCase());
-  const results = query.trim()
-    ? SUGGESTIONS.filter((s) => matches(s.name) || matches(s.detail))
-    : SUGGESTIONS;
-
-  // --- Ajustement du pin ---
   // Faute de géocodage inverse dans le proto, on rattache le pin au lieu connu le
   // plus proche (même approche que `home.tsx`).
   const nearestPlace = (c: { lat: number; lng: number }) =>
@@ -82,8 +85,7 @@ export default function LieuScreen() {
   const confirmPin = () => {
     setAddress(`${pinPlace.name}, ${pinPlace.detail}`);
     setCoords(pinCenter);
-    if (!labelTouched) setLabel(pinPlace.name);
-    setStep('name');
+    setStep('details');
   };
 
   // --- Enregistrement ---
@@ -94,6 +96,7 @@ export default function LieuScreen() {
     !existing ||
     label.trim() !== existing.label ||
     address !== existing.detail ||
+    repere.trim() !== existing.repere ||
     coords.lat !== existing.lat ||
     coords.lng !== existing.lng;
 
@@ -103,6 +106,7 @@ export default function LieuScreen() {
       kind: existing?.kind ?? 'custom',
       label: label.trim(),
       detail: address,
+      repere: repere.trim(),
       ...coords,
     });
     router.back();
@@ -124,13 +128,11 @@ export default function LieuScreen() {
     );
   };
 
-  // Maison et Travail ne se suppriment pas — leur adresse s'efface. L'emplacement
-  // reste dans la liste, prêt à être rempli à nouveau.
   const confirmClear = () => {
     if (!existing) return;
     Alert.alert(
       `Effacer l'adresse de « ${existing.label} » ?`,
-      `${existing.label} restera dans vos lieux enregistrés, sans adresse.`,
+      `${existing.label} restera dans vos lieux, sans adresse ni repère.`,
       [
         { text: 'Annuler', style: 'cancel' },
         {
@@ -142,13 +144,13 @@ export default function LieuScreen() {
     );
   };
 
-  // --- 2. Ajustement du pin sur la carte (plein écran) ---
-  if (step === 'pin') {
+  // --- 1. La carte, avec sa loupe ---
+  if (step === 'map') {
     return (
       <View style={styles.container}>
         <LeafletMap
           ref={mapRef}
-          center={mapCenter}
+          center={initialCenter}
           zoom={16}
           mapStyle="mapbox://styles/mapbox/light-v11"
           tintWater
@@ -165,97 +167,88 @@ export default function LieuScreen() {
           <View style={styles.pinDot} />
         </View>
 
-        <View style={[styles.topRow, { paddingTop: insets.top + 8 }]} pointerEvents="box-none">
-          {/* La carte s'atteint toujours depuis la recherche — le retour y ramène. */}
-          <IconButton name="back" onPress={() => setStep('search')} />
-        </View>
-
-        <View style={styles.pickDock} pointerEvents="box-none">
-          <View style={styles.recenterPick}>
-            <IconButton name="navigate" onPress={() => mapRef.current?.recenter(DAKAR_CENTER, 15)} />
-          </View>
-          <View style={[styles.pickCard, { paddingBottom: insets.bottom + 16 }]}>
-            <Text variant="caption" color={Colors.textTertiary} style={styles.pickKicker}>
-              Déplacez la carte pour ajuster
-            </Text>
-            <View style={styles.pickRow}>
-              <Icon name="location" size={22} color={Colors.primary} />
-              <View style={styles.flex1}>
-                <Text variant="label" numberOfLines={1}>{pinPlace.name}</Text>
-                <Text variant="caption" color={Colors.textSecondary} numberOfLines={1}>{pinPlace.detail}</Text>
-              </View>
-            </View>
-            <Button label="Valider l'emplacement" onPress={confirmPin} />
-          </View>
-        </View>
-      </View>
-    );
-  }
-
-  // --- 1. Recherche de l'adresse ---
-  if (step === 'search') {
-    return (
-      <View style={styles.container}>
-        <ScreenHeader
-          title={!existing ? 'Nouveau lieu' : existing.detail ? "Modifier l'adresse" : 'Ajouter une adresse'}
-          onBack={() => (address ? setStep('name') : router.back())}
-        />
-
-        <View style={styles.searchWrap}>
-          <View style={[styles.field, styles.fieldActive]}>
-            <View style={styles.fieldIcon}>
+        {/* Barre de recherche posée sur la carte (Bolt, Zomato) : chercher un
+            quartier y amène la carte, l'ajustement fin se fait au doigt. */}
+        <View style={[styles.searchDock, { paddingTop: insets.top + 8 }]} pointerEvents="box-none">
+          <View style={styles.searchRow}>
+            <IconButton
+              name="back"
+              onPress={() => (address ? setStep('details') : router.back())}
+            />
+            <View style={styles.searchField}>
               <Icon name="search" size={20} color={Colors.textSecondary} />
-            </View>
-            <View style={styles.fieldBody}>
               <TextInput
-                style={styles.fieldInput}
+                style={styles.searchInput}
                 value={query}
                 onChangeText={setQuery}
-                placeholder="Rechercher une adresse"
+                placeholder="Adresse, quartier ou code (GY 182)"
                 placeholderTextColor={Colors.textTertiary}
-                autoFocus
+                returnKeyType="search"
               />
+              {searching ? (
+                <TouchableOpacity onPress={() => setQuery('')} hitSlop={8}>
+                  <Icon name="close" size={18} color={Colors.textTertiary} />
+                </TouchableOpacity>
+              ) : null}
             </View>
           </View>
 
-          <TouchableOpacity
-            style={styles.mapPickRow}
-            activeOpacity={0.7}
-            onPress={() => openPin(coords)}
-          >
-            <View style={styles.mapPickIcon}>
-              <Icon name="pin" size={20} color={Colors.primary} />
+          {searching ? (
+            <View style={styles.resultsCard}>
+              <ScrollView keyboardShouldPersistTaps="handled" style={styles.resultsScroll}>
+                {results.length ? (
+                  results.map((s) => (
+                    <PlaceRow
+                      key={s.id}
+                      icon="location"
+                      title={s.name}
+                      subtitle={s.detail}
+                      onPress={() => goTo({ lat: s.lat, lng: s.lng })}
+                      style={styles.resultRow}
+                    />
+                  ))
+                ) : (
+                  <Text variant="bodySmall" color={Colors.textSecondary} style={styles.noResult}>
+                    Aucun quartier ne correspond. Placez le pin à la main.
+                  </Text>
+                )}
+              </ScrollView>
             </View>
-            <Text variant="body" style={styles.mapPickLabel}>Choisir sur la carte</Text>
-            <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
-          </TouchableOpacity>
+          ) : null}
         </View>
 
-        <FlatList
-          data={results}
-          keyExtractor={(item) => item.id}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={[styles.results, { paddingBottom: insets.bottom + 24 }]}
-          renderItem={({ item }) => (
-            <PlaceRow
-              icon="location"
-              title={item.name}
-              subtitle={item.detail}
-              onPress={() => openPin({ lat: item.lat, lng: item.lng })}
-            />
-          )}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-        />
+        {/* Le dock du bas s'efface pendant la recherche : la liste a besoin de
+            la hauteur, et il n'y a rien à valider tant qu'on cherche. */}
+        {!searching && (
+          <View style={styles.pickDock} pointerEvents="box-none">
+            <View style={styles.recenterPick}>
+              <IconButton name="navigate" onPress={() => mapRef.current?.recenter(DAKAR_CENTER, 15)} />
+            </View>
+            <View style={[styles.pickCard, { paddingBottom: insets.bottom + 16 }]}>
+              <Text variant="caption" color={Colors.textTertiary} style={styles.pickKicker}>
+                Déplacez la carte pour ajuster
+              </Text>
+              <View style={styles.pickRow}>
+                <Icon name="location" size={22} color={Colors.primary} />
+                <View style={styles.flex1}>
+                  <Text variant="label" numberOfLines={1}>{pinPlace.name}</Text>
+                  <Text variant="caption" color={Colors.textSecondary} numberOfLines={1}>{pinPlace.detail}</Text>
+                </View>
+              </View>
+              <Button label="Valider l'emplacement" onPress={confirmPin} />
+            </View>
+          </View>
+        )}
       </View>
     );
   }
 
-  // --- 3. Nommage ---
+  // --- 2. Les détails : ce qui se tape au clavier ---
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title={existing ? 'Modifier le lieu' : 'Nommer ce lieu'}
-        onBack={() => (existing ? router.back() : setStep('pin'))}
+        title={existing ? 'Modifier le lieu' : 'Nouveau lieu'}
+        onBack={() => (existing ? router.back() : setStep('map'))}
       />
 
       <ScrollView
@@ -263,55 +256,77 @@ export default function LieuScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* L'adresse validée, avec le retour en arrière d'un tap */}
+        {/* L'emplacement validé, avec le retour à la carte d'un tap */}
         <View style={styles.addressCard}>
           <Icon name="location" size={22} color={Colors.primary} />
           <View style={styles.flex1}>
             <Text variant="caption" color={Colors.textTertiary}>Adresse</Text>
             <Text variant="body" style={styles.addressText}>{address}</Text>
           </View>
-          {/* Retour à la recherche, pas à la carte : déménager à l'autre bout de
-              Dakar se fait au clavier. La carte reste à un tap, pour le cas
-              inverse — corriger de quelques rues. */}
-          <Button label="Modifier" variant="link" onPress={() => { setQuery(''); setStep('search'); }} />
+          <Button label="Modifier" variant="link" onPress={() => { setQuery(''); setStep('map'); }} />
         </View>
 
-        <Text variant="caption" color={Colors.textTertiary} style={styles.label}>Nom du lieu</Text>
+        {/* Le nom avant le Repère : requis avant facultatif (style-guide), et le
+            champ long et multiligne se retrouve collé au CTA. */}
+        <Text variant="caption" color={Colors.textTertiary} style={styles.label}>
+          Nom du lieu
+        </Text>
 
         {isFixed ? (
-          <>
-            <View style={[styles.field, styles.fieldLocked]}>
-              <View style={styles.fieldIcon}>
-                <Icon name={existing?.kind === 'home' ? 'home' : 'work'} size={20} color={Colors.textSecondary} />
-              </View>
-              <View style={styles.fieldBody}>
-                <Text variant="body" style={styles.fieldValue}>{label}</Text>
-              </View>
-              {/* Le cadenas suffit à dire que le nom ne se change pas — pas de
-                  phrase d'explication sous le champ. */}
-              <Icon name="lock" size={18} color={Colors.textTertiary} />
+          <View style={styles.field}>
+            <View style={styles.fieldIcon}>
+              <Icon name={existing?.kind === 'home' ? 'home' : 'work'} size={20} color={Colors.textSecondary} />
             </View>
-          </>
+            <View style={styles.fieldBody}>
+              <Text variant="body" style={styles.fieldValue}>{label}</Text>
+            </View>
+            {/* Le cadenas suffit à dire que le nom ne se change pas. */}
+            <Icon name="lock" size={18} color={Colors.textTertiary} />
+          </View>
         ) : (
-          <>
-            <View style={[styles.field, styles.fieldActive]}>
-              <View style={styles.fieldBody}>
-                <TextInput
-                  style={styles.fieldInput}
-                  value={label}
-                  onChangeText={(t) => { setLabel(t); setLabelTouched(true); }}
-                  placeholder="Ex. Salle de sport"
-                  placeholderTextColor={Colors.textTertiary}
-                  autoFocus={!existing}
-                  maxLength={30}
-                />
-              </View>
+          // Pas de note sous ce champ : « Nom du lieu » et l'exemple en
+          // placeholder se suffisent. Le Repère, lui, garde la sienne — c'est le
+          // seul champ dont l'usage n'est pas devinable.
+          <View style={styles.field}>
+            <View style={styles.fieldBody}>
+              <TextInput
+                style={styles.fieldInput}
+                value={label}
+                onChangeText={setLabel}
+                placeholder="Ex. Salle de sport"
+                placeholderTextColor={Colors.textTertiary}
+                maxLength={30}
+              />
             </View>
-            <Text variant="caption" color={Colors.textTertiary} style={styles.hint}>
-              Ce nom n'apparaît que pour vous, dans la recherche d'itinéraire.
-            </Text>
-          </>
+          </View>
         )}
+
+        {/* Le Repère (cf. CONTEXT.md) — le seul champ de cet écran que quelqu'un
+            d'autre lira. Une ligne libre, jamais des champs structurés : ni le
+            chauffeur ni le livreur ne montent, l'étage n'intéresse personne. */}
+        <Text variant="caption" color={Colors.textTertiary} style={[styles.label, styles.labelSpaced]}>
+          Repère
+        </Text>
+        <View style={styles.repereField}>
+          <TextInput
+            style={styles.repereInput}
+            value={repere}
+            onChangeText={setRepere}
+            placeholder="Ex. Villa 214, portail vert en face de la boutique"
+            placeholderTextColor={Colors.textTertiary}
+            multiline
+            maxLength={120}
+          />
+        </View>
+        {/* Motif `infoRow` (cf. profil.tsx, numero.tsx) : dans ce DS, ce qui
+            distingue une note d'un libellé de champ, c'est l'icône — les deux
+            partagent la même taille et la même couleur. */}
+        <View style={styles.infoRow}>
+          <Icon name="info" size={13} color={Colors.textTertiary} />
+          <Text variant="caption" color={Colors.textTertiary} style={styles.flex1}>
+            Ce que le prestataire lira pour vous trouver.
+          </Text>
+        </View>
 
         <Button
           label={existing ? 'Enregistrer' : 'Enregistrer le lieu'}
@@ -320,14 +335,21 @@ export default function LieuScreen() {
           style={styles.cta}
         />
 
-        {existing && (isFixed ? Boolean(existing.detail) : true) && (
+        {existing && (isFixed ? (
           <Button
-            label={isFixed ? "Effacer l'adresse" : 'Supprimer ce lieu'}
+            label="Effacer l'adresse"
             variant="linkDestructive"
-            onPress={isFixed ? confirmClear : confirmRemove}
+            onPress={confirmClear}
             style={styles.remove}
           />
-        )}
+        ) : (
+          <Button
+            label="Supprimer ce lieu"
+            variant="linkDestructive"
+            onPress={confirmRemove}
+            style={styles.remove}
+          />
+        ))}
       </ScrollView>
     </View>
   );
@@ -339,48 +361,46 @@ const styles = StyleSheet.create({
   flex1: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8 },
 
-  // --- Recherche ---
-  searchWrap: { paddingHorizontal: 20 },
-  field: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: Colors.bg,
-    borderRadius: Radii.lg,
-    paddingLeft: 16,
-    paddingRight: 16,
-    minHeight: 60,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  fieldActive: { borderColor: Colors.primary, backgroundColor: Colors.primarySubtle },
-  fieldLocked: { backgroundColor: Colors.surface, borderColor: Colors.border },
-  fieldIcon: { width: 28, alignItems: 'center' },
-  fieldBody: { flex: 1, paddingVertical: 10 },
-  fieldInput: { fontSize: 15, color: Colors.textPrimary, fontFamily: Poppins.medium, padding: 0 },
-  fieldValue: { fontFamily: Poppins.medium },
-
-  mapPickRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16 },
-  mapPickIcon: {
-    width: 42, height: 42,
-    borderRadius: 21,
-    backgroundColor: Colors.primarySubtle,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mapPickLabel: { flex: 1, fontFamily: Poppins.medium },
-
-  results: { paddingHorizontal: 20 },
-  separator: { height: 1, backgroundColor: Colors.borderSubtle, marginLeft: 56 },
-
-  // --- Ajustement du pin (calqué sur home.tsx) ---
-  topRow: {
+  // --- Carte : recherche posée dessus ---
+  searchDock: {
     position: 'absolute',
     top: 0, left: 0, right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 16,
   },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  searchField: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    height: 46,
+    paddingHorizontal: 14,
+    borderRadius: Radii.pill,
+    backgroundColor: Colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Colors.hairline,
+    ...Shadows.float,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: Colors.textPrimary,
+    fontFamily: Poppins.medium,
+    padding: 0,
+  },
+  resultsCard: {
+    marginTop: 10,
+    marginLeft: 56, // aligné sur le champ, pas sur le bouton retour
+    borderRadius: Radii.lg,
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 12,
+    ...Shadows.float,
+  },
+  resultsScroll: { maxHeight: 288 },
+  resultRow: { paddingHorizontal: 4 },
+  noResult: { paddingVertical: 18, paddingHorizontal: 4, lineHeight: 20 },
+
+  // --- Carte : pin + dock de validation (calqué sur home.tsx) ---
   pinWrap: {
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
@@ -407,7 +427,7 @@ const styles = StyleSheet.create({
   pickKicker: { textTransform: 'uppercase', letterSpacing: 0.8 },
   pickRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 
-  // --- Nommage ---
+  // --- Détails ---
   addressCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -415,14 +435,62 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: Radii.lg,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
+    // Même liseré que les deux champs : les trois blocs de l'écran partagent
+    // une seule grammaire, au lieu de trois bordures différentes.
+    borderColor: Colors.border,
     paddingHorizontal: 16,
     paddingVertical: 14,
     marginBottom: 28,
   },
   addressText: { fontFamily: Poppins.medium, marginTop: 1 },
   label: { marginBottom: 8, marginLeft: 4 },
-  hint: { marginTop: 8, marginLeft: 4, lineHeight: 16 },
-  cta: { marginTop: 28 },
+  labelSpaced: { marginTop: 28 },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
+
+  // Le bleu ne sert qu'aux actions sur cet écran (« Modifier », « Enregistrer ») :
+  // un champ au repos ne marque aucun état, il n'a rien à faire en bleu.
+  repereField: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radii.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    minHeight: 76,
+  },
+  repereInput: {
+    fontSize: 15,
+    color: Colors.textPrimary,
+    fontFamily: Poppins.medium,
+    padding: 0,
+    lineHeight: 21,
+    textAlignVertical: 'top',
+  },
+
+  // Un seul traitement de champ sur l'écran — verrouillé ou non, c'est le même
+  // bloc ; seul le cadenas distingue le nom figé de Maison / Travail.
+  field: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: Radii.lg,
+    paddingHorizontal: 16,
+    minHeight: 60,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  fieldIcon: { width: 28, alignItems: 'center' },
+  fieldBody: { flex: 1, paddingVertical: 10 },
+  fieldInput: { fontSize: 15, color: Colors.textPrimary, fontFamily: Poppins.medium, padding: 0 },
+  fieldValue: { fontFamily: Poppins.medium },
+
+  cta: { marginTop: 32 },
   remove: { marginTop: 20, alignSelf: 'center' },
 });
