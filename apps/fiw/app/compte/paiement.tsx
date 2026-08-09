@@ -29,10 +29,13 @@ import Text from '@/components/Text';
 type MethodId = 'wave' | 'orange' | 'cash';
 type Method = { id: MethodId; label: string };
 
+// Espèces en tête : c'est le moyen le plus utilisé du marché dakarois, et le
+// défaut de départ. L'ordre de la liste suit l'usage réel, pas l'ordre
+// d'arrivée des services.
 const METHODS: Method[] = [
+  { id: 'cash', label: 'Espèces' },
   { id: 'wave', label: 'Wave' },
   { id: 'orange', label: 'Orange Money' },
-  { id: 'cash', label: 'Espèces' },
 ];
 
 export default function PaiementScreen() {

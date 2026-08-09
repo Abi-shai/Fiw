@@ -266,6 +266,26 @@ Livraison) doit donc les honorer aussi :
 > `paiement.tsx` vers un store partagé — les deux points ci-dessus en dépendent.
 > Suivi : todo **P9**.
 
+> ⚠️ **Lier un compte Mobile Money n'est pas construit non plus.** `add()` dans
+> `compte/paiement.tsx` est un stub — une `Alert` « Saisie du numéro à brancher »
+> qui pose directement un numéro fictif. Le parcours réel manque : saisie du
+> numéro (`PhoneField` + `CountryPicker`, déjà construits pour le changement de
+> numéro) puis **confirmation du numéro avant de le lier**. On ne rattache pas un
+> compte d'argent sur une frappe non vérifiée : un chiffre faux et les débits
+> partent chez quelqu'un d'autre. **Reste ouvert** : quelle forme prend la
+> confirmation — un code SMS envoyé au numéro (comme le changement de numéro,
+> écran `compte/numero.tsx`) ou une simple relecture avant validation. Les deux
+> ne coûtent pas la même chose et ne protègent pas de la même chose. Suivi :
+> todo **P10**.
+
+**Ordre de la liste — Espèces en tête** (9 août 2026). Les trois moyens sont rangés
+par **usage réel du marché dakarois**, pas par ordre d'arrivée des services : Espèces,
+puis Wave, puis Orange Money. Les Espèces sont à la fois le moyen le plus utilisé et
+le défaut de départ — les voir en premier évite de faire défiler pour trouver ce que
+la plupart des Clients choisiront. Le même ordre vaut pour `PAYMENT_METHODS`
+(`constants/data.ts`), qui alimente la `PaymentSheet` des parcours : **deux listes
+dans un ordre différent se lisent comme un bug**.
+
 **Reste de D6** : **Free Money sort des moyens de paiement** — et de la définition
 « Mobile Money » de `CONTEXT.md` : chez Fiw, Mobile Money = **Wave + Orange Money**,
 et eux seuls. La proposition v1 le citait par simple report du cadrage d'origine, pas
