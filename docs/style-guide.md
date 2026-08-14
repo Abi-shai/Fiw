@@ -132,10 +132,10 @@ Dérivés de l'échelle de gris Tailwind (gray-50 → gray-900) ; les tokens son
 
 ## Typographie
 
-**Police** : Poppins — chargée via `@expo-google-fonts/poppins`.  
+**Police** : Outfit — chargée via `@expo-google-fonts/outfit`.  
 **Graisses chargées** : Light 300 · Regular 400 · Medium 500 · SemiBold 600 · Bold 700
 
-> ⚠️ En RN, `fontWeight` ne sélectionne pas une graisse Poppins : chaque graisse doit être mappée à sa famille nommée (`Poppins_600SemiBold`…). La typo passe donc **obligatoirement par l'atome `Text`** à variants sémantiques (`display`, `heading1`, `heading2`, `body`, `body-small`, `label`, `caption`) — pas de `fontSize`/`fontWeight` bruts dans les écrans.
+> ⚠️ En RN, `fontWeight` ne sélectionne pas une graisse Outfit : chaque graisse doit être mappée à sa famille nommée (`Outfit_600SemiBold`…). La typo passe donc **obligatoirement par l'atome `Text`** à variants sémantiques (`display`, `heading1`, `heading2`, `body`, `body-small`, `label`, `caption`) — pas de `fontSize`/`fontWeight` bruts dans les écrans.
 
 ### Échelle
 
@@ -244,9 +244,9 @@ Deux familles : **pleine** (fond de couleur, pour le CTA) et **transparente** (s
 
 | Taille | Hauteur | Padding horizontal | Typographie | Icône | Usage |
 |---|---|---|---|---|---|
-| `lg` | 56px | 28px | Poppins SemiBold 16px | 20px | CTA pleine largeur |
-| `md` | 48px | 20px | Poppins SemiBold 15px | 18px | Actions courantes |
-| `sm` | 40px | 16px | Poppins Medium 14px | 16px | Actions inline / compactes |
+| `lg` | 56px | 28px | Outfit SemiBold 16px | 20px | CTA pleine largeur |
+| `md` | 48px | 20px | Outfit SemiBold 15px | 18px | Actions courantes |
+| `sm` | 40px | 16px | Outfit Medium 14px | 16px | Actions inline / compactes |
 
 ---
 
@@ -279,7 +279,7 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 
 | Composant | Rôle | Points clés |
 |---|---|---|
-| `Text` | Typographie | Variants sémantiques, mappe graisse→famille Poppins. Seul point d'entrée typo. |
+| `Text` | Typographie | Variants sémantiques, mappe graisse→famille Outfit. Seul point d'entrée typo. |
 | `Icon` | Icône | Phosphor, sous-ensemble nommé, `regular`/`fill`. |
 | `Button` | Action | 6 variantes (`primary` / `secondary` contour neutre / `destructive` texte Error / `destructiveFilled` plein rouge / `link` texte-action sans fond / `linkDestructive` idem en rouge), tailles `lg`/`md`/`sm`, slots icône, loading/disabled. |
 | `IconButton` | Bouton rond icône | `floating` (blanc + liseré + ombre, sur carte ; **icône gris foncé `gray-700`** — neutre, registre nav, pas le bleu marque) / `flat` (fond gris, dans sheet ; icône bleu marque). |

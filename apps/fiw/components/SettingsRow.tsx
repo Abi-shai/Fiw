@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors, Poppins } from '@/constants/tokens';
+import { Colors, Outfit } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   body: { flex: 1 },
-  label: { fontFamily: Poppins.medium },
+  label: { fontFamily: Outfit.medium },
   subtitle: { marginTop: 2 },
   value: { marginRight: 4, maxWidth: 150 },
 });

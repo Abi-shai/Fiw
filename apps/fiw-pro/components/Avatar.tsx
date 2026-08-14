@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { Colors, Poppins } from '@/constants/tokens';
+import { Colors, Outfit } from '@/constants/tokens';
 import Text from '@/components/Text';
 
 function initials(name: string) {
@@ -43,5 +43,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   bordered: { borderWidth: 2, borderColor: Colors.primary },
-  text: { fontFamily: Poppins.semibold },
+  text: { fontFamily: Outfit.semibold },
 });

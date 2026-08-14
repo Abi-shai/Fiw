@@ -3,7 +3,7 @@ import {
   View, StyleSheet, ScrollView, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
 import Text from '@/components/Text';
 import IconButton from '@/components/IconButton';
@@ -99,6 +99,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg,
     borderRadius: Radii.pill,
     paddingHorizontal: 16,
-    fontFamily: Poppins.regular, fontSize: 15, color: Colors.textPrimary,
+    fontFamily: Outfit.regular, fontSize: 15, color: Colors.textPrimary,
   },
 });

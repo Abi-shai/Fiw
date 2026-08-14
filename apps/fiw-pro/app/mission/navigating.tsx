@@ -7,7 +7,7 @@ import Text from '@/components/Text';
 import IconButton from '@/components/IconButton';
 import Avatar from '@/components/Avatar';
 import { sheetSurface } from '@/components/Sheet';
-import { Colors, Spacing, Radii, Shadows, Poppins } from '@/constants/tokens';
+import { Colors, Spacing, Radii, Shadows, Outfit } from '@/constants/tokens';
 import { MISSION_INCOMING } from '@/constants/data';
 
 const PRESTA_START = { lat: 14.7320, lng: -17.5113 };
@@ -38,10 +38,10 @@ export default function NavigatingScreen() {
         <View style={styles.topBar}>
           <IconButton name="back" onPress={() => router.back()} variant="floating" />
           <View style={[styles.etaBadge, Shadows.md]}>
-            <Text variant="caption" color={Colors.primarySubtle} style={{ fontFamily: Poppins.semibold, letterSpacing: 0.5 }}>
+            <Text variant="caption" color={Colors.primarySubtle} style={{ fontFamily: Outfit.semibold, letterSpacing: 0.5 }}>
               ETA
             </Text>
-            <Text style={{ fontFamily: Poppins.bold, fontSize: 18, color: Colors.textOnPrimary }}>
+            <Text style={{ fontFamily: Outfit.bold, fontSize: 18, color: Colors.textOnPrimary }}>
               {eta} min
             </Text>
           </View>
@@ -59,7 +59,7 @@ export default function NavigatingScreen() {
           <View style={styles.clientRow}>
             <Avatar name={MISSION_INCOMING.clientName} size={44} bordered />
             <View style={styles.clientInfo}>
-              <Text variant="label" style={{ fontFamily: Poppins.semibold, fontSize: 16 }}>
+              <Text variant="label" style={{ fontFamily: Outfit.semibold, fontSize: 16 }}>
                 {MISSION_INCOMING.clientName}
               </Text>
               <Text variant="bodySmall" color={Colors.textSecondary} style={{ marginTop: 2 }}>

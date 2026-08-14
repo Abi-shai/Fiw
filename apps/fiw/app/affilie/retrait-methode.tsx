@@ -5,7 +5,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
-import { Colors, Radii, Spacing, Poppins, Shadows } from '@/constants/tokens';
+import { Colors, Radii, Spacing, Outfit, Shadows } from '@/constants/tokens';
 import { AMBASSADEUR, WITHDRAW_MIN, fcfa } from '@/constants/affilie';
 
 type Method = { id: string; name: string; color: string };
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   kicker: { textTransform: 'uppercase', letterSpacing: 0.8 },
   amountRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing[2] },
   amountInput: {
-    fontFamily: Poppins.semibold,
+    fontFamily: Outfit.semibold,
     fontSize: 48,
     color: Colors.textPrimary,
     letterSpacing: -1,

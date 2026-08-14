@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
 import Avatar from '@/components/Avatar';
 import Button from '@/components/Button';
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginBottom: 12,
   },
-  input: { fontSize: 15, color: Colors.textPrimary, fontFamily: Poppins.medium, marginTop: 2, padding: 0 },
+  input: { fontSize: 15, color: Colors.textPrimary, fontFamily: Outfit.medium, marginTop: 2, padding: 0 },
 
   phoneRow: {
     flexDirection: 'row',
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 8,
   },
-  phoneValue: { marginTop: 2, fontFamily: Poppins.medium },
+  phoneValue: { marginTop: 2, fontFamily: Outfit.medium },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4, paddingHorizontal: 4 },
 
   save: { marginTop: 20 },

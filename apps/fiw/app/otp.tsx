@@ -3,7 +3,7 @@ import {
   View, StyleSheet, TextInput, TouchableOpacity
 } from 'react-native';
 import { router } from 'expo-router';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import IconButton from '@/components/IconButton';
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingTop: 24 },
   title: { marginBottom: 12 },
   subtitle: { lineHeight: 22, marginBottom: 40 },
-  phone: { fontFamily: Poppins.semibold },
+  phone: { fontFamily: Outfit.semibold },
   codeRow: {
     flexDirection: 'row',
     gap: 12,
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primarySubtle,
   },
   codeDigit: {
-    fontFamily: Poppins.bold,
+    fontFamily: Outfit.bold,
     fontSize: 28,
   },
   hiddenInput: {

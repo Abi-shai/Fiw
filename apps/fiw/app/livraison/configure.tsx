@@ -17,7 +17,7 @@ import PaymentSheetContent from '@/components/PaymentSheet';
 import { Handle, SHEET_RADIUS } from '@/components/Sheet';
 import { groupedSheetSurface, SheetCard, RouteCard, CARD_GAP } from '@/components/RideSheet';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 import {
   CONTACTS, DAKAR_CENTER, livraisonGamme, makeTrackingNumber, makeCodeRemise,
 } from '@/constants/data';
@@ -574,7 +574,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
-    fontFamily: Poppins.regular,
+    fontFamily: Outfit.regular,
     color: Colors.textPrimary,
     paddingVertical: 12,
   },
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
     padding: 14,
     fontSize: 15,
     lineHeight: 21,
-    fontFamily: Poppins.regular,
+    fontFamily: Outfit.regular,
     color: Colors.textPrimary,
     minHeight: 84,
   },
@@ -619,7 +619,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 15,
-    fontFamily: Poppins.medium,
+    fontFamily: Outfit.medium,
     color: Colors.textPrimary,
     paddingVertical: 16,
   },

@@ -7,7 +7,7 @@ import Text from '@/components/Text';
 import IconButton from '@/components/IconButton';
 import Avatar from '@/components/Avatar';
 import { sheetSurface } from '@/components/Sheet';
-import { Colors, Spacing, Radii, Shadows, Poppins } from '@/constants/tokens';
+import { Colors, Spacing, Radii, Shadows, Outfit } from '@/constants/tokens';
 import { MISSION_INCOMING } from '@/constants/data';
 
 const PICKUP = MISSION_INCOMING.pickup;
@@ -45,7 +45,7 @@ export default function ArrivedScreen() {
       <SafeAreaView style={styles.overlay} pointerEvents="box-none">
         <View style={styles.topBar}>
           <View style={[styles.arrivedBadge, Shadows.md]}>
-            <Text variant="label" color={Colors.textOnPrimary} style={{ fontFamily: Poppins.semibold }}>
+            <Text variant="label" color={Colors.textOnPrimary} style={{ fontFamily: Outfit.semibold }}>
               Arrivé au point de collecte
             </Text>
           </View>
@@ -65,10 +65,10 @@ export default function ArrivedScreen() {
               </Text>
             ) : (
               <View style={styles.fraisRow}>
-                <Text variant="bodySmall" color={Colors.textPrimary} style={{ fontFamily: Poppins.medium }}>
+                <Text variant="bodySmall" color={Colors.textPrimary} style={{ fontFamily: Outfit.medium }}>
                   Frais d'attente
                 </Text>
-                <Text variant="label" color={Colors.warning} style={{ fontFamily: Poppins.bold }}>
+                <Text variant="label" color={Colors.warning} style={{ fontFamily: Outfit.bold }}>
                   +{fraisTotal} F CFA
                 </Text>
               </View>
@@ -80,7 +80,7 @@ export default function ArrivedScreen() {
           <View style={styles.clientRow}>
             <Avatar name={MISSION_INCOMING.clientName} size={44} bordered />
             <View style={styles.clientInfo}>
-              <Text variant="label" style={{ fontFamily: Poppins.semibold, fontSize: 16 }}>
+              <Text variant="label" style={{ fontFamily: Outfit.semibold, fontSize: 16 }}>
                 {MISSION_INCOMING.clientName}
               </Text>
               <Text variant="bodySmall" color={Colors.textSecondary} style={{ marginTop: 2 }}>
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   },
   timerSection: { alignItems: 'center', marginBottom: Spacing[6] },
   timerValue: {
-    fontFamily: Poppins.bold,
+    fontFamily: Outfit.bold,
     fontSize: 40,
     color: Colors.textPrimary,
     letterSpacing: -1,

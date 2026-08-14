@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Colors, Radii, Poppins, Shadows } from '@/constants/tokens';
+import { Colors, Radii, Outfit, Shadows } from '@/constants/tokens';
 import {
   VELO_LIVREUR, MOTO_LIVREUR, PAYMENT_METHODS, FRAIS_RAPPROCHEMENT, GROUPEE_ECONOMIE,
 } from '@/constants/data';
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   },
   ratingTitle: { marginTop: 14 },
   starsRow: { flexDirection: 'row', gap: 8, marginTop: 16, marginBottom: 6 },
-  ratingLabel: { fontFamily: Poppins.medium, marginBottom: 16 },
+  ratingLabel: { fontFamily: Outfit.medium, marginBottom: 16 },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 14 },
   tag: {
     paddingHorizontal: 14, paddingVertical: 8,
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.track,
   },
   tagActive: { backgroundColor: Colors.primarySubtle },
-  tagTextActive: { fontFamily: Poppins.semibold },
+  tagTextActive: { fontFamily: Outfit.semibold },
   addComment: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6 },
   commentInput: {
     alignSelf: 'stretch',
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     padding: 14,
     fontSize: 15,
     lineHeight: 21,
-    fontFamily: Poppins.regular,
+    fontFamily: Outfit.regular,
     color: Colors.textPrimary,
     minHeight: 84,
   },

@@ -14,7 +14,7 @@ import Button from '@/components/Button';
 import GammeCard from '@/components/GammeCard';
 import { GroupedSheet, SheetCard } from '@/components/RideSheet';
 import PaymentSheetContent from '@/components/PaymentSheet';
-import { Colors, Radii, Poppins, Shadows } from '@/constants/tokens';
+import { Colors, Radii, Outfit, Shadows } from '@/constants/tokens';
 import { GAMMES, COVOITURAGE, COVOITURAGE_NODETOUR_PRICE, DAKAR_CENTER, WAIT_GRACE_MINUTES, WAIT_FEE_PER_MIN } from '@/constants/data';
 import { topviewSprite } from '@/constants/illustrations';
 
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
   // Covoiturage.
   covoitRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, marginTop: 12 },
   covoitInfo: { flex: 1, gap: 5, paddingTop: 8 },
-  covoitTitle: { fontFamily: Poppins.semibold, fontSize: 16, lineHeight: 22 },
+  covoitTitle: { fontFamily: Outfit.semibold, fontSize: 16, lineHeight: 22 },
   covoitDesc: { fontSize: 14, lineHeight: 19 },
   detourTitle: { fontSize: 14, lineHeight: 19 },
   detourSub: { fontSize: 12, lineHeight: 16 },

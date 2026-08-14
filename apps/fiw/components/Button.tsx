@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Pressable, Animated, StyleSheet, ActivityIndicator, ViewStyle, View } from 'react-native';
-import { Colors, Radii, Shadows, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Shadows, Outfit } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 
@@ -65,9 +65,9 @@ const BORDER: Partial<Record<Variant, string>> = {
 
 // Hauteurs « pouce-friendly » (cibles tactiles ≥ 48px) + typo par taille.
 const SIZING: Record<Size, { height: number; padX: number; font: number; family: string; icon: number; gap: number }> = {
-  lg: { height: 56, padX: 28, font: 16, family: Poppins.semibold, icon: 20, gap: 10 },
-  md: { height: 48, padX: 20, font: 15, family: Poppins.semibold, icon: 18, gap: 8 },
-  sm: { height: 40, padX: 16, font: 14, family: Poppins.medium,   icon: 16, gap: 6 },
+  lg: { height: 56, padX: 28, font: 16, family: Outfit.semibold, icon: 20, gap: 10 },
+  md: { height: 48, padX: 20, font: 15, family: Outfit.semibold, icon: 18, gap: 8 },
+  sm: { height: 40, padX: 16, font: 14, family: Outfit.medium,   icon: 16, gap: 6 },
 };
 
 export default function Button({
@@ -110,7 +110,7 @@ export default function Button({
         ) : (
           <View style={[styles.content, { gap: s.gap }]}>
             {icon && <Icon name={icon} size={s.icon} color={fg} />}
-            <Text variant="label" color={fg} style={{ fontFamily: isLink ? Poppins.medium : s.family, fontSize: s.font }}>{label}</Text>
+            <Text variant="label" color={fg} style={{ fontFamily: isLink ? Outfit.medium : s.family, fontSize: s.font }}>{label}</Text>
             {trailingIcon && <Icon name={trailingIcon} size={s.icon} color={fg} />}
           </View>
         )}

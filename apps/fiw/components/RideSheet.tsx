@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 import { sheetSurface, SHEET_RADIUS, Handle } from '@/components/Sheet';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 import { gammeIllustration, type IlluKey } from '@/constants/illustrations';
 
 /**
@@ -178,7 +178,7 @@ export function Badge({ variant, label }: { variant: 'bienNote' | 'suggere'; lab
   );
 }
 
-/** PlateChip (Figma 84:74) — pastille plaque, bordure 1.5, Poppins Bold. */
+/** PlateChip (Figma 84:74) — pastille plaque, bordure 1.5, Outfit Bold. */
 export function PlateChip({ plate }: { plate: string }) {
   return (
     <View style={styles.plateChip}>
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   stackOverlap: { marginLeft: -12 },
-  stackAvatarTxt: { fontFamily: Poppins.semibold, fontSize: 11 },
+  stackAvatarTxt: { fontFamily: Outfit.semibold, fontSize: 11 },
 
   // Badge.
   badge: {
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
   },
   badgeSuccess: { backgroundColor: Colors.successSubtle },
   badgeInfo: { backgroundColor: Colors.primarySubtle },
-  badgeTxt: { fontFamily: Poppins.semibold, fontSize: 11, lineHeight: 15 },
+  badgeTxt: { fontFamily: Outfit.semibold, fontSize: 11, lineHeight: 15 },
 
   // PlateChip.
   plateChip: {
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4, paddingHorizontal: 10,
     backgroundColor: Colors.surface,
   },
-  plateText: { fontFamily: Poppins.bold, fontSize: 15, letterSpacing: 1.5, color: Colors.textPrimary },
+  plateText: { fontFamily: Outfit.bold, fontSize: 15, letterSpacing: 1.5, color: Colors.textPrimary },
 
   // Avatar prestataire.
   driverAvatar: {
@@ -421,13 +421,13 @@ const styles = StyleSheet.create({
     borderWidth: 2, borderColor: Colors.surface,
     alignItems: 'center', justifyContent: 'center',
   },
-  driverAvatarTxt: { fontFamily: Poppins.semibold, color: Colors.primaryPressed },
+  driverAvatarTxt: { fontFamily: Outfit.semibold, color: Colors.primaryPressed },
 
   // DriverRow.
   driverRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 4 },
   driverCol: { flex: 1, gap: 4 },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  ratingVal: { fontFamily: Poppins.semibold, color: Colors.textPrimary },
+  ratingVal: { fontFamily: Outfit.semibold, color: Colors.textPrimary },
 
   // VehicleBlock.
   vehicleBlock: {
@@ -470,7 +470,7 @@ const styles = StyleSheet.create({
   altThumbImg: { width: 42, height: 42 },
   altTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   altTitle: { flexShrink: 1 },
-  altSub: { fontFamily: Poppins.regular, fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  altSub: { fontFamily: Outfit.regular, fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
 
   // RouteCard (Itinéraire).
   routeCard: {
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
     borderRadius: Radii.pill,
     paddingHorizontal: 14, paddingVertical: 9,
   },
-  pillTxt: { fontFamily: Poppins.medium, fontSize: 14, color: Colors.textPrimary },
+  pillTxt: { fontFamily: Outfit.medium, fontSize: 14, color: Colors.textPrimary },
 
   // InfoBanner.
   banner: {
@@ -507,5 +507,5 @@ const styles = StyleSheet.create({
   // TotalBar.
   totalBar: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   totalNote: { marginTop: 2 },
-  totalAmount: { fontFamily: Poppins.bold, fontSize: 22, lineHeight: 29, color: Colors.primary },
+  totalAmount: { fontFamily: Outfit.bold, fontSize: 22, lineHeight: 29, color: Colors.primary },
 });

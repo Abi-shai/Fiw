@@ -15,7 +15,7 @@ import {
   groupedSheetSurface, SheetCard, VehicleGroup, RouteCard, InfoBanner, ActionPill, CARD_GAP,
 } from '@/components/RideSheet';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 import { DRIVER, MOTO_DRIVER, DAKAR_CENTER, WAIT_FEE_PER_MIN } from '@/constants/data';
 import { payIllustration, topviewSprite, type IlluKey } from '@/constants/illustrations';
 
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
   paymentRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   paymentLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   paymentRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  paymentAmount: { fontFamily: Poppins.bold, fontSize: 18, color: Colors.primary },
+  paymentAmount: { fontFamily: Outfit.bold, fontSize: 18, color: Colors.primary },
   paymentIllu: { width: 24, height: 24, borderRadius: 6 },
 
   tilesRow: { flexDirection: 'row', gap: 8 },

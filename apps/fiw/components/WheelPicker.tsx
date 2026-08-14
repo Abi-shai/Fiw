@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, ScrollView } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Colors, Poppins } from '@/constants/tokens';
+import { Colors, Outfit } from '@/constants/tokens';
 
 // Géométrie partagée avec les parents (bande de sélection, hauteur de zone).
 export const WHEEL_ITEM_H = 44;
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   value: {
-    fontFamily: Poppins.semibold,
+    fontFamily: Outfit.semibold,
     fontSize: 22,
     lineHeight: 30,
     color: Colors.textPrimary,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Image, StyleSheet } from 'react-native';
-import { Colors, Poppins } from '@/constants/tokens';
+import { Colors, Outfit } from '@/constants/tokens';
 import Text from '@/components/Text';
 import { FLAG_IMAGES } from '@/constants/flags';
 
@@ -30,5 +30,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  code: { fontFamily: Poppins.semibold, fontSize: 10, letterSpacing: 0.3 },
+  code: { fontFamily: Outfit.semibold, fontSize: 10, letterSpacing: 0.3 },
 });

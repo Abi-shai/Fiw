@@ -4,7 +4,7 @@ import {
   ScrollView, SafeAreaView,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Colors, Spacing, Radii, Shadows, Poppins } from '@/constants/tokens';
+import { Colors, Spacing, Radii, Shadows, Outfit } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import Button from '@/components/Button';
@@ -49,14 +49,14 @@ export default function CompleteScreen() {
           </View>
           <View style={styles.divider} />
           <View style={styles.lineRow}>
-            <Text variant="label" style={{ fontFamily: Poppins.semibold, fontSize: 16 }}>Net perçu</Text>
+            <Text variant="label" style={{ fontFamily: Outfit.semibold, fontSize: 16 }}>Net perçu</Text>
             <Text variant="heading2" color={Colors.primary}>{netPercu.toLocaleString('fr-FR')} F CFA</Text>
           </View>
 
           <View style={styles.walletNotice}>
             <Text variant="caption" color={Colors.primary}>
               Commission débitée de votre Wallet · Nouveau solde :{' '}
-              <Text variant="caption" color={Colors.primary} style={{ fontFamily: Poppins.bold }}>
+              <Text variant="caption" color={Colors.primary} style={{ fontFamily: Outfit.bold }}>
                 {(PRESTATAIRE.walletSolde - commission).toLocaleString('fr-FR')} F
               </Text>
             </Text>
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     ...Shadows.sm,
   },
   cardTitle: {
-    fontFamily: Poppins.bold,
+    fontFamily: Outfit.bold,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
     marginBottom: 14,

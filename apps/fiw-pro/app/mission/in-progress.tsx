@@ -6,7 +6,7 @@ import Button from '@/components/Button';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import { sheetSurface } from '@/components/Sheet';
-import { Colors, Spacing, Radii, Shadows, Poppins } from '@/constants/tokens';
+import { Colors, Spacing, Radii, Shadows, Outfit } from '@/constants/tokens';
 import { MISSION_INCOMING } from '@/constants/data';
 
 const DEST = MISSION_INCOMING.destination;
@@ -37,13 +37,13 @@ export default function InProgressScreen() {
         <View style={styles.topBar}>
           <View style={[styles.inProgressBadge, Shadows.float]}>
             <View style={styles.pulseDot} />
-            <Text variant="bodySmall" style={{ fontFamily: Poppins.semibold }}>Mission en cours</Text>
+            <Text variant="bodySmall" style={{ fontFamily: Outfit.semibold }}>Mission en cours</Text>
           </View>
           <View style={[styles.etaBadge, Shadows.md]}>
-            <Text variant="caption" color={Colors.primarySubtle} style={{ fontFamily: Poppins.semibold, letterSpacing: 0.5 }}>
+            <Text variant="caption" color={Colors.primarySubtle} style={{ fontFamily: Outfit.semibold, letterSpacing: 0.5 }}>
               ETA
             </Text>
-            <Text style={{ fontFamily: Poppins.bold, fontSize: 18, color: Colors.textOnPrimary }}>
+            <Text style={{ fontFamily: Outfit.bold, fontSize: 18, color: Colors.textOnPrimary }}>
               {eta} min
             </Text>
           </View>
@@ -54,7 +54,7 @@ export default function InProgressScreen() {
             <View style={styles.routeRow}>
               <View style={[styles.routeDot, { backgroundColor: Colors.primary }]} />
               <Text variant="bodySmall" style={{ flex: 1 }}>{MISSION_INCOMING.pickup.name}</Text>
-              <Text variant="caption" color={Colors.success} style={{ fontFamily: Poppins.semibold }}>
+              <Text variant="caption" color={Colors.success} style={{ fontFamily: Outfit.semibold }}>
                 Collecte ✓
               </Text>
             </View>
@@ -76,7 +76,7 @@ export default function InProgressScreen() {
           <View style={styles.actionsRow}>
             <TouchableOpacity style={styles.callBtn} onPress={() => {}}>
               <Icon name="phone" size={20} color={Colors.primary} />
-              <Text variant="caption" color={Colors.primary} style={{ fontFamily: Poppins.semibold, marginTop: 2 }}>
+              <Text variant="caption" color={Colors.primary} style={{ fontFamily: Outfit.semibold, marginTop: 2 }}>
                 Appeler
               </Text>
             </TouchableOpacity>

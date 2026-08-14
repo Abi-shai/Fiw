@@ -17,7 +17,7 @@ import {
   groupedSheetSurface, SheetCard, VehicleGroup, RouteCard, InfoBanner, ActionPill, CARD_GAP,
 } from '@/components/RideSheet';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 import { VELO_LIVREUR, MOTO_LIVREUR, DAKAR_CENTER, livraisonGamme } from '@/constants/data';
 import { payIllustration, topviewSprite } from '@/constants/illustrations';
 
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
   },
   trackingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   trackingNum: {
-    fontFamily: Poppins.semibold, fontSize: 13, color: Colors.textPrimary,
+    fontFamily: Outfit.semibold, fontSize: 13, color: Colors.textPrimary,
     letterSpacing: 0.5,
   },
   codeWrap: {
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
   paymentRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   paymentLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   paymentRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  paymentAmount: { fontFamily: Poppins.bold, fontSize: 18, color: Colors.primary },
+  paymentAmount: { fontFamily: Outfit.bold, fontSize: 18, color: Colors.primary },
   paymentIllu: { width: 24, height: 24, borderRadius: 6 },
 
   tilesRow: { flexDirection: 'row', gap: 8 },

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import Text from '@/components/Text';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 
 type Props = {
   /** Code court (ex. « 4832 ») — un caractère par case. */
@@ -35,5 +35,5 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: Colors.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  digit: { fontFamily: Poppins.bold, fontSize: 28, lineHeight: 36, color: Colors.textPrimary },
+  digit: { fontFamily: Outfit.bold, fontSize: 28, lineHeight: 36, color: Colors.textPrimary },
 });

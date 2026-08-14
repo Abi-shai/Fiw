@@ -15,7 +15,7 @@ import {
   GroupedSheet, SheetCard, ProgressBar, AvatarStack, AltSuggestCard,
   VehicleGroup, TotalBar,
 } from '@/components/RideSheet';
-import { Colors, Poppins, Radii, Shadows } from '@/constants/tokens';
+import { Colors, Outfit, Radii, Shadows } from '@/constants/tokens';
 import { DAKAR_CENTER, FRAIS_RAPPROCHEMENT, DRIVER, MOTO_DRIVER, complementaryGamme } from '@/constants/data';
 import { gammeIllustration, topviewSprite, type IlluKey } from '@/constants/illustrations';
 
@@ -420,8 +420,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 12,
   },
   breakdown: { marginTop: 4, lineHeight: 21 },
-  breakdownStrong: { fontFamily: Poppins.semibold, color: Colors.textPrimary },
-  totalCardAmount: { fontFamily: Poppins.bold, fontSize: 22, lineHeight: 29, color: Colors.primary },
+  breakdownStrong: { fontFamily: Outfit.semibold, color: Colors.textPrimary },
+  totalCardAmount: { fontFamily: Outfit.bold, fontSize: 22, lineHeight: 29, color: Colors.primary },
 
   demoControls: { position: 'absolute', right: 16 },
   demoChip: {

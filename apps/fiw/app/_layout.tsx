@@ -7,22 +7,22 @@ import * as SplashScreen from 'expo-splash-screen';
 import BrandSplash from '@/components/BrandSplash';
 import {
   useFonts,
-  Poppins_300Light,
-  Poppins_400Regular,
-  Poppins_500Medium,
-  Poppins_600SemiBold,
-  Poppins_700Bold,
-} from '@expo-google-fonts/poppins';
+  Outfit_300Light,
+  Outfit_400Regular,
+  Outfit_500Medium,
+  Outfit_600SemiBold,
+  Outfit_700Bold,
+} from '@expo-google-fonts/outfit';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    Poppins_300Light,
-    Poppins_400Regular,
-    Poppins_500Medium,
-    Poppins_600SemiBold,
-    Poppins_700Bold,
+    Outfit_300Light,
+    Outfit_400Regular,
+    Outfit_500Medium,
+    Outfit_600SemiBold,
+    Outfit_700Bold,
   });
 
   // Écran de chargement de marque : reste affiché tant que l'app n'est pas
@@ -45,7 +45,7 @@ export default function RootLayout() {
   }, [fontsLoaded, fontError]);
 
   // Garde l'écran de démarrage tant que la police n'est pas prête (évite le
-  // flash en police système puis le saut vers Poppins).
+  // flash en police système puis le saut vers Outfit).
   if (!fontsLoaded && !fontError) return null;
 
   return (
