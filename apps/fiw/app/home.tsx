@@ -16,7 +16,7 @@ import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 import { Handle, SheetHeader, sheetSurface } from '@/components/Sheet';
 import { useSnapSheet, SHEET_SPRING } from '@/hooks/useSnapSheet';
-import { Colors, Radii, Poppins, Shadows } from '@/constants/tokens';
+import { Colors, Radii, Outfit, Shadows } from '@/constants/tokens';
 import { DAKAR_CENTER, SUGGESTIONS, RECENT_PLACES } from '@/constants/data';
 import { usePlaces } from '@/stores/places';
 
@@ -838,8 +838,8 @@ const styles = StyleSheet.create({
   fieldA: { marginBottom: 4 },
   fieldIcon: { width: 28, alignItems: 'center' },
   fieldBody: { flex: 1, paddingVertical: 10 },
-  fieldValue: { marginTop: 1, fontFamily: Poppins.medium },
-  fieldInput: { fontSize: 15, color: Colors.textPrimary, fontFamily: Poppins.medium, marginTop: 1, padding: 0 },
+  fieldValue: { marginTop: 1, fontFamily: Outfit.medium },
+  fieldInput: { fontSize: 15, color: Colors.textPrimary, fontFamily: Outfit.medium, marginTop: 1, padding: 0 },
   fieldActive: { borderColor: Colors.primary, backgroundColor: Colors.primarySubtle },
 
   // Bouton « Choisir sur la carte », présent à droite du champ actif.

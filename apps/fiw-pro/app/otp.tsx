@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
-import { Colors, Spacing, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Spacing, Radii, Outfit } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Button from '@/components/Button';
 import IconButton from '@/components/IconButton';
@@ -26,13 +26,13 @@ export default function OTPScreen() {
         <Text variant="display" style={{ marginBottom: Spacing[3] }}>Code de vérification</Text>
         <Text variant="body" color={Colors.textSecondary} style={{ lineHeight: 24, marginBottom: 40 }}>
           Nous avons envoyé un code au{'\n'}
-          <Text variant="body" style={{ fontFamily: Poppins.semibold }}>+221 77 000 00 00</Text>
+          <Text variant="body" style={{ fontFamily: Outfit.semibold }}>+221 77 000 00 00</Text>
         </Text>
 
         <View style={styles.codeRow}>
           {code.map((digit, i) => (
             <View key={i} style={styles.codeBox}>
-              <Text style={{ fontFamily: Poppins.bold, fontSize: 28, color: Colors.primary }}>
+              <Text style={{ fontFamily: Outfit.bold, fontSize: 28, color: Colors.primary }}>
                 {digit}
               </Text>
             </View>

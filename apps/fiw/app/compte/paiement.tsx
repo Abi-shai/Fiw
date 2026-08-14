@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, ScrollView, Alert, Image, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 import { PAY_ILLUSTRATIONS } from '@/constants/illustrations';
 import ScreenHeader from '@/components/ScreenHeader';
 import Callout from '@/components/Callout';
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   // `flexShrink` : c'est le label qui cède la place, jamais le chip — un chip
   // tronqué ne veut plus rien dire.
-  label: { fontFamily: Poppins.medium, flexShrink: 1 },
+  label: { fontFamily: Outfit.medium, flexShrink: 1 },
   metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   meta: { flexShrink: 1 },
 
@@ -155,5 +155,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  tagLabel: { fontFamily: Poppins.semibold },
+  tagLabel: { fontFamily: Outfit.semibold },
 });

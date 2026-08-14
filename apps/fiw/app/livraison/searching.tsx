@@ -16,13 +16,13 @@ import {
   VehicleGroup, TotalBar, InfoBanner,
 } from '@/components/RideSheet';
 import LivraisonModeChoice, { type LivraisonMode } from '@/components/LivraisonModeChoice';
-import { Colors, Poppins, Radii, Shadows } from '@/constants/tokens';
+import { Colors, Outfit, Radii, Shadows } from '@/constants/tokens';
 import {
   DAKAR_CENTER, FRAIS_RAPPROCHEMENT, VELO_LIVREUR, MOTO_LIVREUR,
   livraisonGamme, complementaryLivraisonGamme, GROUPEE_ECONOMIE,
   GROUPAGE_MIN_COMMANDES, GROUPAGE_DELAI_MAX_MIN,
 } from '@/constants/data';
-import { gammeIllustration } from '@/constants/illustrations';
+import { gammeIllustration, topviewSprite } from '@/constants/illustrations';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -137,11 +137,9 @@ export default function LivraisonSearchingScreen() {
       [-0.0070, -0.0030], [0.0052, 0.0020], [-0.0024, -0.0066],
     ].map(([dlat, dlng]) => ({ lat: o.lat + dlat, lng: o.lng + dlng }));
   }, []);
-  // Les prestataires sur la carte portent le véhicule de la gamme demandée.
-  const providerIcon = useMemo(
-    () => Image.resolveAssetSource(gammeIllustration(gamme.illu)).uri,
-    [gamme.illu],
-  );
+  // Les prestataires sur la carte portent le véhicule de la gamme demandée,
+  // vu du dessus (le bandeau, lui, garde la vue isométrique).
+  const providerSprite = useMemo(() => topviewSprite(gamme.illu), [gamme.illu]);
 
   const scrimFade = useRef(new Animated.Value(0)).current;
   const sheetY = useRef(new Animated.Value(700)).current;
@@ -294,7 +292,7 @@ export default function LivraisonSearchingScreen() {
         tintWater
         declutter
         providers={providers}
-        providerIcon={providerIcon}
+        providerSprite={providerSprite}
         style={StyleSheet.absoluteFillObject}
       />
 
@@ -529,8 +527,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 12,
   },
   breakdown: { marginTop: 4, lineHeight: 21 },
-  breakdownStrong: { fontFamily: Poppins.semibold, color: Colors.textPrimary },
-  totalCardAmount: { fontFamily: Poppins.bold, fontSize: 22, lineHeight: 29, color: Colors.primary },
+  breakdownStrong: { fontFamily: Outfit.semibold, color: Colors.textPrimary },
+  totalCardAmount: { fontFamily: Outfit.bold, fontSize: 22, lineHeight: 29, color: Colors.primary },
 
   demoControls: { position: 'absolute', right: 16 },
   demoChip: {

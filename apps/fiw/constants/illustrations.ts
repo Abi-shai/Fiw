@@ -1,3 +1,5 @@
+import { Image } from 'react-native';
+
 // Jeu d'illustrations `mobility option` (Figma `icons`, nœud 40:169), indexé par
 // la clé `illu` portée par chaque gamme (cf. GAMMES/COVOITURAGE/LIVRAISON_GAMMES
 // dans data.ts). Une illustration par type de véhicule, quel que soit le service
@@ -23,6 +25,122 @@ export type IlluKey = keyof typeof GAMME_ILLUSTRATIONS;
 
 export const gammeIllustration = (illu: IlluKey) =>
   GAMME_ILLUSTRATIONS[illu] ?? GAMME_ILLUSTRATIONS.auto;
+
+// ---------------------------------------------------------------------------
+// Vue de dessus (`mobility option`, variante `View=top view`)
+// ---------------------------------------------------------------------------
+// Deuxième moitié du jeu Figma : le même véhicule vu du dessus, **nez au nord**.
+// Répartition des rôles — la variante `Default` (isométrique) illustre les
+// CARTES (carte gamme, vignette de suivi, bandeau de recherche) ; la variante
+// `top view` habille la CARTOGRAPHIE (véhicule suivi, prestataires alentour),
+// où le sprite est tourné selon le cap et doit se lire à la verticale de la
+// chaussée. Ne jamais poser une vue de dessus sur une carte gamme, ni une vue
+// isométrique sur la carte : elles ne racontent pas la même chose.
+export const TOPVIEW_ILLUSTRATIONS: Record<IlluKey, ReturnType<typeof require>> = {
+  moto: require('../assets/top-moto.png'),
+  velo: require('../assets/top-velo.png'),
+  auto: require('../assets/top-auto.png'),
+  luxe: require('../assets/top-luxe.png'),
+  covoiturage: require('../assets/top-covoit.png'),
+  // La tuile de service Livraison n'a pas de vue de dessus propre — sur la
+  // carte, c'est le véhicule qui compte : la moto.
+  livraison: require('../assets/top-moto.png'),
+};
+
+/** Rapport largeur / longueur de chaque sprite vu du dessus, mesuré sur l'asset
+ *  (l'ombre portée élargit un peu la boîte des voitures). Sert à dimensionner
+ *  le marqueur à partir de sa seule LONGUEUR, sans jamais l'étirer. */
+export const TOPVIEW_RATIOS: Record<IlluKey, number> = {
+  moto: 0.5,
+  velo: 0.375,
+  auto: 0.549,
+  luxe: 0.497,
+  covoiturage: 0.569,
+  livraison: 0.5,
+};
+
+export const topviewIllustration = (illu: IlluKey) =>
+  TOPVIEW_ILLUSTRATIONS[illu] ?? TOPVIEW_ILLUSTRATIONS.auto;
+
+/**
+ * Calibre des marqueurs de carte, véhicule par véhicule.
+ *
+ * `len` = longueur du sprite en px écran (véhicule suivi), `ambLen` = idem pour
+ * les prestataires alentour ; la largeur en découle par `TOPVIEW_RATIOS`, donc
+ * rien n'est jamais étiré.
+ *
+ * **Les deux-roues sont volontairement plus GRANDS que les voitures.** À
+ * l'échelle réelle une moto ferait la moitié d'une voiture et un vélo un tiers
+ * — illisible sur une carte. Aucune app du corpus ne s'y plie (cf.
+ * `docs/benchmark-carte-mobbin.md`) : soit elle enferme le deux-roues dans une
+ * pastille qui lui garantit un gabarit plancher (Glovo, foodpanda, Bolt Food,
+ * Blinkit), soit elle grossit franchement le sprite — le scooter Zomato mesure
+ * **26 × 39 pt**, soit plus LARGE que la voiture inDrive (~16 × 29). Fiw n'a pas
+ * de pastille : le sprite doit donc porter seul ce gabarit plancher. Le critère
+ * qui gouverne est la **largeur apparente** (~24–30 px pour toute la famille),
+ * pas la longueur.
+ *
+ * Ces valeurs dépassent le haut du corpus (~48 pt pour le deux-roues le plus
+ * gros, Meituan) : **c'est délibéré**, tranché sur rendu le 3 août 2026. Les
+ * illustrations Fiw sont des rendus 3D détaillés, pas des pictogrammes plats —
+ * elles demandent plus de place pour livrer ce détail, et elles portent la
+ * marque sur la carte. Le plafond utile a été constaté à ×1,5 des valeurs
+ * ci-dessous : au-delà, le sprite déborde la chaussée et la ville se lit comme
+ * une maquette.
+ *
+ * `pivot` = position du point de rotation le long du sprite, 0 = nez, 1 = arrière.
+ * Un véhicule braque autour de son train arrière : c'est le nez qui balaie vers
+ * l'extérieur du virage. Pivoter au centre donne une toupie — défaut d'autant
+ * plus visible que le sprite est long et fin, donc sur les deux-roues.
+ *
+ * `lean` = amplitude de l'inclinaison simulée en virage (0 = aucune). Un
+ * deux-roues se penche à l'intérieur du virage ; vu du dessus sa silhouette se
+ * resserre. Une voiture, non.
+ *
+ * `steerBand` = fraction du sprite, mesurée depuis le nez, occupée par le TRAIN
+ * AVANT — la partie qui braque. Les illustrations Figma sont des bitmaps
+ * aplatis (aucun calque à récupérer) : la roue est donc détachée au découpage,
+ * le sprite étant dessiné deux fois, l'une privée de cette bande, l'autre
+ * réduite à elle et pivotant sur la colonne de direction. Les valeurs sont
+ * calées sur le dessin, à l'interstice entre le garde-boue et le guidon —
+ * changer d'illustration impose de les revérifier. 0 = pas de découpage : sur
+ * une voiture vue du dessus, les roues sont sous la carrosserie, invisibles.
+ *
+ * `maxSteer` = angle de braquage maximal en degrés. Au-delà, l'arête droite de
+ * la découpe finit par se voir.
+ */
+export const TOPVIEW_MARKER: Record<
+  IlluKey,
+  {
+    len: number; ambLen: number; pivot: number; lean: number;
+    steerBand: number; maxSteer: number;
+  }
+> = {
+  auto: { len: 48, ambLen: 34, pivot: 0.68, lean: 0, steerBand: 0, maxSteer: 0 },
+  luxe: { len: 48, ambLen: 34, pivot: 0.68, lean: 0, steerBand: 0, maxSteer: 0 },
+  covoiturage: { len: 48, ambLen: 34, pivot: 0.68, lean: 0, steerBand: 0, maxSteer: 0 },
+  moto: { len: 60, ambLen: 43, pivot: 0.72, lean: 0.14, steerBand: 0.24, maxSteer: 26 },
+  velo: { len: 63, ambLen: 44, pivot: 0.75, lean: 0.16, steerBand: 0.22, maxSteer: 28 },
+  livraison: { len: 60, ambLen: 43, pivot: 0.72, lean: 0.14, steerBand: 0.24, maxSteer: 26 },
+};
+
+export interface TopviewSprite {
+  uri: string;
+  ratio: number;
+  len: number;
+  ambLen: number;
+  pivot: number;
+  lean: number;
+  steerBand: number;
+  maxSteer: number;
+}
+
+/** Sprite prêt pour la carte (`LeafletMap`) : URI résolue + géométrie de rendu. */
+export const topviewSprite = (illu: IlluKey): TopviewSprite => ({
+  uri: Image.resolveAssetSource(topviewIllustration(illu)).uri,
+  ratio: TOPVIEW_RATIOS[illu] ?? TOPVIEW_RATIOS.auto,
+  ...(TOPVIEW_MARKER[illu] ?? TOPVIEW_MARKER.auto),
+});
 
 /** Côté de l'emplacement qu'occupe une illustration dans le jeu Figma
  *  `mobility option` (chaque variante est un carré de 68). */

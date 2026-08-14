@@ -15,9 +15,9 @@ import {
   GroupedSheet, SheetCard, ProgressBar, AvatarStack, AltSuggestCard,
   VehicleGroup, TotalBar,
 } from '@/components/RideSheet';
-import { Colors, Poppins, Radii, Shadows } from '@/constants/tokens';
+import { Colors, Outfit, Radii, Shadows } from '@/constants/tokens';
 import { DAKAR_CENTER, FRAIS_RAPPROCHEMENT, DRIVER, MOTO_DRIVER, complementaryGamme } from '@/constants/data';
-import { gammeIllustration, type IlluKey } from '@/constants/illustrations';
+import { gammeIllustration, topviewSprite, type IlluKey } from '@/constants/illustrations';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -133,10 +133,8 @@ export default function SearchingScreen() {
       [-0.0070, -0.0030], [0.0052, 0.0020], [-0.0024, -0.0066],
     ].map(([dlat, dlng]) => ({ lat: o.lat + dlat, lng: o.lng + dlng }));
   }, []);
-  const providerIcon = useMemo(
-    () => Image.resolveAssetSource(gammeIllustration(illu)).uri,
-    [illu],
-  );
+  // Vue de dessus sur la carte (le bandeau, lui, garde la vue isométrique).
+  const providerSprite = useMemo(() => topviewSprite(illu), [illu]);
 
   const scrimFade = useRef(new Animated.Value(0)).current;
   const sheetY = useRef(new Animated.Value(700)).current;
@@ -245,7 +243,7 @@ export default function SearchingScreen() {
         tintWater
         declutter
         providers={providers}
-        providerIcon={providerIcon}
+        providerSprite={providerSprite}
         style={StyleSheet.absoluteFillObject}
       />
 
@@ -422,8 +420,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 12,
   },
   breakdown: { marginTop: 4, lineHeight: 21 },
-  breakdownStrong: { fontFamily: Poppins.semibold, color: Colors.textPrimary },
-  totalCardAmount: { fontFamily: Poppins.bold, fontSize: 22, lineHeight: 29, color: Colors.primary },
+  breakdownStrong: { fontFamily: Outfit.semibold, color: Colors.textPrimary },
+  totalCardAmount: { fontFamily: Outfit.bold, fontSize: 22, lineHeight: 29, color: Colors.primary },
 
   demoControls: { position: 'absolute', right: 16 },
   demoChip: {

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Animated, type StyleProp, type ViewStyle } from 'react-native';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
-import { Colors, Poppins } from '@/constants/tokens';
+import { Colors, Outfit } from '@/constants/tokens';
 
 export type Step = { icon: IconName; label: string };
 
@@ -115,5 +115,5 @@ const styles = StyleSheet.create({
   },
   labels: { flexDirection: 'row', justifyContent: 'space-between', gap: 4 },
   label: { flex: 1 },
-  labelCurrent: { fontFamily: Poppins.semibold },
+  labelCurrent: { fontFamily: Outfit.semibold },
 });

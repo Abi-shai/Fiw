@@ -3,7 +3,7 @@ import { View, ScrollView, StyleSheet, TouchableOpacity, type StyleProp, type Vi
 import * as Haptics from 'expo-haptics';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 
 export type ChipItem = { id: string; label: string; icon?: IconName; hint?: string };
 
@@ -93,6 +93,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: 'transparent',
   },
   chipActive: { backgroundColor: Colors.primarySubtle, borderColor: Colors.primary },
-  labelActive: { fontFamily: Poppins.semibold },
+  labelActive: { fontFamily: Outfit.semibold },
   hint: { marginTop: 8 },
 });

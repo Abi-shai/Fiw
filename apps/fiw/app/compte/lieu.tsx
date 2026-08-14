@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Radii, Shadows, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Shadows, Outfit } from '@/constants/tokens';
 import LeafletMap, { type LeafletMapHandle } from '@/components/LeafletMap';
 import ScreenHeader from '@/components/ScreenHeader';
 import IconButton from '@/components/IconButton';
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: Colors.textPrimary,
-    fontFamily: Poppins.medium,
+    fontFamily: Outfit.medium,
     padding: 0,
   },
   resultsCard: {
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginBottom: 28,
   },
-  addressText: { fontFamily: Poppins.medium, marginTop: 1 },
+  addressText: { fontFamily: Outfit.medium, marginTop: 1 },
   label: { marginBottom: 8, marginLeft: 4 },
   labelSpaced: { marginTop: 28 },
   infoRow: {
@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
   repereInput: {
     fontSize: 15,
     color: Colors.textPrimary,
-    fontFamily: Poppins.medium,
+    fontFamily: Outfit.medium,
     padding: 0,
     lineHeight: 21,
     textAlignVertical: 'top',
@@ -488,8 +488,8 @@ const styles = StyleSheet.create({
   },
   fieldIcon: { width: 28, alignItems: 'center' },
   fieldBody: { flex: 1, paddingVertical: 10 },
-  fieldInput: { fontSize: 15, color: Colors.textPrimary, fontFamily: Poppins.medium, padding: 0 },
-  fieldValue: { fontFamily: Poppins.medium },
+  fieldInput: { fontSize: 15, color: Colors.textPrimary, fontFamily: Outfit.medium, padding: 0 },
+  fieldValue: { fontFamily: Outfit.medium },
 
   cta: { marginTop: 32 },
   remove: { marginTop: 20, alignSelf: 'center' },

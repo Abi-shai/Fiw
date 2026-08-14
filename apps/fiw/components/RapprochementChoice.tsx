@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 
 export type OptId = 'A' | 'B';
 
@@ -123,14 +123,14 @@ const styles = StyleSheet.create({
   },
   iconWrapActive: { backgroundColor: Colors.surface },
   mid: { flex: 1, gap: 4 },
-  title: { fontFamily: Poppins.semibold },
+  title: { fontFamily: Outfit.semibold },
   benefit: {
     alignSelf: 'flex-start',
     flexDirection: 'row', alignItems: 'center', gap: 4,
     borderRadius: Radii.pill,
     paddingVertical: 3, paddingHorizontal: 8,
   },
-  benefitTxt: { fontFamily: Poppins.semibold },
+  benefitTxt: { fontFamily: Outfit.semibold },
   right: { alignItems: 'flex-end', gap: 6 },
   radio: {
     width: 22, height: 22, borderRadius: 11,

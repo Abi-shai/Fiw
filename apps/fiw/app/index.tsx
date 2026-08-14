@@ -4,7 +4,7 @@ import {
   Platform, TouchableOpacity, ScrollView
 } from 'react-native';
 import { router } from 'expo-router';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   logoText: {
-    fontFamily: Poppins.bold,
+    fontFamily: Outfit.bold,
     fontSize: 32,
     letterSpacing: -1,
   },
@@ -110,10 +110,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 17,
     color: Colors.textPrimary,
-    fontFamily: Poppins.medium,
+    fontFamily: Outfit.medium,
   },
   btn: { marginTop: 8 },
   createLink: { marginTop: 20, alignItems: 'center' },
-  createBold: { fontFamily: Poppins.semibold },
+  createBold: { fontFamily: Outfit.semibold },
   footer: { paddingVertical: 32, alignItems: 'center' },
 });

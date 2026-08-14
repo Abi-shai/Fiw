@@ -3,7 +3,7 @@ import { Text as RNText, StyleSheet, TextProps as RNTextProps, TextStyle } from 
 import { Colors, Typography, type TextVariant } from '@/constants/tokens';
 
 type Props = RNTextProps & {
-  /** Variante typographique sémantique (mappe taille + graisse Poppins + line-height). */
+  /** Variante typographique sémantique (mappe taille + graisse Outfit + line-height). */
   variant?: TextVariant;
   /** Couleur du token de texte (défaut : primaire). */
   color?: string;

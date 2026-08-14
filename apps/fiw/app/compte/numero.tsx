@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
 import Icon from '@/components/Icon';
@@ -138,10 +138,10 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8 },
   intro: { lineHeight: 22, marginBottom: 28 },
   label: { marginBottom: 8, marginLeft: 4 },
-  phone: { fontFamily: Poppins.semibold },
+  phone: { fontFamily: Outfit.semibold },
 
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, marginBottom: 24, paddingHorizontal: 4 },
-  currentPhone: { fontFamily: Poppins.semibold },
+  currentPhone: { fontFamily: Outfit.semibold },
   cta: { marginTop: 8 },
 
   codeRow: { flexDirection: 'row', gap: 12, marginBottom: 32 },
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   codeBoxActive: { borderColor: Colors.primary, backgroundColor: Colors.primarySubtle },
-  codeDigit: { fontFamily: Poppins.bold, fontSize: 28 },
+  codeDigit: { fontFamily: Outfit.bold, fontSize: 28 },
   hiddenInput: { position: 'absolute', width: 1, height: 1, opacity: 0 },
   resend: { marginTop: 20, alignItems: 'center' },
 });

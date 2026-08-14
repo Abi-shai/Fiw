@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { Colors, Radii, Poppins, Shadows } from '@/constants/tokens';
+import { Colors, Radii, Outfit, Shadows } from '@/constants/tokens';
 import Text from '@/components/Text';
 
 export type ReceiptLine = { label: string; value: string };
@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
   },
-  rowValue: { fontFamily: Poppins.medium, maxWidth: '60%', textAlign: 'right' },
+  rowValue: { fontFamily: Outfit.medium, maxWidth: '60%', textAlign: 'right' },
   divider: { height: 1, backgroundColor: Colors.border, marginVertical: 8 },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 },
 });

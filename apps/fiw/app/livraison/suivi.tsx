@@ -17,9 +17,9 @@ import {
   groupedSheetSurface, SheetCard, VehicleGroup, RouteCard, InfoBanner, ActionPill, CARD_GAP,
 } from '@/components/RideSheet';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 import { VELO_LIVREUR, MOTO_LIVREUR, DAKAR_CENTER, livraisonGamme } from '@/constants/data';
-import { payIllustration } from '@/constants/illustrations';
+import { payIllustration, topviewSprite } from '@/constants/illustrations';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -69,6 +69,10 @@ const SEG_PLAN: Record<StepKey, { from: number; to: number } | null> = {
 
 const DRIVER_START = { lat: 14.7100, lng: -17.4500 };
 const SCREEN_H = Dimensions.get('window').height;
+// Hauteur que la feuille occupe à son cran milieu — marge basse du cadrage
+// carte (le trajet doit tenir dans la zone visible, au-dessus de la feuille).
+// Estimée : la carte ne recharge plus, son cadrage est figé au montage.
+const SHEET_MID_H = Math.round(SCREEN_H * 0.44);
 
 const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/[\s  ]/g, '.');
 
@@ -128,6 +132,9 @@ export default function LivraisonSuiviScreen() {
 
   const driver = params.gammeId === 'velo' ? VELO_LIVREUR : MOTO_LIVREUR;
   const gamme = livraisonGamme(params.gammeId);
+  // Le véhicule suivi porte la gamme choisie, vu du dessus : c'est lui qu'on
+  // regarde rouler, pivoter aux carrefours et remonter la rue.
+  const vehicleSprite = useMemo(() => topviewSprite(gamme.illu), [gamme.illu]);
   const price = parseInt(params.finalPrice || '700', 10);
   const destLat = parseFloat(params.destLat || String(DAKAR_CENTER.lat));
   const destLng = parseFloat(params.destLng || String(DAKAR_CENTER.lng));
@@ -248,16 +255,21 @@ export default function LivraisonSuiviScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Une seule carte pour toute la livraison : les jalons changent le trajet
+          et les marqueurs sur place (pas de remontage), donc le véhicule garde
+          sa position et son cap entre collecte et livraison. */}
       <LeafletMap
-        key={`map-${step.key}`}
         ref={mapRef}
         center={mapConfig.center}
         zoom={mapConfig.zoom}
         markers={mapConfig.markers}
         route={mapConfig.route}
+        vehicleSprite={vehicleSprite}
+        followVehicle
         mapStyle="mapbox://styles/mapbox/light-v11"
         tintWater
         declutter
+        fitPadding={{ top: insets.top + 40, bottom: SHEET_MID_H, left: 48, right: 48 }}
         style={StyleSheet.absoluteFillObject}
       />
 
@@ -472,7 +484,7 @@ const styles = StyleSheet.create({
   },
   trackingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   trackingNum: {
-    fontFamily: Poppins.semibold, fontSize: 13, color: Colors.textPrimary,
+    fontFamily: Outfit.semibold, fontSize: 13, color: Colors.textPrimary,
     letterSpacing: 0.5,
   },
   codeWrap: {
@@ -486,7 +498,7 @@ const styles = StyleSheet.create({
   paymentRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   paymentLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   paymentRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  paymentAmount: { fontFamily: Poppins.bold, fontSize: 18, color: Colors.primary },
+  paymentAmount: { fontFamily: Outfit.bold, fontSize: 18, color: Colors.primary },
   paymentIllu: { width: 24, height: 24, borderRadius: 6 },
 
   tilesRow: { flexDirection: 'row', gap: 8 },

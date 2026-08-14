@@ -16,7 +16,7 @@ import { groupedSheetSurface, SheetCard, RouteCard, CARD_GAP } from '@/component
 import { useSnapSheet } from '@/hooks/useSnapSheet';
 import { Colors, Radii } from '@/constants/tokens';
 import { LIVRAISON_GAMMES, DAKAR_CENTER } from '@/constants/data';
-import { gammeIllustration } from '@/constants/illustrations';
+import { topviewSprite } from '@/constants/illustrations';
 
 const SCREEN_H = Dimensions.get('window').height;
 
@@ -60,10 +60,12 @@ export default function LivraisonMethodeScreen() {
     ].map(([dlat, dlng]) => ({ lat: o.lat + dlat, lng: o.lng + dlng }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const providerIcon = useMemo(
-    () => Image.resolveAssetSource(gammeIllustration(gamme.illu)).uri,
-    [gamme.illu],
-  );
+  // Sur la carte, le véhicule se lit du dessus (variante `top view` du jeu
+  // `mobility option`) — le sprite pivote alors selon le cap de sa rue.
+  const providerSprite = useMemo(() => topviewSprite(gamme.illu), [gamme.illu]);
+  const initialProviderSprite = useRef(providerSprite).current;
+  // Change de gamme → échange le sprite des prestataires (sans recharger).
+  useEffect(() => { mapRef.current?.setProviderSprite(providerSprite); }, [providerSprite]);
 
   // Crans mesurés (même mécanique que configure/suivi) : l'en-tête se glisse
   // pour rétracter la feuille, le corps est borné à l'écran et scrolle au-delà.
@@ -131,7 +133,7 @@ export default function LivraisonMethodeScreen() {
         tintWater
         declutter
         providers={providers}
-        providerIcon={providerIcon}
+        providerSprite={initialProviderSprite}
         fitPadding={{ top: insets.top + 64, bottom: Math.round(SCREEN_H * 0.5), left: 56, right: 56 }}
         style={StyleSheet.absoluteFillObject}
       />

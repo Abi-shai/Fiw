@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 import { gammeIllustration, illoSize, type IlluKey } from '@/constants/illustrations';
 
 const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/[\s  ]/g, '.');
@@ -128,14 +128,14 @@ const styles = StyleSheet.create({
   labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
   label: { fontSize: 12 },
   price: { width: '100%' },
-  priceText: { fontFamily: Poppins.bold, width: '100%' },
+  priceText: { fontFamily: Outfit.bold, width: '100%' },
   tag: {
     backgroundColor: Colors.brandYellow,
     borderRadius: Radii.pill,
     borderWidth: 1, borderColor: Colors.primarySubtle,
     paddingHorizontal: 6, paddingVertical: 2,
   },
-  tagText: { fontFamily: Poppins.medium, color: Colors.textPrimary },
+  tagText: { fontFamily: Outfit.medium, color: Colors.textPrimary },
   eta: {
     position: 'absolute',
     bottom: -8, left: 0,
@@ -146,5 +146,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8, paddingVertical: 3,
   },
   etaSel: { borderColor: Colors.primarySubtle },
-  etaText: { fontFamily: Poppins.medium, color: Colors.textPrimary },
+  etaText: { fontFamily: Outfit.medium, color: Colors.textPrimary },
 });

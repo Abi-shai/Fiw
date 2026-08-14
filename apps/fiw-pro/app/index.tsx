@@ -4,7 +4,7 @@ import {
   Platform, TouchableOpacity, ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Colors, Spacing, Radii, Shadows, Poppins } from '@/constants/tokens';
+import { Colors, Spacing, Radii, Shadows, Outfit } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Button from '@/components/Button';
 
@@ -19,10 +19,10 @@ export default function OnboardingScreen() {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <View style={styles.logoBox}>
-            <Text style={{ fontFamily: Poppins.bold, fontSize: 32, color: Colors.textOnPrimary, letterSpacing: -1 }}>
+            <Text style={{ fontFamily: Outfit.bold, fontSize: 32, color: Colors.textOnPrimary, letterSpacing: -1 }}>
               fiw
             </Text>
-            <Text style={{ fontFamily: Poppins.bold, fontSize: 14, color: Colors.primarySubtle, marginLeft: 4, marginBottom: 4, letterSpacing: 1 }}>
+            <Text style={{ fontFamily: Outfit.bold, fontSize: 14, color: Colors.primarySubtle, marginLeft: 4, marginBottom: 4, letterSpacing: 1 }}>
               pro
             </Text>
           </View>
@@ -53,7 +53,7 @@ export default function OnboardingScreen() {
           <TouchableOpacity onPress={() => router.push('/otp')} style={styles.createLink}>
             <Text variant="bodySmall" color={Colors.textSecondary} align="center">
               Pas encore inscrit ?{' '}
-              <Text variant="bodySmall" color={Colors.primary} style={{ fontFamily: Poppins.semibold }}>
+              <Text variant="bodySmall" color={Colors.primary} style={{ fontFamily: Outfit.semibold }}>
                 Créer un compte
               </Text>
             </Text>
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 17,
     color: Colors.textPrimary,
-    fontFamily: Poppins.medium,
+    fontFamily: Outfit.medium,
   },
   createLink: { marginTop: Spacing[6], alignItems: 'center' },
   footer: { paddingVertical: Spacing[8], alignItems: 'center' },

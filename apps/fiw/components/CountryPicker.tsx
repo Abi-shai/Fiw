@@ -3,7 +3,7 @@ import {
   View, StyleSheet, Animated, Dimensions, TextInput, FlatList, TouchableOpacity, Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import FlagChip from '@/components/FlagChip';
@@ -150,10 +150,10 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 8,
   },
-  searchInput: { flex: 1, fontSize: 15, color: Colors.textPrimary, fontFamily: Poppins.regular, padding: 0 },
+  searchInput: { flex: 1, fontSize: 15, color: Colors.textPrimary, fontFamily: Outfit.regular, padding: 0 },
   list: { flex: 1 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
-  name: { flex: 1, fontFamily: Poppins.medium },
+  name: { flex: 1, fontFamily: Outfit.medium },
   sep: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.borderSubtle },
   empty: { marginTop: 40 },
 });

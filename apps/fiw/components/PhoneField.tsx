@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity, Keyboard } from 'react-native';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import FlagChip from '@/components/FlagChip';
@@ -70,13 +70,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 14,
   },
-  dialText: { fontFamily: Poppins.medium },
+  dialText: { fontFamily: Outfit.medium },
   sep: { width: 1, height: 24, backgroundColor: Colors.border },
   input: {
     flex: 1,
     fontSize: 15,
     color: Colors.textPrimary,
-    fontFamily: Poppins.medium,
+    fontFamily: Outfit.medium,
     paddingHorizontal: 12,
     paddingVertical: 14,
   },

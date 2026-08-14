@@ -15,9 +15,9 @@ import {
   groupedSheetSurface, SheetCard, VehicleGroup, RouteCard, InfoBanner, ActionPill, CARD_GAP,
 } from '@/components/RideSheet';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
-import { Colors, Radii, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Outfit } from '@/constants/tokens';
 import { DRIVER, MOTO_DRIVER, DAKAR_CENTER, WAIT_FEE_PER_MIN } from '@/constants/data';
-import { payIllustration, type IlluKey } from '@/constants/illustrations';
+import { payIllustration, topviewSprite, type IlluKey } from '@/constants/illustrations';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -45,6 +45,11 @@ const DRIVER_START = { lat: 14.7100, lng: -17.4500 };
 const GRACE_SECONDS_SIM = 3;
 
 const SCREEN_H = Dimensions.get('window').height;
+// Hauteur que la feuille occupe à son cran milieu — c'est la marge basse du
+// cadrage carte, pour que trajet et véhicule vivent dans la zone VISIBLE. Elle
+// est estimée (et non mesurée) : la carte ne recharge plus, sa mise en page de
+// cadrage est donc figée au montage, avant toute mesure de feuille.
+const SHEET_MID_H = Math.round(SCREEN_H * 0.44);
 // Feuille de suivi à 3 crans, HUG-CONTENT : elle épouse exactement son contenu —
 // AUCUN vide gris sous la dernière carte. `translateY` la décale vers le bas pour
 // la replier (glisser l'en-tête = redimensionner). Le corps ne scrolle QUE si le
@@ -94,6 +99,9 @@ export default function CourseActiveScreen() {
 
   const driver = params.gammeId === 'moto' ? MOTO_DRIVER : DRIVER;
   const illu = (params.gammeIllu || (params.gammeId === 'moto' ? 'moto' : 'auto')) as IlluKey;
+  // Le véhicule suivi porte la gamme commandée, vu du dessus : c'est LUI qu'on
+  // regarde rouler, pivoter aux carrefours et remonter la rue jusqu'au client.
+  const vehicleSprite = useMemo(() => topviewSprite(illu), [illu]);
   const basePrice = parseInt(params.finalPrice || '1500');
   const destLat = parseFloat(params.destLat || String(DAKAR_CENTER.lat));
   const destLng = parseFloat(params.destLng || String(DAKAR_CENTER.lng));
@@ -199,16 +207,21 @@ export default function CourseActiveScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Une seule carte pour toute la course : les étapes changent le trajet et
+          les marqueurs sur place (pas de remontage), donc le véhicule garde sa
+          position et son cap d'une étape à l'autre. */}
       <LeafletMap
-        key={`map-${step.key}`}
         ref={mapRef}
         center={mapConfig.center}
         zoom={mapConfig.zoom}
         markers={mapConfig.markers}
         route={mapConfig.route}
+        vehicleSprite={vehicleSprite}
+        followVehicle
         mapStyle="mapbox://styles/mapbox/light-v11"
         tintWater
         declutter
+        fitPadding={{ top: insets.top + 40, bottom: SHEET_MID_H, left: 48, right: 48 }}
         style={StyleSheet.absoluteFillObject}
       />
 
@@ -388,7 +401,7 @@ const styles = StyleSheet.create({
   paymentRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   paymentLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   paymentRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  paymentAmount: { fontFamily: Poppins.bold, fontSize: 18, color: Colors.primary },
+  paymentAmount: { fontFamily: Outfit.bold, fontSize: 18, color: Colors.primary },
   paymentIllu: { width: 24, height: 24, borderRadius: 6 },
 
   tilesRow: { flexDirection: 'row', gap: 8 },

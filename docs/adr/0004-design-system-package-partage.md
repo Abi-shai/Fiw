@@ -25,3 +25,5 @@ Construction **client-first** : on code le package + migre les écrans Transport
 ## Choix techniques liés
 
 Décidés en même temps (réversibles, donc non bloquants mais notés ici) : icônes **Phosphor** (`phosphor-react-native`) exposées via un atome `Icon` ; typographie **Poppins** (`@expo-google-fonts/poppins`) via un atome `Text` ; bottom sheets sur **`@gorhom/bottom-sheet`** enveloppé. Détails et conventions dans [`style-guide.md`](../style-guide.md).
+
+> _Mise à jour du 14 août 2026_ : la police de marque passe de **Poppins** à **Outfit** (`@expo-google-fonts/outfit`). L'échelle, les graisses chargées et le passage obligatoire par l'atome `Text` sont inchangés — seule la famille change. C'est exactement le genre de révision que ce paragraphe annonçait comme réversible : la décision de l'ADR (le DS en package partagé) n'est pas touchée.

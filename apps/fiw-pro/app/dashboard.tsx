@@ -9,7 +9,7 @@ import Button from '@/components/Button';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import { sheetSurface } from '@/components/Sheet';
-import { Colors, Spacing, Radii, Shadows, Poppins } from '@/constants/tokens';
+import { Colors, Spacing, Radii, Shadows, Outfit } from '@/constants/tokens';
 import { DAKAR_CENTER, PRESTATAIRE, MISSION_INCOMING } from '@/constants/data';
 
 export default function DashboardScreen() {
@@ -83,10 +83,10 @@ export default function DashboardScreen() {
         {/* Top bar */}
         <View style={styles.topBar}>
           <View style={styles.logoRow}>
-            <Text style={{ fontFamily: Poppins.bold, fontSize: 16, color: Colors.textOnPrimary, letterSpacing: -0.5 }}>
+            <Text style={{ fontFamily: Outfit.bold, fontSize: 16, color: Colors.textOnPrimary, letterSpacing: -0.5 }}>
               fiw
             </Text>
-            <Text style={{ fontFamily: Poppins.bold, fontSize: 10, color: Colors.primarySubtle, marginLeft: 3, marginBottom: 1, letterSpacing: 1 }}>
+            <Text style={{ fontFamily: Outfit.bold, fontSize: 10, color: Colors.primarySubtle, marginLeft: 3, marginBottom: 1, letterSpacing: 1 }}>
               pro
             </Text>
           </View>
@@ -99,7 +99,7 @@ export default function DashboardScreen() {
             <Text
               variant="label"
               color={walletLow ? Colors.walletLow : Colors.textPrimary}
-              style={{ fontFamily: Poppins.bold }}
+              style={{ fontFamily: Outfit.bold }}
             >
               {PRESTATAIRE.walletSolde.toLocaleString('fr-FR')} F
             </Text>
@@ -124,7 +124,7 @@ export default function DashboardScreen() {
               <Text
                 variant="caption"
                 color={Colors.primary}
-                style={{ fontFamily: Poppins.semibold, marginLeft: 4 }}
+                style={{ fontFamily: Outfit.semibold, marginLeft: 4 }}
               >
                 {PRESTATAIRE.statut}
               </Text>
@@ -144,7 +144,7 @@ export default function DashboardScreen() {
               <Text
                 variant="label"
                 color={online ? Colors.primary : Colors.textSecondary}
-                style={{ fontFamily: Poppins.bold }}
+                style={{ fontFamily: Outfit.bold }}
               >
                 {online ? 'En ligne' : 'Hors ligne'}
               </Text>
@@ -173,7 +173,7 @@ export default function DashboardScreen() {
                 <Text
                   variant="label"
                   color={timer <= 5 ? Colors.error : Colors.primary}
-                  style={{ fontFamily: Poppins.bold }}
+                  style={{ fontFamily: Outfit.bold }}
                 >
                   {timer}s
                 </Text>
@@ -193,14 +193,14 @@ export default function DashboardScreen() {
             <View style={styles.missionRow}>
               <Icon name="car" size={32} color={Colors.primary} />
               <View style={styles.missionInfo}>
-                <Text variant="label" color={Colors.textPrimary} style={{ fontFamily: Poppins.bold, fontSize: 16 }}>
+                <Text variant="label" color={Colors.textPrimary} style={{ fontFamily: Outfit.bold, fontSize: 16 }}>
                   {MISSION_INCOMING.type}
                 </Text>
                 <Text variant="bodySmall" color={Colors.textSecondary} style={{ marginTop: 2 }}>
                   {MISSION_INCOMING.clientName} · ★ {MISSION_INCOMING.clientRating}
                 </Text>
               </View>
-              <Text style={{ fontFamily: Poppins.bold, fontSize: 20, color: Colors.primary }}>
+              <Text style={{ fontFamily: Outfit.bold, fontSize: 20, color: Colors.primary }}>
                 {MISSION_INCOMING.prixEstime.toLocaleString('fr-FR')} F
               </Text>
             </View>

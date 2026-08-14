@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
-import { Colors, Poppins } from '@/constants/tokens';
+import { Colors, Outfit } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 
@@ -61,5 +61,5 @@ const styles = StyleSheet.create({
   },
   iconAccent: { backgroundColor: Colors.primarySubtle },
   text: { flex: 1 },
-  title: { fontFamily: Poppins.medium },
+  title: { fontFamily: Outfit.medium },
 });

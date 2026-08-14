@@ -7,7 +7,7 @@ import Button from '@/components/Button';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import FauxQR from '@/components/FauxQR';
-import { Colors, Radii, Spacing, Shadows, Poppins } from '@/constants/tokens';
+import { Colors, Radii, Spacing, Shadows, Outfit } from '@/constants/tokens';
 import { AMBASSADEUR } from '@/constants/affilie';
 
 // JS2 — Mes Outils : QR code, code perso (copie + partage natif).
