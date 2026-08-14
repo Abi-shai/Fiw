@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, StyleSheet, ScrollView, Alert, Image, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -8,70 +8,38 @@ import ScreenHeader from '@/components/ScreenHeader';
 import Callout from '@/components/Callout';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
+import {
+  METHODS, usePayment, isConfigured as methodIsConfigured,
+  setNumber, removeNumber, setDefault as storeSetDefault, type MethodId,
+} from '@/stores/payment';
 
-// Une seule liste : un moyen de paiement est un moyen de paiement, la page ne
-// rubrique pas « Mobile Money » d'un côté et « Espèces » de l'autre. Ce qui
-// distingue les cartes, c'est leur ÉTAT — trois, et trois seulement :
-//
-// · non configuré — aucun numéro lié. N'existe que pour le Mobile Money (les
-//   Espèces n'ont rien à configurer). Ne peut pas être le moyen par défaut.
-// · configuré     — utilisable pour payer une Course.
-// · par défaut    — LE configuré pré-sélectionné à la commande. Exactement un à
-//   tout instant, forcément parmi les configurés.
-//
-// Les Espèces sont configurées d'office, donc il existe toujours au moins un
-// moyen configuré — et donc toujours un repli valide pour le défaut. C'est ce
-// qui rend `remove` sûr : retirer le compte par défaut fait retomber le défaut
-// sur les Espèces plutôt que de laisser l'invariant cassé.
-//
-// Free Money est absent volontairement : ce n'est pas un moyen de paiement Fiw
-// (cf. CONTEXT.md « Mobile Money » — Wave et Orange Money, et eux seuls).
-type MethodId = 'wave' | 'orange' | 'cash';
-type Method = { id: MethodId; label: string };
-
-// Espèces en tête : c'est le moyen le plus utilisé du marché dakarois, et le
-// défaut de départ. L'ordre de la liste suit l'usage réel, pas l'ordre
-// d'arrivée des services.
-const METHODS: Method[] = [
-  { id: 'cash', label: 'Espèces' },
-  { id: 'wave', label: 'Wave' },
-  { id: 'orange', label: 'Orange Money' },
-];
-
+// La liste des moyens et les trois états qui les distinguent vivent désormais
+// dans `stores/payment` : ils décrivent le moyen de paiement partout, pas
+// seulement sur cet écran (page Compte, PaymentSheet des parcours — todo P9).
 export default function PaiementScreen() {
   const insets = useSafeAreaInsets();
-  const [numbers, setNumbers] = useState<Partial<Record<MethodId, string>>>({
-    wave: '77 ••• •• 67',
-    orange: '78 ••• •• 30',
-  });
-  const [defaultId, setDefaultId] = useState<MethodId>('cash');
+  const { numbers, defaultId } = usePayment();
 
-  const isConfigured = (id: MethodId) => id === 'cash' || !!numbers[id];
+  const isConfigured = (id: MethodId) => methodIsConfigured(id, numbers);
 
   const setDefault = (id: MethodId) => {
     if (id === defaultId) return;
     Haptics.selectionAsync();
-    setDefaultId(id);
+    storeSetDefault(id);
   };
 
   const remove = (id: MethodId, label: string) =>
     Alert.alert('Retirer ce compte', `Voulez-vous retirer votre compte ${label} ?`, [
       { text: 'Annuler', style: 'cancel' },
-      {
-        text: 'Retirer',
-        style: 'destructive',
-        onPress: () => {
-          setNumbers((n) => ({ ...n, [id]: undefined }));
-          setDefaultId((d) => (d === id ? 'cash' : d));
-        },
-      },
+      { text: 'Retirer', style: 'destructive', onPress: () => removeNumber(id) },
     ]);
 
-  // Stub proto : la saisie du numéro (PhoneField + OTP) reste à brancher.
+  // Stub proto : la saisie du numéro puis sa confirmation restent à brancher
+  // (todo P10 — cf. benchmark-compte-mobbin.md § D6).
   const add = (id: MethodId, label: string) =>
     Alert.alert(`Ajouter ${label}`, 'Saisie du numéro à brancher.', [
       { text: 'Annuler', style: 'cancel' },
-      { text: 'Lier', onPress: () => setNumbers((n) => ({ ...n, [id]: '76 ••• •• 12' })) },
+      { text: 'Lier', onPress: () => setNumber(id, '76 ••• •• 12') },
     ]);
 
   return (
