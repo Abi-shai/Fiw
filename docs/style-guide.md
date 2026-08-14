@@ -288,10 +288,32 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 | `PlaceRow` | Ligne de lieu | Cercle d'icône + titre + sous-titre + trailing. Récents, suggestions, lieux enregistrés. |
 | `PhoneField` | Saisie de numéro | Chip indicatif (drapeau + `+code` + caret) ouvrant le `CountryPicker`, numéro **formaté par pays** (`constants/countries.ts`). **Tous pays acceptés.** Point d'entrée unique de toute saisie de téléphone — changement de numéro **et onboarding** (cf. `sitemap-client.md` §1) : même saisie, même présentation. |
 | `CountryPicker` | Choix du pays | Feuille **3 crans** (`hooks/useSnapSheet`) + barre de recherche + liste monde triée. Drapeaux = **PNG plats locaux** (`assets/flags/`, map `constants/flags.ts`) rendus via `FlagChip` — **pas de SVG** (`SvgXml` plante sur les drapeaux à bloc `<style>`). |
-| `SettingsRow` | Ligne de réglage | Icône ligne + label + sous-titre + `value`/slot `right` + chevron. Variante `destructive` (label rouge). Page Compte et sous-écrans. **Volontairement pauvre** : un objet plus riche (logo de service, badge d'état, action sur une 2ᵉ ligne — cf. carte de `compte/paiement.tsx`) mérite **son propre composant**, pas des slots ajoutés ici un par un. |
-| `SettingsGroup` | Carte de réglages | Regroupe des `SettingsRow` (séparateurs auto), label de section en capitales + `footnote`. |
+| `SettingsRow` | Ligne de réglage | Icône ligne + label + **sous-titre** + slot `right` + chevron. Variante `destructive` (label rouge). Page Compte et sous-écrans. **Volontairement pauvre** : un objet plus riche (logo de service, badge d'état, action sur une 2ᵉ ligne — cf. carte de `compte/paiement.tsx`) mérite **son propre composant**, pas des slots ajoutés ici un par un. Le résumé de la rangée passe **toujours par `subtitle`**, jamais par une valeur alignée à droite : la valeur de droite dispute sa largeur au label et le fait passer à la ligne, d'où des rangées de hauteurs inégales. `subtitle` est en `numberOfLines={1}` — un résumé trop long se tronque, il ne déforme pas la liste. |
+| `SettingsGroup` | Groupe de réglages | Regroupe des `SettingsRow` séparées par un filet 1 px **de bord à bord**, label de section en capitales (`label` 13 px medium, gris secondaire) + `footnote`. **Sans carte** — voir la règle ci-dessous. |
 | `Radio` | Pastille de sélection | Coché = fond bleu marque + tick blanc ; décoché = cercle vide `text-disabled`. Marque l'élu d'un ensemble à choix unique **dans une feuille de choix** (`PaymentSheet`). Non tappable en propre — c'est la rangée qui porte l'action. Dans une **liste persistante**, préférer `SettingsRow selected` + badge (voir ci-dessous). |
 | `Callout` | Encart d'information | Fond `brand-yellow-subtle` + liseré `brand-yellow-100` + **pastille `brand-yellow` à glyphe sombre** (structure de la carte « Devenir prestataire » — le jaune remplit, le glyphe dessus porte le contraste). Pour une **règle** ou une **affordance non devinable** que le Client doit lire. Jaune et **pas bleu** : cf. répartition des rôles bleu/jaune. **Un seul par écran** — au-delà, c'est un problème de hiérarchie. À distinguer du motif `infoRow` (icône + `caption` tertiaire **sans fond**), qui précise sans réclamer l'attention. |
+
+> **Les cartes sont pour les objets ; les portes sont à plat.** Une carte blanche
+> encadrée représente **une chose qui a un état** — un moyen de paiement (configuré /
+> par défaut), une gamme, un reçu, un lieu. Une rangée de réglage ne représente
+> rien : c'est une **porte** vers un écran. Lui donner une carte, c'est ajouter du
+> cadre là où il n'y a pas de contenu à cadrer — la page se charge visuellement sans
+> livrer une information de plus.
+>
+> Donc : **les écrans de réglages sont à plat sur fond blanc** (`color-surface`),
+> rangées séparées par un filet 1 px `color-border` de bord à bord, sections
+> séparées par un label en capitales et de l'air. C'est la géométrie déjà retenue
+> pour la **sidebar** (`MenuDrawer`) — même nature de liste, même traitement — et le
+> contraste gris-sur-blanc résiste mieux à une lecture en plein soleil que le
+> gris-sur-gris d'une carte posée sur `color-bg`.
+>
+> ⚠️ **Précision sur le benchmark.** `benchmark-compte-mobbin.md` décrit la carte de
+> réglages comme le « motif unanime » de Bolt / Careem / Réglages iOS. Cette
+> unanimité est celle d'un **échantillon iOS** : toutes les recherches Mobbin ont été
+> faites en `platform: "ios"`, et la carte blanche sur gris est précisément l'idiome
+> des Réglages iOS. L'idiome natif Android — la plateforme dominante du marché
+> dakarois — est l'inverse : rangées à plat, filets pleine largeur, en-têtes de
+> section. _(Décidé en rendant le 11 août 2026, todo P5.)_
 
 ### BottomSheet (organisme)
 

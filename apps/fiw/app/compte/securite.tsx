@@ -34,7 +34,12 @@ export default function SecuriteScreen() {
       >
         <SettingsGroup
           title="Partage de trajet"
-          footnote="Quand c'est activé, vos Contacts de confiance reçoivent votre position en temps réel dès le départ de chaque course."
+          // La seconde phrase vient du hub Compte, où elle était la dernière note
+          // d'une page qui n'en a plus : le rôle d'urgence des Contacts de
+          // confiance s'explique là où on les gère, pas devant la porte. Gardée
+          // dans CETTE note plutôt que dans une seconde — une note par écran
+          // (style-guide), et l'écran en avait déjà une.
+          footnote="Quand c'est activé, vos Contacts de confiance reçoivent votre position en temps réel dès le départ de chaque course. Ils peuvent aussi être alertés en cas d'urgence."
         >
           <SettingsRow
             icon="share"
@@ -51,6 +56,9 @@ export default function SecuriteScreen() {
           />
         </SettingsGroup>
 
+        {/* Pas de note ici : celle du partage de trajet, juste au-dessus, dit
+            déjà ce que sont les Contacts de confiance. Une seule note par écran
+            (style-guide). */}
         <SettingsGroup title="Contacts de confiance">
           {contacts.length === 0 ? (
             <SettingsRow icon="user" label="Aucun contact" subtitle="Ajoutez-en un ci-dessous" chevron={false} />
@@ -71,7 +79,7 @@ export default function SecuriteScreen() {
         <Button label="Ajouter un contact de confiance" variant="secondary" icon="add" onPress={addContact} />
 
         <SettingsGroup title="Connexion" style={styles.connexion}>
-          <SettingsRow icon="phone" label="Numéro de téléphone" value={CLIENT.phone}
+          <SettingsRow icon="phone" label="Numéro de téléphone" subtitle={CLIENT.phone}
             onPress={() => Alert.alert('Numéro', 'Modification du numéro à venir dans le proto.')} />
           <SettingsRow icon="lock" label="Code de connexion"
             onPress={() => Alert.alert('Code', 'Changement de code à venir dans le proto.')} />
@@ -82,7 +90,9 @@ export default function SecuriteScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+  // Fond blanc, comme le hub Compte et la sidebar : les réglages sont des
+  // rangées à plat séparées par des filets, jamais des cartes (todo P5).
+  container: { flex: 1, backgroundColor: Colors.surface },
   content: { paddingHorizontal: 20, paddingTop: 8 },
   connexion: { marginTop: 24 },
 });

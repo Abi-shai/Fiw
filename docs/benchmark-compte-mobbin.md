@@ -81,6 +81,19 @@ benchmark carte/PayPal ; le minimalisme cash-first de [inDrive](https://mobbin.c
 > liste du compte** (pas enterré). → Fiw doit rendre les Contacts de confiance
 > **visibles**, cohérent avec l'axe sécurité produit.
 
+> ⚠️ **La section Sécurité est à ajuster.** L'écran `compte/securite.tsx` porte
+> trois sections hétérogènes — partage de trajet (un switch), Contacts de
+> confiance (une liste + un CTA), connexion (numéro + code) — sous un seul titre.
+> La rangée du hub qui y mène s'appelait « Contacts de confiance », soit le nom
+> d'**une** de ses trois sections ; renommée **« Sécurité »** le 11 août 2026,
+> mais le problème de fond reste : **son sous-titre n'énumère toujours que les
+> contacts**, donc il résume un tiers de l'écran. Questions ouvertes : le
+> sous-titre doit-il décrire l'écran entier ou sa partie la plus actionnable ?
+> « Connexion » a-t-elle sa place ici plutôt que dans le hub ? Et le signal du
+> benchmark ci-dessus — rendre les Contacts **visibles** depuis le compte —
+> est-il encore tenu maintenant que la rangée ne les nomme plus ? Suivi : todo
+> **P11**.
+
 **4 · Préférences** → notifications (push / SMS), groupées par canal — réf.
 [Sumeria (FR)](https://mobbin.com/screens/8def4c2c-d55b-4da5-8210-30a9d4e8ec12),
 [Zomato](https://mobbin.com/screens/ea6bdb86-bce1-4794-9c47-39c84af745ac). Le
@@ -308,6 +321,17 @@ lieu d'une absence de rangée. **Logos** tirés du registre partagé
   `MenuItem` du drawer. Variante toggle pour les Préférences.
 - **`SectionList`** — regroupement en sections étiquetées (Profil / Paiement /
   Sécurité / Préférences), motif unanime du benchmark.
+
+  > ⚠️ **Amendement du 11 août 2026.** Le *regroupement en sections* est bien
+  > unanime — mais la **carte** blanche à liseré qui l'habillait ne l'est pas :
+  > toutes les recherches Mobbin de ce benchmark ont été faites en
+  > `platform: "ios"`, et cette carte est l'idiome des Réglages iOS. L'idiome
+  > natif Android, plateforme dominante du marché dakarois, est l'inverse —
+  > rangées à plat sur fond blanc, filets pleine largeur, en-têtes de section.
+  > C'est la forme retenue après comparaison des deux en rendu (todo P5) :
+  > `SettingsGroup` n'a plus de carte. Les cartes restent aux **objets** (un
+  > moyen de paiement, une gamme, un reçu), pas aux portes. Règle détaillée dans
+  > `style-guide.md`, section « Composants & organismes ».
 - **`TrustedContactRow`** — contact de confiance : avatar/initiales + nom + état de
   partage, menant aux réglages par contact (partage au départ, appel d'urgence).
 

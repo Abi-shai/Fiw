@@ -8,10 +8,11 @@ type Props = {
   /** Glyphe de tête (style réglages : icône ligne, sans cercle). */
   icon?: IconName;
   label: string;
-  /** Ligne secondaire sous le label. */
+  /** Ligne secondaire sous le label : c'est **le seul** emplacement d'un résumé.
+   *  Il n'y a volontairement pas de valeur alignée à droite — elle disputait sa
+   *  largeur au label et le faisait passer à la ligne, d'où des rangées de
+   *  hauteurs inégales (cf. style-guide, « Composants & organismes »). */
   subtitle?: string;
-  /** Valeur alignée à droite (ex. « Wave · +1 »). */
-  value?: string;
   /** Label rouge Error (déconnexion / suppression). */
   destructive?: boolean;
   /** Élément à droite (Switch, badge…). Prioritaire sur le chevron. */
@@ -29,7 +30,7 @@ type Props = {
  *  seconde ligne — voir la carte de `compte/paiement.tsx`) mérite son propre
  *  composant plutôt que des slots ajoutés ici un par un. */
 export default function SettingsRow({
-  icon, label, subtitle, value, destructive, right, chevron, onPress,
+  icon, label, subtitle, destructive, right, chevron, onPress,
 }: Props) {
   const showChevron = chevron ?? (!!onPress && !right);
   const labelColor = destructive ? Colors.error : Colors.textPrimary;
@@ -46,12 +47,14 @@ export default function SettingsRow({
       <View style={styles.body}>
         <Text variant="body" color={labelColor} style={styles.label}>{label}</Text>
         {subtitle ? (
-          <Text variant="caption" color={Colors.textTertiary} style={styles.subtitle}>{subtitle}</Text>
+          // Une seule ligne : c'est ce qui garantit que toutes les rangées d'une
+          // carte font la même hauteur. Un résumé qui déborde se tronque, il ne
+          // déforme pas la liste.
+          <Text variant="caption" color={Colors.textTertiary} style={styles.subtitle} numberOfLines={1}>
+            {subtitle}
+          </Text>
         ) : null}
       </View>
-      {value ? (
-        <Text variant="bodySmall" color={Colors.textSecondary} style={styles.value} numberOfLines={1}>{value}</Text>
-      ) : null}
       {right ?? (showChevron ? <Icon name="chevronRight" size={18} color={Colors.textTertiary} /> : null)}
     </TouchableOpacity>
   );
@@ -63,11 +66,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 14,
     minHeight: 56,
-    paddingHorizontal: 16,
+    // 20 = gouttière de page : sans carte pour la porter, c'est la rangée qui
+    // tient l'alignement du contenu sous le titre de section.
+    paddingHorizontal: 20,
     paddingVertical: 12,
   },
   body: { flex: 1 },
   label: { fontFamily: Poppins.medium },
   subtitle: { marginTop: 2 },
-  value: { marginRight: 4, maxWidth: 150 },
 });
