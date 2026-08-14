@@ -16,7 +16,7 @@ import { GroupedSheet, SheetCard } from '@/components/RideSheet';
 import PaymentSheetContent from '@/components/PaymentSheet';
 import { Colors, Radii, Poppins, Shadows } from '@/constants/tokens';
 import { GAMMES, COVOITURAGE, COVOITURAGE_NODETOUR_PRICE, DAKAR_CENTER, WAIT_GRACE_MINUTES, WAIT_FEE_PER_MIN } from '@/constants/data';
-import { gammeIllustration } from '@/constants/illustrations';
+import { topviewSprite } from '@/constants/illustrations';
 
 // Carte gamme : composant partagé avec la Livraison (`components/GammeCard`).
 // Les gammes Transport n'ont pas de ligne secondaire — libellé, pastille de
@@ -89,11 +89,11 @@ export default function ConfigureScreen() {
     ].map(([dlat, dlng]) => ({ lat: o.lat + dlat, lng: o.lng + dlng }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const providerIcon = useMemo(
-    () => Image.resolveAssetSource(gammeIllustration(gamme.illu)).uri,
-    [gamme.illu],
-  );
-  const initialProviderIcon = useRef(providerIcon).current;
+  // Sur la carte, le véhicule se lit du dessus (variante `top view` du jeu
+  // `mobility option`) : c'est le point de vue de la carto, et le sprite peut
+  // alors pivoter selon le cap de la rue qu'il suit.
+  const providerSprite = useMemo(() => topviewSprite(gamme.illu), [gamme.illu]);
+  const initialProviderSprite = useRef(providerSprite).current;
 
   // Entrée de la feuille par le bas + mesure de hauteur (pour les contrôles carte).
   const [sheetH, setSheetH] = useState(0);
@@ -106,8 +106,8 @@ export default function ConfigureScreen() {
     }
   }, [sheetH]);
 
-  // Change de gamme → échange l'illustration des prestataires (sans recharger).
-  useEffect(() => { mapRef.current?.setProviderIcon(providerIcon); }, [providerIcon]);
+  // Change de gamme → échange le sprite des prestataires (sans recharger).
+  useEffect(() => { mapRef.current?.setProviderSprite(providerSprite); }, [providerSprite]);
 
   const openPay = () => {
     Haptics.selectionAsync();
@@ -155,7 +155,7 @@ export default function ConfigureScreen() {
         tintWater
         declutter
         providers={providers}
-        providerIcon={initialProviderIcon}
+        providerSprite={initialProviderSprite}
         fitPadding={{ top: insets.top + 64, bottom: (sheetH || 420) + 24, left: 56, right: 56 }}
         style={StyleSheet.absoluteFillObject}
       />
