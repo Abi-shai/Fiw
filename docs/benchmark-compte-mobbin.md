@@ -93,6 +93,40 @@ benchmark carte/PayPal ; le minimalisme cash-first de [inDrive](https://mobbin.c
 > benchmark ci-dessus — rendre les Contacts **visibles** depuis le compte —
 > est-il encore tenu maintenant que la rangée ne les nomme plus ? Suivi : todo
 > **P11**.
+>
+> **Amendement du 20 août 2026 — l'écran Sécurité est gardé, et son nom aussi.**
+> Depuis la rédaction ci-dessus, la section **Connexion a été retirée** (elle
+> doublait Profil, et aucune app du bench ne range le téléphone sous Safety) :
+> l'écran ne porte plus que **deux** rubriques, partage de trajet et Contacts de
+> confiance. D'où la question posée : un écran si maigre mérite-t-il encore un
+> écran, ou redevient-il la rangée « Contacts de confiance » du benchmark
+> d'origine ?
+>
+> **Réponse : on garde « Sécurité ».** L'argument est celui relevé en réunion le
+> 16 août 2026 (`meeting-recaps/08-16.md`) — *« garder "Sécurité" permet d'y
+> ajouter d'autres paramètres à l'avenir »*. Il ne nie pas la maigreur, il la
+> requalifie : l'écran est court **parce qu'il n'a pas encore reçu ce qui lui
+> reviendra**, pas parce qu'il n'a pas de raison d'être. Nommer la rangée d'après
+> sa seule liste actuelle rendrait tout ajout futur soit invisible, soit
+> renommant. Un contenant se nomme d'après ce qu'il est fait pour tenir.
+>
+> **Et son sous-titre dit l'ÉTAT de la protection**, pas la liste des contacts :
+> « Partage activé · 2 contacts de confiance ». Trois formes ont été pesées —
+> énumérer les contacts (statu quo), nommer les deux rubriques, ou dire l'état.
+> L'énumération ne résumait qu'une rubrique sur deux et allait vieillir avec
+> l'écran ; nommer les rubriques décrit bien l'écran mais tient mal sur une
+> ligne et n'apprend rien. **L'état couvre les deux rubriques, garde les
+> Contacts visibles depuis le compte — le signal du bench ci-dessus est donc
+> tenu — et répond à la seule question qu'on ne peut pas deviner de l'extérieur :
+> le partage est-il en marche ?** C'est la seule rangée du hub dont le résumé
+> n'est pas une liste de valeurs ; l'écart est assumé, les autres rangées
+> ouvrent sur des inventaires, celle-ci sur une protection qui est en marche ou
+> non.
+>
+> Conséquence technique : l'état de sécurité sort de l'écran pour vivre dans
+> **`stores/safety.ts`** — le hub affiche ce que `compte/securite` règle, les
+> deux doivent voir la même chose. Même motif que `stores/payment` (D6) et
+> `stores/places`. _(P11 est close.)_
 
 **4 · Préférences** → notifications (push / SMS), groupées par canal — réf.
 [Sumeria (FR)](https://mobbin.com/screens/8def4c2c-d55b-4da5-8210-30a9d4e8ec12),

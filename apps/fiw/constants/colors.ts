@@ -41,6 +41,14 @@ export const Colors = {
   // Neutrals — dérivés de l'échelle de gris Tailwind (gray-50 → gray-900).
   // Paliers nommés sémantiquement ; gray600/700 exposés pour les cas plus
   // foncés (ex. icônes neutres) où textSecondary (gray-500) est trop clair.
+  // Le gris de fond — « le sol ». Il occupe soit la page entière (Transport,
+  // Livraison, Affiliation), soit seulement un bloc posé sur une page blanche
+  // (toute la partie Compte, où figure et fond sont inversés : page blanche,
+  // blocs gris). Deux emplois, un seul rôle : ce qui est en retrait.
+  // À ne pas confondre avec `surfaceAlt`, qui est un cadre de **regroupement
+  // discret à l'intérieur d'une feuille déjà dense** (RideSheet, configure) —
+  // lui doit rester à peine perceptible, sinon il ajoute une frontière à lire
+  // sur un écran qui en a déjà beaucoup.
   bg:            '#F9FAFB', // gray-50
   surface:       '#FFFFFF',
   border:        '#E5E7EB', // gray-200

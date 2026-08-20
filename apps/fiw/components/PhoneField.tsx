@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.bg,
     borderRadius: Radii.md,
     borderWidth: 1,
     borderColor: Colors.border,

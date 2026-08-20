@@ -120,7 +120,7 @@ export default function PaiementScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+  container: { flex: 1, backgroundColor: Colors.surface },
   content: { paddingHorizontal: 20, paddingTop: 8 },
 
   // Le liseré marque l'élu — pas un fond teinté : un bleu clair posé sur le gris
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   // carte. `borderWidth` reste identique dans les deux états : seule la couleur
   // change, sinon la carte se décalerait d'un demi-pixel en devenant défaut.
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.bg,
     borderRadius: Radii.lg,
     borderWidth: 1.5,
     borderColor: Colors.borderSubtle,

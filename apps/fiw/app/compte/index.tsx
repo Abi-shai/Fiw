@@ -9,9 +9,10 @@ import SettingsRow from '@/components/SettingsRow';
 import Avatar from '@/components/Avatar';
 import Icon from '@/components/Icon';
 import Text from '@/components/Text';
-import { CLIENT, TRUSTED_CONTACTS } from '@/constants/data';
+import { CLIENT } from '@/constants/data';
 import { usePlaces } from '@/stores/places';
 import { usePayment, configuredMethods } from '@/stores/payment';
+import { useSafety, safetySummary } from '@/stores/safety';
 
 const APP_VERSION = 'Fiw 1.0.0 (proto)';
 
@@ -30,7 +31,12 @@ export default function CompteScreen() {
     .filter((p) => p.detail)
     .map((p) => p.label)
     .join(', ');
-  const contactsSummary = TRUSTED_CONTACTS.map((c) => c.name).join(', ');
+  // Seule rangée dont le résumé dit un ÉTAT plutôt qu'une liste de valeurs :
+  // « Sécurité » couvre deux rubriques, et énumérer les contacts n'en
+  // résumait qu'une. L'état les couvre toutes les deux et répond à la seule
+  // question qu'on ne peut pas deviner de l'extérieur — le partage est-il en
+  // marche ? (Tranché le 20 août 2026, question 4.)
+  const securiteSummary = safetySummary(useSafety());
 
   const logout = () =>
     Alert.alert('Se déconnecter', 'Voulez-vous vous déconnecter de Fiw ?', [
@@ -78,8 +84,10 @@ export default function CompteScreen() {
             le fait passer à la ligne, ce qui donne des rangées de hauteurs
             inégales. Sous le label, le résumé a toute la largeur.
             « Sécurité » et non « Contacts de confiance » : l'écran couvre aussi
-            le partage de trajet et la connexion — la rangée portait le nom d'une
-            seule de ses trois sections. */}
+            le partage de trajet — la rangée portait le nom d'une seule de ses
+            sections. Le nom est gardé même si l'écran est court : un contenant
+            se nomme d'après ce qu'il est fait pour tenir, et celui-ci recevra
+            d'autres paramètres (réunion du 16 août 2026). */}
         {/* Une seule liste, sans titres de section : quatre portes ne demandent
             pas de taxonomie, et les titres répétaient le nom de leurs rangées.
             Aucune note ici non plus — ce qu'il y a à expliquer sur les Contacts
@@ -87,7 +95,7 @@ export default function CompteScreen() {
         <SettingsGroup>
           <SettingsRow icon="card" label="Moyens de paiement" subtitle={paymentSummary} onPress={() => router.push('/compte/paiement')} />
           <SettingsRow icon="location" label="Lieux enregistrés" subtitle={placesSummary} onPress={() => router.push('/compte/lieux')} />
-          <SettingsRow icon="shield" label="Sécurité" subtitle={contactsSummary} onPress={() => router.push('/compte/securite')} />
+          <SettingsRow icon="shield" label="Sécurité" subtitle={securiteSummary} onPress={() => router.push('/compte/securite')} />
           <SettingsRow icon="bell" label="Préférences" subtitle="Notifications" onPress={() => router.push('/compte/preferences')} />
         </SettingsGroup>
 

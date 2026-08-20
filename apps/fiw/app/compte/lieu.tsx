@@ -356,7 +356,8 @@ export default function LieuScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+  // Fond blanc comme toute la partie Compte ; les blocs sont gris.
+  container: { flex: 1, backgroundColor: Colors.surface },
   map: { flex: 1 },
   flex1: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8 },
@@ -432,8 +433,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
+    backgroundColor: Colors.bg,
+    borderRadius: Radii.md,
     borderWidth: 1,
     // Même liseré que les deux champs : les trois blocs de l'écran partagent
     // une seule grammaire, au lieu de trois bordures différentes.
@@ -456,8 +457,8 @@ const styles = StyleSheet.create({
   // Le bleu ne sert qu'aux actions sur cet écran (« Modifier », « Enregistrer ») :
   // un champ au repos ne marque aucun état, il n'a rien à faire en bleu.
   repereField: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
+    backgroundColor: Colors.bg,
+    borderRadius: Radii.md,
     borderWidth: 1,
     borderColor: Colors.border,
     paddingHorizontal: 16,
@@ -479,12 +480,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderRadius: Radii.lg,
+    borderRadius: Radii.md,
     paddingHorizontal: 16,
     minHeight: 60,
     borderWidth: 1,
     borderColor: Colors.border,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.bg,
   },
   fieldIcon: { width: 28, alignItems: 'center' },
   fieldBody: { flex: 1, paddingVertical: 10 },

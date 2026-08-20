@@ -2,18 +2,30 @@ import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Radii } from '@/constants/tokens';
+import { Colors } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
+import SettingsGroup from '@/components/SettingsGroup';
 import PlaceRow from '@/components/PlaceRow';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
-import { usePlaces } from '@/stores/places';
+import { usePlaces, type Place } from '@/stores/places';
 import type { IconName } from '@/components/Icon';
 
 // Maison + Travail = emplacements permanents ; les autres sont des lieux libres
 // nommés par le Client (décision D2). Icône par type.
 const iconFor = (kind: string): IconName =>
   kind === 'home' ? 'home' : kind === 'work' ? 'work' : 'location';
+
+/** Ce que la seconde ligne dit d'un lieu : l'adresse quand il est complet,
+ *  sinon ce qui manque — l'adresse d'abord (sans elle le lieu n'existe pas), le
+ *  Repère ensuite. C'est l'ABSENCE qu'on montre, pas le contenu : on ne relit
+ *  pas un Repère qu'on a écrit soi-même, mais on doit voir le lieu qui fera
+ *  chercher le Prestataire. Contrepartie assumée de la rangée à deux lignes :
+ *  quand le Repère manque, l'adresse cède sa place à l'invitation.
+ *  _(Tranché le 20 août 2026 — carte à trois lignes écartée, cf. style-guide.)_ */
+const rowSubtitle = (p: Place) =>
+  !p.detail ? 'Ajouter une adresse' : !p.repere ? 'Ajouter un Repère' : p.detail;
+const rowIsInvite = (p: Place) => !p.detail || !p.repere;
 
 export default function LieuxScreen() {
   const insets = useSafeAreaInsets();
@@ -27,7 +39,7 @@ export default function LieuxScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.card}>
+        <SettingsGroup>
           {places.map((p) => (
             <PlaceRow
               key={p.id}
@@ -37,19 +49,21 @@ export default function LieuxScreen() {
               // Maison et Travail restent dans la liste même vidés de leur
               // adresse : la seconde ligne devient alors l'invitation à la
               // remplir (cf. Bolt, Uber, Freenow).
-              subtitle={p.detail || 'Ajouter une adresse'}
-              subtitleAccent={!p.detail}
+              subtitle={rowSubtitle(p)}
+              subtitleAccent={rowIsInvite(p)}
               trailing="chevronRight"
               onPress={() => router.push(`/compte/lieu?id=${p.id}`)}
               style={styles.row}
             />
           ))}
-        </View>
+        </SettingsGroup>
 
         <Text variant="caption" color={Colors.textTertiary} style={styles.hint}>
           Maison et Travail sont toujours présents ; ajoutez autant de lieux libres que vous voulez.
         </Text>
 
+        {/* Seule action de l'écran, donc `primary` sous la liste — pas une
+            rangée d'ajout dans la liste (cf. style-guide, 20 août 2026). */}
         <Button
           label="Ajouter un lieu"
           icon="add"
@@ -62,17 +76,13 @@ export default function LieuxScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+  container: { flex: 1, backgroundColor: Colors.surface },
   content: { paddingHorizontal: 20, paddingTop: 8 },
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  row: { paddingHorizontal: 4 },
+  // Les lieux sont des portes — mêmes rangées à plat, mêmes filets de bord à
+  // bord que le hub Compte, et non une carte englobant la liste. Le padding de
+  // 20 est celui que `SettingsGroup` attend pour aligner le contenu sous son
+  // titre (il tire les rangées de -20 pour que les filets filent aux bords).
+  row: { paddingHorizontal: 20 },
   hint: { marginTop: 8, marginLeft: 4, lineHeight: 16 },
   add: { marginTop: 16 },
 });

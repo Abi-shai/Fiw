@@ -134,7 +134,7 @@ export default function NumeroScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+  container: { flex: 1, backgroundColor: Colors.surface },
   content: { paddingHorizontal: 20, paddingTop: 8 },
   intro: { lineHeight: 22, marginBottom: 28 },
   label: { marginBottom: 8, marginLeft: 4 },
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   codeRow: { flexDirection: 'row', gap: 12, marginBottom: 32 },
   codeBox: {
     flex: 1, height: 64, borderRadius: Radii.md,
-    backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: Colors.border,
+    backgroundColor: Colors.bg, borderWidth: 1.5, borderColor: Colors.border,
     justifyContent: 'center', alignItems: 'center',
   },
   codeBoxActive: { borderColor: Colors.primary, backgroundColor: Colors.primarySubtle },

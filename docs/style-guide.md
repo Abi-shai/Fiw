@@ -288,7 +288,7 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 | `PlaceRow` | Ligne de lieu | Cercle d'icône + titre + sous-titre + trailing. Récents, suggestions, lieux enregistrés. |
 | `PhoneField` | Saisie de numéro | Chip indicatif (drapeau + `+code` + caret) ouvrant le `CountryPicker`, numéro **formaté par pays** (`constants/countries.ts`). **Tous pays acceptés.** Point d'entrée unique de toute saisie de téléphone — changement de numéro **et onboarding** (cf. `sitemap-client.md` §1) : même saisie, même présentation. |
 | `CountryPicker` | Choix du pays | Feuille **3 crans** (`hooks/useSnapSheet`) + barre de recherche + liste monde triée. Drapeaux = **PNG plats locaux** (`assets/flags/`, map `constants/flags.ts`) rendus via `FlagChip` — **pas de SVG** (`SvgXml` plante sur les drapeaux à bloc `<style>`). |
-| `SettingsRow` | Ligne de réglage | Icône ligne + label + **sous-titre** + slot `right` + chevron. Variante `destructive` (label rouge). Page Compte et sous-écrans. **Volontairement pauvre** : un objet plus riche (logo de service, badge d'état, action sur une 2ᵉ ligne — cf. carte de `compte/paiement.tsx`) mérite **son propre composant**, pas des slots ajoutés ici un par un. Le résumé de la rangée passe **toujours par `subtitle`**, jamais par une valeur alignée à droite : la valeur de droite dispute sa largeur au label et le fait passer à la ligne, d'où des rangées de hauteurs inégales. `subtitle` est en `numberOfLines={1}` — un résumé trop long se tronque, il ne déforme pas la liste. |
+| `SettingsRow` | Ligne de réglage | Icône ligne + label + **sous-titre** + slot `right` + chevron. Variante `destructive` (label rouge) ; prop `accent` = **rangée d'objet** (pastille bleue 42 px, voir la règle plus bas). Page Compte et sous-écrans. **Volontairement pauvre** : un objet plus riche (logo de service, badge d'état, action sur une 2ᵉ ligne — cf. carte de `compte/paiement.tsx`) mérite **son propre composant**, pas des slots ajoutés ici un par un. Le résumé de la rangée passe **toujours par `subtitle`**, jamais par une valeur alignée à droite : la valeur de droite dispute sa largeur au label et le fait passer à la ligne, d'où des rangées de hauteurs inégales. `subtitle` est en `numberOfLines={1}` — un résumé trop long se tronque, il ne déforme pas la liste. |
 | `SettingsGroup` | Groupe de réglages | Regroupe des `SettingsRow` séparées par un filet 1 px **de bord à bord**, label de section en capitales (`label` 13 px medium, gris secondaire) + `footnote`. **Sans carte** — voir la règle ci-dessous. |
 | `Radio` | Pastille de sélection | Coché = fond bleu marque + tick blanc ; décoché = cercle vide `text-disabled`. Marque l'élu d'un ensemble à choix unique **dans une feuille de choix** (`PaymentSheet`). Non tappable en propre — c'est la rangée qui porte l'action. Dans une **liste persistante**, préférer `SettingsRow selected` + badge (voir ci-dessous). |
 | `Callout` | Encart d'information | Fond `brand-yellow-subtle` + liseré `brand-yellow-100` + **pastille `brand-yellow` à glyphe sombre** (structure de la carte « Devenir prestataire » — le jaune remplit, le glyphe dessus porte le contraste). Pour une **règle** ou une **affordance non devinable** que le Client doit lire. Jaune et **pas bleu** : cf. répartition des rôles bleu/jaune. **Un seul par écran** — au-delà, c'est un problème de hiérarchie. À distinguer du motif `infoRow` (icône + `caption` tertiaire **sans fond**), qui précise sans réclamer l'attention. |
@@ -314,6 +314,51 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > des Réglages iOS. L'idiome natif Android — la plateforme dominante du marché
 > dakarois — est l'inverse : rangées à plat, filets pleine largeur, en-têtes de
 > section. _(Décidé en rendant le 11 août 2026, todo P5.)_
+
+> **Une liste d'objets porte la pastille ; un groupe de réglages porte l'icône
+> nue.** Dans une liste d'**éléments que le Client possède** — un Lieu
+> enregistré, un Contact de confiance — le glyphe de tête passe en bleu marque
+> dans une pastille `color-primary-subtle` de **42 px** (géométrie de
+> `PlaceRow`, glyphe 20, gap 14 ; `SettingsRow` l'obtient par son prop
+> `accent`). Dans un groupe de **réglages**, il reste une icône ligne nue de
+> 22 px.
+>
+> La pastille se met alors sur **toutes** les rangées de la liste, y compris
+> l'état vide : c'est la liste entière qui change de grammaire, pas une rangée
+> qui se distingue. Elle décale le label d'une douzaine de pixels par rapport à
+> un groupe de réglages voisin — c'est la marque de la liste, et à l'intérieur
+> d'une liste rien n'est désaligné.
+>
+> Corollaire : la même pastille sur les deux écrans. Les Lieux enregistrés et
+> les Contacts de confiance sont deux listes de même nature ; deux tailles de
+> pastille pour un même motif se lisent comme une erreur, pas comme une nuance.
+> _(Décidé en rendant le 15 août 2026 ; la pastille de `SettingsRow`, née à
+> 34 px pour la seule rangée « Ajouter… », est passée à 42.)_
+
+> **L'action « ajouter » d'un écran de gestion est un bouton `primary` sous la
+> liste.** Sur un écran dont c'est la **seule** action — Lieux enregistrés,
+> Contacts de confiance — la forme retenue n'est ni le `secondary` (elle n'est
+> pas une action secondaire, il n'y en a pas d'autre) ni la rangée « + Ajouter »
+> en dernière ligne de liste (motif Bolt / Uber). Une rangée d'ajout **se range
+> parmi les objets** : elle se lit comme un élément de plus dans la liste, alors
+> qu'elle en crée un. Le bouton plein la sort de la liste et la nomme pour ce
+> qu'elle est.
+> _(Tranché par le client le 20 août 2026, après comparaison des deux formes sur
+> interrupteur de démo. Aligne Sécurité, qui était resté en `secondary`.)_
+
+> **La seconde ligne d'une rangée d'objet dit ce qui MANQUE, pas ce qu'il y a.**
+> Un Lieu enregistré tient deux informations — l'adresse et le **Repère** — et
+> une rangée n'a qu'une seconde ligne. Elle porte donc l'adresse quand le lieu
+> est complet, et sinon l'invitation à combler le trou : « Ajouter une adresse »
+> d'abord (sans elle le lieu n'existe pas), « Ajouter un Repère » ensuite, en
+> `color-primary` — le bleu de l'action, cf. `subtitleAccent`.
+>
+> Le raisonnement vaut au-delà des lieux : **on ne relit pas un texte qu'on a
+> écrit soi-même**, mais on doit voir l'objet qui va échouer. Afficher le contenu
+> du Repère aurait demandé une troisième ligne, donc une carte — un cadre bâti
+> pour montrer un état, occupé à afficher ce que personne ne relit.
+> _(Tranché le 20 août 2026 ; variante carte à trois lignes construite,
+> comparée, écartée.)_
 
 ### BottomSheet (organisme)
 
