@@ -119,7 +119,7 @@ export default function SearchingScreen() {
 
   // Statut de recherche qui évolue — donne du sens à l'attente.
   const statusLine = elapsed < 4
-    ? 'On repère les prestataires autour de vous.'
+    ? 'On repère les chauffeurs autour de vous.'
     : elapsed < 8
       ? 'Votre demande part vers les plus proches.'
       : 'En attente d’une confirmation…';
@@ -292,7 +292,7 @@ export default function SearchingScreen() {
             <>
               <SheetCard>
                 <View style={styles.head}>
-                  <Text variant="heading2">Les prestataires sont un peu loin…</Text>
+                  <Text variant="heading2">Les chauffeurs sont un peu loin…</Text>
                   <Text variant="body" color={Colors.textSecondary}>
                     Un frais de rapprochement couvre leur trajet jusqu'à vous.
                   </Text>
@@ -321,9 +321,9 @@ export default function SearchingScreen() {
             <>
               <SheetCard>
                 <View style={styles.head}>
-                  <Text variant="heading2">Aucun prestataire disponible</Text>
+                  <Text variant="heading2">Aucun chauffeur disponible</Text>
                   <Text variant="body" color={Colors.textSecondary}>
-                    Aucun prestataire n'est libre tout près pour l'instant. C'est fréquent aux heures de pointe, mais ça se libère vite.
+                    Aucun chauffeur n'est libre tout près pour l'instant. C'est fréquent aux heures de pointe, mais ça se libère vite.
                   </Text>
                 </View>
                 <AltSuggestCard
@@ -343,7 +343,7 @@ export default function SearchingScreen() {
             /* Révélation « Prestataire trouvé » — carte véhicule (maquette 118-305). */
             <>
               <SheetCard>
-                <Text variant="heading2">Votre prestataire arrive dans environ {revealEta}</Text>
+                <Text variant="heading2">Votre chauffeur arrive dans environ {revealEta}</Text>
                 <VehicleGroup driver={driver} illu={illu} />
               </SheetCard>
               <TotalBar amount={finalPrice} />
@@ -353,7 +353,7 @@ export default function SearchingScreen() {
             <>
               <SheetCard>
                 <View style={styles.head}>
-                  <Text variant="heading2" numberOfLines={2}>Recherche du prestataire le plus proche…</Text>
+                  <Text variant="heading2" numberOfLines={2}>Recherche du chauffeur le plus proche…</Text>
                   <Text variant="body" color={Colors.textSecondary}>{statusLine}</Text>
                 </View>
                 <ProgressBar progress={progress} />
