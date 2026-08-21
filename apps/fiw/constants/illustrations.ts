@@ -16,9 +16,6 @@ export const GAMME_ILLUSTRATIONS = {
   auto: require('../assets/gamme-auto.png'),
   luxe: require('../assets/gamme-luxe.png'),
   covoiturage: require('../assets/gamme-covoit.png'),
-  // Scooter bleu — illustration de la TUILE DE SERVICE Livraison sur l'accueil,
-  // hors jeu `mobility option`. Gardée ici pour les vignettes de service.
-  livraison: require('../assets/serv-livraison.png'),
 } as const;
 
 export type IlluKey = keyof typeof GAMME_ILLUSTRATIONS;
@@ -42,9 +39,6 @@ export const TOPVIEW_ILLUSTRATIONS: Record<IlluKey, ReturnType<typeof require>> 
   auto: require('../assets/top-auto.png'),
   luxe: require('../assets/top-luxe.png'),
   covoiturage: require('../assets/top-covoit.png'),
-  // La tuile de service Livraison n'a pas de vue de dessus propre — sur la
-  // carte, c'est le véhicule qui compte : la moto.
-  livraison: require('../assets/top-moto.png'),
 };
 
 /** Rapport largeur / longueur de chaque sprite vu du dessus, mesuré sur l'asset
@@ -59,7 +53,6 @@ export const TOPVIEW_RATIOS: Record<IlluKey, number> = {
   auto: 0.549,
   luxe: 0.497,
   covoiturage: 0.569,
-  livraison: 0.385,
 };
 
 export const topviewIllustration = (illu: IlluKey) =>
@@ -136,7 +129,6 @@ export const TOPVIEW_MARKER: Record<
   // perd en longueur. `ambLen` suit le même rapport qu'avant (≈ 0,70 · len).
   moto: { len: 78, ambLen: 56, pivot: 0.72, lean: 0.14, steerBand: 0.24, maxSteer: 26 },
   velo: { len: 46, ambLen: 32, pivot: 0.75, lean: 0.16, steerBand: 0.22, maxSteer: 28 },
-  livraison: { len: 78, ambLen: 56, pivot: 0.72, lean: 0.14, steerBand: 0.24, maxSteer: 26 },
 };
 
 export interface TopviewSprite {
@@ -189,9 +181,6 @@ export const ILLO_SIZES: Record<IlluKey, { width: number; height: number }> = {
   // Variante masquée dans le jeu Figma, mais l'illustration a le gabarit exact
   // des deux autres voitures.
   luxe: { width: 93, height: 76 },
-  // Hors jeu `mobility option` (tuile de service) : carré, jamais posé sur une
-  // plateforme de gamme.
-  livraison: { width: 76, height: 76 },
 };
 
 /** Dimensions d'une illustration pour un emplacement d'un autre côté que 68

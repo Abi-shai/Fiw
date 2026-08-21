@@ -30,10 +30,13 @@ Accessible uniquement avant connexion.
 
 Point d'entrée post-connexion. Donne accès à tous les services.
 
-- Tuile **Transport** (prioritaire + barre de saisie départ/destination — ADR 0001)
+- Tuile **Transport** (prioritaire + barre de saisie départ/destination — ADR 0001) — libellée « Course » dans l'app
 - Tuile **Livraison**
 - Tuile **Location**
 - Tuile **Assistance**
+- Bannière **Affilié Réseau**, refermable, en tête de feuille
+
+> Carte cible. **Dans l'app, seuls les services ouverts sont annoncés** (16 août 2026) : Location et Assistance ne figurent pas sur l'accueil tant qu'elles ne sont pas lancées — une tuile éteinte occupe la place sans rien promettre. Leurs sections 5 et 6 restent le périmètre visé.
 
 ---
 
