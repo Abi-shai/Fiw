@@ -41,11 +41,17 @@ type Props = {
  * livraison.
  *
  * Géométrie du composant Figma, à ne pas rogner : la plateforme colorée occupe
- * la hauteur restante (~60) et l'illustration garde **sa taille propre** —
- * 76 de haut pour toute la famille, jusqu'à 93 de large pour les voitures
- * (cf. `ILLO_SIZES`). Elle **déborde** donc la plateforme en haut et en bas et
- * se cale **à droite** (`paddingRight: 12`) : c'est ce débord qui donne son
- * expressivité à la carte. Le badge ETA vient mordre le coin bas-gauche.
+ * la hauteur restante (~52) et l'illustration garde **sa taille propre** —
+ * 76 de haut et 93 de large pour les voitures, 78 pour le vélo, 106 × 87 pour
+ * la moto (cf. `ILLO_SIZES`). Elle **déborde** donc la plateforme d'au moins 12
+ * en haut comme en bas et se cale **à droite** (`paddingRight: 12`) : c'est ce
+ * débord qui donne son expressivité à la carte. Le badge ETA vient mordre le
+ * coin bas-gauche.
+ *
+ * Passe « craft » du 14 août 2026 : espacement porté à 18 (la plateforme se
+ * tasse, le débord double), libellé à 16, aplat en `primaryFill` et prix en
+ * `primaryInk`. Les deux-roues y perdent leur pilote — il ne subsiste que sur
+ * la vue de dessus, celle de la carto.
  */
 export default function GammeCard({
   label, eta, price, illu, badge, description, selected, onPress, style,
@@ -57,7 +63,9 @@ export default function GammeCard({
 
   const cardBg = progress.interpolate({ inputRange: [0, 1], outputRange: [Colors.surfaceAlt, Colors.primarySubtle] });
   const cardOpacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] });
-  const platformBg = progress.interpolate({ inputRange: [0, 1], outputRange: [Colors.track, Colors.primary] });
+  // `primaryFill` et non `primary` : sur un aplat de cette taille, le bleu de
+  // marque vibre et mange l'illustration posée dessus (maquette 40:197).
+  const platformBg = progress.interpolate({ inputRange: [0, 1], outputRange: [Colors.track, Colors.primaryFill] });
   const platformScale = progress.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] });
   const idleOpacity = progress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
 
@@ -102,7 +110,7 @@ export default function GammeCard({
               </Text>
             </Animated.View>
             <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: progress }]}>
-              <Text variant="heading2" align="center" style={styles.priceText} color={Colors.primary}>
+              <Text variant="heading2" align="center" style={styles.priceText} color={Colors.primaryInk}>
                 {fmt(price)} FCFA
               </Text>
             </Animated.View>
@@ -116,7 +124,9 @@ export default function GammeCard({
 const styles = StyleSheet.create({
   card: { width: GAMME_CARD_WIDTH, padding: 8, borderRadius: Radii.lg },
   cardBg: { borderRadius: Radii.lg },
-  content: { flex: 1, gap: 12 },
+  // 18 (maquette 40:197) : la plateforme se tasse d'autant, ce qui accentue le
+  // débord de l'illustration — c'est voulu, cf. l'en-tête du composant.
+  content: { flex: 1, gap: 18 },
   platform: {
     flex: 1, width: '100%',
     borderRadius: Radii.md,
@@ -126,7 +136,10 @@ const styles = StyleSheet.create({
   },
   info: { gap: 4 },
   labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
-  label: { fontSize: 12 },
+  // 16/20 (maquette 40:197). L'interligne doit être surchargé avec la taille :
+  // `variant="label"` impose 18, trop serré pour du 16 — et c'est ce 20 qui fait
+  // tomber la géométrie juste (bloc info 47 → plateforme 52, exactement Figma).
+  label: { fontSize: 16, lineHeight: 20 },
   price: { width: '100%' },
   priceText: { fontFamily: Outfit.bold, width: '100%' },
   tag: {

@@ -3,6 +3,17 @@ export const Colors = {
   primary:        '#0066FF',
   primaryHover:   '#0676FF',
   primaryPressed: '#0D459B',
+  // Aplat bleu des GRANDES surfaces (plateforme de la carte gamme). Moins
+  // saturé que `primary` : étalé sur une large surface, le bleu de marque
+  // vibre et écrase l'illustration posée dessus. Ne jamais l'employer pour du
+  // texte ni pour un bouton — c'est un fond, pas une couleur d'action.
+  primaryFill:    '#3B82F6',
+  // Bleu de TEXTE sur fond clair — un cran plus profond que `primary`, qui
+  // manque de corps sur un chiffre de 18 px (prix de la carte gamme).
+  primaryInk:     '#005DE8',
+  // Aligné sur la variable `primarySubtle` du fichier Figma (16 août 2026) : les
+  // deux avaient divergé, le code tirant vers le violet et la maquette vers le
+  // cyan. Même valeur que `blue50` — c'est le palier subtil de l'échelle bleue.
   primarySubtle:  '#EDF7FF',
   primaryOn:      '#FFFFFF',
   // Jaune de marque (logo Fiw, accents ponctuels). Seuls jaunes autorisés — à ne

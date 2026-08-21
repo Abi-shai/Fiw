@@ -45,12 +45,21 @@ const STEPS: { key: StepKey; duration: number }[] = [
 ];
 
 // Jalons affichés (réf. benchmark : barre segmentée Shopee SPX / Walmart).
+// Trois phases, chacune avec une durée : un jalon est une phase, jamais un état
+// terminal.
+//
+// Le dernier jalon se nomme **Remis** depuis la maquette 311:664 — il se lisait
+// « Livraison », mot que l'itinéraire vient de libérer en passant à
+// Départ/Arrivée. Attention toutefois : « Remis » est aussi un état du Colis
+// dans le modèle conceptuel (Yobanté). Même mot, deux objets — à trancher si la
+// collision gêne, le jalon pouvant revenir à « Livré ».
 const JALONS: Step[] = [
   { icon: 'package', label: 'Collecte' },
   { icon: 'navigate', label: 'En route' },
-  { icon: 'flag', label: 'Livraison' },
-  { icon: 'shield', label: 'Remis' },
+  { icon: 'flag', label: 'Remis' },
 ];
+// `finished` pointe au-delà du dernier jalon : tout passe en « fait » (coche,
+// plus d'anneau) le temps du fondu vers la clôture.
 const JALON_INDEX: Record<StepKey, number> = {
   vers_collecte: 0, collecte: 0, vers_livraison: 1, remise: 2, finished: 3,
 };
@@ -59,11 +68,13 @@ const JALON_INDEX: Record<StepKey, number> = {
 // barre grise se remplit en continu jusqu'à atteindre le jalon. Les deux
 // premières étapes vivent sur le jalon Collecte → elles se partagent le même
 // segment (trajet ≈ 78 % du temps, remise du colis le reste).
+// La remise se joue sur le dernier jalon : la barre est déjà pleine, il n'y a
+// plus de segment à remplir.
 const SEG_PLAN: Record<StepKey, { from: number; to: number } | null> = {
   vers_collecte: { from: 0, to: 0.78 },
   collecte: { from: 0.78, to: 1 },
   vers_livraison: { from: 0, to: 1 },
-  remise: { from: 0, to: 1 },
+  remise: null,
   finished: null,
 };
 
@@ -328,19 +339,6 @@ export default function LivraisonSuiviScreen() {
                 Livraison groupée — votre colis voyage avec un colis voisin.
               </InfoBanner>
             )}
-            <View style={styles.colisRow}>
-              <View style={styles.colisThumb}>
-                <Icon name="package" size={22} weight="bold" color={Colors.primary} />
-              </View>
-              <View style={styles.flex1}>
-                <Text variant="label" numberOfLines={2}>
-                  {params.colisDesc || 'Colis sans description'}
-                </Text>
-                <Text variant="caption" color={Colors.textSecondary} numberOfLines={1}>
-                  {params.gammeLabel}
-                </Text>
-              </View>
-            </View>
             <View style={styles.trackingRow}>
               <Icon name="barcode" size={18} color={Colors.textSecondary} />
               <Text variant="caption" color={Colors.textSecondary}>N° de suivi</Text>
@@ -349,7 +347,7 @@ export default function LivraisonSuiviScreen() {
             {showCode && (
               <View style={styles.codeWrap}>
                 <CodePill code={params.codeRemise || '0000'} />
-                <Text variant="caption" color={Colors.textSecondary} align="center">
+                <Text variant="body" color={Colors.textSecondary} align="center">
                   Communiquez ce code à {params.destinataireName || 'votre destinataire'} — le prestataire le demandera à la remise.
                 </Text>
                 <Button label="Partager le code" icon="share" size="md" onPress={onShareCode} />
@@ -357,23 +355,25 @@ export default function LivraisonSuiviScreen() {
             )}
           </SheetCard>
 
-          {/* Détails — itinéraire + paiement. */}
+          {/* Détails de la livraison — même bloc que la course active Transport
+              (maquette 311:664) : titre, itinéraire à plat, paiement en carte. */}
           <SheetCard>
+            <Text variant="heading2">Détails de la livraison</Text>
             <RouteCard
+              plain
               departure={params.departureName || 'Ma position actuelle'}
               destination={`${params.destName} · ${params.destinataireName}`}
-              labels={{ from: 'Collecte', to: 'Livraison' }}
-              icons={{ from: 'package', to: 'flag' }}
             />
             <View style={styles.paymentRow}>
               <View style={styles.paymentLeft}>
-                <Icon name="coins" size={20} color={Colors.textSecondary} />
-                <Text variant="label">Paiement</Text>
+                <Image
+                  source={payIllustration(params.paymentId)}
+                  style={styles.paymentIllu}
+                  resizeMode="contain"
+                />
+                <Text variant="body">Paiement</Text>
               </View>
-              <View style={styles.paymentRight}>
-                <Text style={styles.paymentAmount}>{fmt(price)} F</Text>
-                <Image source={payIllustration(params.paymentId)} style={styles.paymentIllu} />
-              </View>
+              <Text style={styles.paymentAmount}>{fmt(price)} F</Text>
             </View>
           </SheetCard>
 
@@ -476,30 +476,32 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 
   // Colis.
-  colisRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  colisThumb: {
-    width: 44, height: 44, borderRadius: Radii.md,
-    backgroundColor: Colors.primarySubtle,
-    alignItems: 'center', justifyContent: 'center',
+  // Le n° de suivi devient une rangée pleine (maquette 311:664) : c'est elle qui
+  // porte le fond maintenant que la carte du code n'en a plus.
+  trackingRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: Colors.bg,
+    borderRadius: 20,
+    padding: 12,
   },
-  trackingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   trackingNum: {
     fontFamily: Outfit.semibold, fontSize: 13, color: Colors.textPrimary,
     letterSpacing: 0.5,
   },
-  codeWrap: {
-    gap: 10,
-    backgroundColor: Colors.surfaceAlt,
-    borderRadius: Radii.lg,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
-    padding: 14,
-  },
+  // Plus de fond ni de liseré : le code de remise se détache déjà par ses cases.
+  codeWrap: { gap: 10, padding: 14 },
 
-  paymentRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  paymentLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  paymentRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  paymentAmount: { fontFamily: Outfit.bold, fontSize: 18, color: Colors.primary },
-  paymentIllu: { width: 24, height: 24, borderRadius: 6 },
+  // Paiement — identique à la course active Transport : illustration à gauche,
+  // carte pleine, montant à droite (maquette 311:664 · InfosCourse).
+  paymentRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: Colors.bg,
+    borderRadius: 20,
+    padding: 12,
+  },
+  paymentLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  paymentAmount: { fontFamily: Outfit.bold, fontSize: 20, lineHeight: 28, color: Colors.primary },
+  paymentIllu: { width: 40, height: 26 },
 
   tilesRow: { flexDirection: 'row', gap: 8 },
   tile: {

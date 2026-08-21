@@ -238,11 +238,11 @@ export default function CourseActiveScreen() {
           <View style={styles.handleFloat} pointerEvents="none"><Handle /></View>
           <SheetCard style={styles.headerCard}>
             {step.key === 'en_route' && (
-              <Text variant="heading2">Votre prestataire arrive dans {etaLabel}</Text>
+              <Text variant="heading2">Votre chauffeur arrive dans {etaLabel}</Text>
             )}
             {step.key === 'arrived' && (
               <View style={styles.titleRow}>
-                <Text variant="heading2" style={styles.flex1} numberOfLines={1}>Votre prestataire est arrivé</Text>
+                <Text variant="heading2" style={styles.flex1} numberOfLines={1}>Votre chauffeur est arrivé</Text>
                 <ActionPill label="J'arrive" icon="walk" onPress={() => {}} />
               </View>
             )}
@@ -277,18 +277,24 @@ export default function CourseActiveScreen() {
             <VehicleGroup driver={driver} illu={illu} onPress={expand} />
           </SheetCard>
 
-          {/* InfosCourse — itinéraire + paiement (maquette 173:691). */}
+          {/* InfosCourse — titre + itinéraire à plat + paiement (maquette 271:1288). */}
           <SheetCard>
-            <RouteCard departure="Ma position actuelle" destination={params.destName} />
+            <Text variant="heading2">Détails de la course</Text>
+            <RouteCard
+              plain
+              departure="Ma position actuelle"
+              destination={params.destName}
+            />
             <View style={styles.paymentRow}>
               <View style={styles.paymentLeft}>
-                <Icon name="coins" size={20} color={Colors.textSecondary} />
-                <Text variant="label">Paiement</Text>
+                <Image
+                  source={payIllustration(params.paymentId)}
+                  style={styles.paymentIllu}
+                  resizeMode="contain"
+                />
+                <Text variant="body">Paiement</Text>
               </View>
-              <View style={styles.paymentRight}>
-                <Text style={styles.paymentAmount}>{fmt(currentPrice)} F</Text>
-                <Image source={payIllustration(params.paymentId)} style={styles.paymentIllu} />
-              </View>
+              <Text style={styles.paymentAmount}>{fmt(currentPrice)} F</Text>
             </View>
           </SheetCard>
 
@@ -321,7 +327,7 @@ export default function CourseActiveScreen() {
               </View>
               <Text variant="heading1" align="center">Annuler la course ?</Text>
               <Text variant="body" color={Colors.textSecondary} align="center" style={styles.cancelText}>
-                Votre prestataire est déjà en route vers vous. Annuler maintenant peut allonger votre prochaine attente.
+                Votre chauffeur est déjà en route vers vous. Annuler maintenant peut allonger votre prochaine attente.
               </Text>
               <Button label="Garder ma course" onPress={close} style={styles.cancelBtn} />
               <Button
@@ -397,12 +403,19 @@ const styles = StyleSheet.create({
 
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 
-  // Paiement (maquette 177:750) — libellé à gauche, montant + illustration à droite.
-  paymentRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  paymentLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  paymentRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  paymentAmount: { fontFamily: Outfit.bold, fontSize: 18, color: Colors.primary },
-  paymentIllu: { width: 24, height: 24, borderRadius: 6 },
+  // Paiement (maquette 271:1303) — l'illustration passe À GAUCHE, devant le
+  // libellé, et la ligne devient une carte pleine : c'est elle qui porte le
+  // fond maintenant que l'itinéraire a perdu le sien. Rayon 20 : la maquette
+  // le demande et l'échelle saute de 16 (`lg`) à 28 (`xl`), donc pas de token.
+  paymentRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: Colors.bg,
+    borderRadius: 20,
+    padding: 12,
+  },
+  paymentLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  paymentAmount: { fontFamily: Outfit.bold, fontSize: 20, lineHeight: 28, color: Colors.primary },
+  paymentIllu: { width: 40, height: 26 },
 
   tilesRow: { flexDirection: 'row', gap: 8 },
   tile: {

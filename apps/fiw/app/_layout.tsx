@@ -68,7 +68,6 @@ export default function RootLayout() {
         <Stack.Screen name="transport/cloture" />
         <Stack.Screen name="transport/call" />
         <Stack.Screen name="transport/chat" />
-        <Stack.Screen name="livraison/methode" />
         <Stack.Screen name="livraison/configure" />
         <Stack.Screen name="livraison/searching" />
         <Stack.Screen name="livraison/suivi" />

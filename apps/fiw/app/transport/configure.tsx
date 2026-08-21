@@ -12,7 +12,7 @@ import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import Button from '@/components/Button';
 import GammeCard from '@/components/GammeCard';
-import { GroupedSheet, SheetCard } from '@/components/RideSheet';
+import { GroupedSheet, SheetCard, RouteCard } from '@/components/RideSheet';
 import PaymentSheetContent from '@/components/PaymentSheet';
 import { Colors, Radii, Outfit, Shadows } from '@/constants/tokens';
 import { GAMMES, COVOITURAGE, COVOITURAGE_NODETOUR_PRICE, DAKAR_CENTER, WAIT_GRACE_MINUTES, WAIT_FEE_PER_MIN } from '@/constants/data';
@@ -181,26 +181,13 @@ export default function ConfigureScreen() {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.routeCard} onPress={editItinerary} activeOpacity={0.85}>
-              <View style={styles.routeRail}>
-                <Icon name="walk" size={22} weight="bold" color={Colors.textPrimary} />
-                <View style={styles.routeLine} />
-                <Icon name="flag" size={22} weight="bold" color={Colors.textPrimary} />
-              </View>
-              <View style={styles.routeCol}>
-                <View>
-                  <Text variant="bodySmall" color={Colors.textSecondary}>Départ</Text>
-                  <Text variant="label" numberOfLines={1}>{departureName}</Text>
-                </View>
-                <View>
-                  <Text variant="bodySmall" color={Colors.textSecondary}>Arrivée</Text>
-                  <Text variant="label" numberOfLines={1}>{params.destName}</Text>
-                </View>
-              </View>
-              <View style={styles.routeEdit}>
-                <Icon name="edit" size={18} color={Colors.textSecondary} />
-              </View>
-            </TouchableOpacity>
+            {/* Itinéraire à plat, comme la course active (maquette 118:525). */}
+            <RouteCard
+              plain
+              departure={departureName}
+              destination={params.destName}
+              onEdit={editItinerary}
+            />
           </SheetCard>
 
           {/* Carte 2 : switcher de catégorie + choix de l'offre. */}
@@ -329,19 +316,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.track,
     alignItems: 'center', justifyContent: 'center',
   },
-
-  // Itinéraire.
-  routeCard: {
-    flexDirection: 'row',
-    gap: 12,
-    backgroundColor: Colors.surfaceAlt,
-    borderRadius: Radii.lg,
-    padding: 14,
-  },
-  routeRail: { alignItems: 'center', paddingVertical: 5, justifyContent: 'space-between' },
-  routeLine: { flex: 1, width: 2, backgroundColor: Colors.border, marginVertical: 6, minHeight: 24 },
-  routeCol: { flex: 1, justifyContent: 'space-between', gap: 14 },
-  routeEdit: { alignSelf: 'flex-start', padding: 2 },
 
   // Switcher de catégorie (segmented control).
   segment: {

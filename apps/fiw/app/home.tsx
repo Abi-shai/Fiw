@@ -2,7 +2,10 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View, StyleSheet, TouchableOpacity, Animated, ScrollView,
   PanResponder, Dimensions, TextInput, FlatList, Keyboard, Image,
+  Easing, AccessibilityInfo, type EasingFunction,
 } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+import HandWithCash from '@/components/HandWithCash';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -41,19 +44,17 @@ const TAP_THRESHOLD = 6;
 const SEARCH_H = SCREEN_H - TY_EXPANDED;
 
 type Service = {
-  id: string;
+  id: SearchService;
   label: string;
-  tagline: string;
-  icon: IconName;
-  iconColor: string;
-  active: boolean;
+  /** Phrase de pied de tuile, sous l'illustration. */
+  blurb: string;
 };
 
+// Seuls les deux services ouverts sont annoncés (maquette du 16 août 2026) :
+// Location et Assistance ne sont pas lancés, ils ne figurent plus sur l'accueil.
 const SERVICES: Service[] = [
-  { id: 'transport',  label: 'Transport',  tagline: 'Réservez une course', icon: 'car',       iconColor: Colors.primary,  active: true },
-  { id: 'livraison',  label: 'Livraison',  tagline: 'Envoyez un colis',    icon: 'package',   iconColor: Colors.primary,  active: true },
-  { id: 'location',   label: 'Location',   tagline: 'Louez un véhicule',   icon: 'handshake', iconColor: Colors.primary,  active: false },
-  { id: 'assistance', label: 'Assistance', tagline: 'Dépannage & secours', icon: 'lifebuoy',  iconColor: Colors.gray700,  active: false },
+  { id: 'transport', label: 'Course',    blurb: 'Rendez vous rapidement à votre destination.' },
+  { id: 'livraison', label: 'Livraison', blurb: 'Faites vous livré, aussi vite que possible.' },
 ];
 
 // Services dont la recherche d'itinéraire est câblée. La même feuille de
@@ -79,41 +80,174 @@ const SEARCH_COPY: Record<SearchService, {
   },
 };
 
-// Illustrations 3D isométriques par service (maquette Figma) — rendent les
-// tuiles plus expressives que les icônes ligne.
-const SERVICE_ILLUSTRATIONS: Record<string, ReturnType<typeof require>> = {
-  transport:  require('@/assets/serv-transport.png'),
-  livraison:  require('@/assets/serv-livraison.png'),
-  location:   require('@/assets/serv-location.png'),
-  assistance: require('@/assets/serv-assistance.png'),
+// Géométrie du panneau illustré, relevée EXACTEMENT sur la maquette
+// (node 336:1175). La tuile fait 328 de haut : 6 + en-tête 39 + 10 + panneau 217
+// + 10 + pied 40 + 6.
+const CARD_H = 328;
+
+// Feuille décorative posée derrière les véhicules : une forme unique, pivotée,
+// centrée dans une boîte de 154.624. Remplace la bande bleue diagonale.
+const LEAF_PATH = 'M44.2062 20.6341C74.0014 6.73435 134.078 -13.91 133.47 13.4098C133.004 34.3277 110.859 90.7533 51.8918 124.281C-24.408 167.664 -7.4579 44.7359 44.2062 20.6341Z';
+const LEAF_SIZE = 133.474;
+const LEAF_BOX = 154.624;
+const LEAF_TOP = 86;
+const LEAF_ROTATE = '80deg';
+const LEAF_OPACITY = 0.6;
+
+// --- Motion (Figma Motion, timeline de 2 s relevée sur la frame 357:1685) ---
+// Les trois courbes employées par la maquette, reprises telles quelles.
+const EASE_QUART = Easing.bezier(0.25, 1, 0.5, 1);   // sorties douces
+const EASE_BACK = Easing.bezier(0.34, 1.56, 0.64, 1); // léger dépassement
+const EASE_QUINT = Easing.bezier(0.22, 1, 0.36, 1);   // traînées
+
+// L'habillage de la tuile (en-tête, feuille, pied) s'anime à l'identique sur les
+// deux services : une seule définition, réutilisée.
+const CHROME = {
+  headOpacity: { delay: 400, dur: 250, ease: EASE_QUART },
+  headShift: { delay: 400, dur: 250, ease: EASE_BACK, from: -10 },
+  leaf: { delay: 500, dur: 400, ease: EASE_QUART, fromX: 12 },
+  footOpacity: { delay: 600, dur: 250, ease: EASE_QUART },
+  footShift: { delay: 600, dur: 250, ease: EASE_BACK, from: 10 },
 };
 
-// Géométrie reprise EXACTEMENT de la maquette (node 62:96). La bande bleue est
-// un grand carré translucide pivoté ; on donne le coin haut-gauche du carré
-// (= position du wrapper Figma + (tailleWrapper − 249.505) / 2, le carré étant
-// centré dans son wrapper) et l'angle. La rotation RN, comme Figma, se fait
-// autour du centre du carré → même rendu.
-const BAND_COLOR = 'rgba(0, 102, 255, 0.2)';
-type BandCfg = { size: number; left: number; top: number; rotate: string; radius?: number };
-const SERVICE_BANDS: Record<string, BandCfg> = {
-  transport:  { size: 249.5, left: -88.34, top: 90.66, rotate: '30deg' },
-  livraison:  { size: 249.5, left: -23.47, top: 54.03, rotate: '-30deg' },
-  location:   { size: 249.5, left: -20.84, top: 39.66, rotate: '-30deg', radius: 58 },
-  assistance: { size: 249.5, left: -139.91, top: 21.09, rotate: '31.91deg' },
+// Chaque véhicule est un cadre de découpe (`frame`) dans lequel l'image déborde
+// (`img`) : Figma recadre l'illustration, on reproduit le même cadrage plutôt que
+// de la contenir. Les calques fantômes sont des PNG déjà désaturés — React Native
+// n'a pas de `mix-blend-mode`, et sur fond blanc un mélange « luminosity » revient
+// exactement à un gris posé à la même opacité.
+const GHOST_MOTO = require('@/assets/home-ghost-moto.png');
+const GHOST_AUTO = require('@/assets/home-ghost-auto.png');
+
+// Un palier d'opacité : la valeur visée et la durée pour l'atteindre.
+type Seg = { to: number; dur: number; ease: EasingFunction };
+type ArtLayer = {
+  src: ReturnType<typeof require>;
+  frame: { x: number; y: number; w: number; h: number };
+  img: { x: number; y: number; w: number; h: number };
+  /** Opacité au premier keyframe, puis les paliers successifs (le dernier = repos). */
+  opFrom: number;
+  opSegs: Seg[];
+  /** Arrivée du véhicule : décalage et échelle de départ, fenêtre et courbe. */
+  enter: { dx: number; dy: number; scale: number; dur: number; ease: EasingFunction };
 };
-// Illustration : `left`/`top` du wrapper (px ou « 50% ») et translation de base
-// (centrage Figma via -translate-x/y et décalages calc()). Tailles Figma exactes.
-type IlloCfg = { size: number; left: number | string; top: number | string; baseX: number; baseY: number; mirror?: boolean };
-const SERVICE_ILLOS: Record<string, IlloCfg> = {
-  transport:  { size: 132, left: -14,   top: '50%', baseX: 0,       baseY: -47.5 }, // top 50%+18.5, ty -50% (132/2)
-  livraison:  { size: 112, left: 18.5,  top: 0,     baseX: 0,       baseY: 0 },
-  location:   { size: 88,  left: '50%', top: '50%', baseX: -44.25,  baseY: -36 },   // center 50%-0.25 / 50%+8
-  assistance: { size: 88,  left: '50%', top: '50%', baseX: -47,     baseY: -44, mirror: true }, // center 50%-3 / 50%, miroir
+type ServiceArt = { leafLeft: number; layers: ArtLayer[] };
+
+// Les traînées entrent de plus en plus tard et s'éteignent en se posant ; le
+// véhicule de tête arrive en dernier, avec un léger dépassement d'échelle.
+const ENTER_FROM = { dx: -55, dy: -150 };
+
+const SERVICE_ART: Record<SearchService, ServiceArt> = {
+  // Course : deux traînées (moto, puis berline) derrière la voiture de tête.
+  transport: {
+    leafLeft: 19,
+    layers: [
+      { src: GHOST_MOTO,
+        frame: { x: 7, y: 22, w: 111, h: 92 },
+        img: { x: 0, y: -46.52, w: 111, h: 138.25 },
+        opFrom: 0.45,
+        opSegs: [{ to: 0.35, dur: 350, ease: EASE_QUINT }, { to: 0.1, dur: 350, ease: EASE_QUART }],
+        enter: { ...ENTER_FROM, scale: 1, dur: 500, ease: EASE_QUINT } },
+      { src: GHOST_AUTO,
+        frame: { x: 19, y: 52, w: 111, h: 89 },
+        img: { x: -5.55, y: -12.24, w: 119.88, h: 120.15 },
+        opFrom: 0.5,
+        opSegs: [{ to: 0.45, dur: 450, ease: EASE_QUINT }, { to: 0.3, dur: 400, ease: EASE_QUART }],
+        enter: { ...ENTER_FROM, scale: 1, dur: 650, ease: EASE_QUINT } },
+      { src: require('@/assets/home-auto.png'),
+        frame: { x: 31, y: 88, w: 111, h: 88 },
+        img: { x: -16.05, y: -24, w: 144.43, h: 144 },
+        opFrom: 0,
+        opSegs: [{ to: 1, dur: 150, ease: EASE_QUINT }],
+        enter: { ...ENTER_FROM, scale: 0.88, dur: 800, ease: EASE_BACK } },
+    ],
+  },
+  // Livraison : une traînée moto derrière le vélo de tête.
+  livraison: {
+    leafLeft: 19.5,
+    layers: [
+      { src: GHOST_MOTO,
+        frame: { x: 12.5, y: 36, w: 111.184, h: 91.848 },
+        img: { x: 0, y: -46.45, w: 111.184, h: 138.03 },
+        opFrom: 0.5,
+        opSegs: [{ to: 0.45, dur: 400, ease: EASE_QUINT }, { to: 0.3, dur: 350, ease: EASE_QUART }],
+        enter: { ...ENTER_FROM, scale: 1, dur: 550, ease: EASE_QUINT } },
+      { src: require('@/assets/home-velo.png'),
+        frame: { x: 24.684, y: 58.157, w: 111.141, h: 123.843 },
+        img: { x: -5.48, y: -55.32, w: 120.74, h: 177.81 },
+        opFrom: 0,
+        opSegs: [{ to: 1, dur: 150, ease: EASE_QUINT }],
+        enter: { ...ENTER_FROM, scale: 0.88, dur: 800, ease: EASE_BACK } },
+    ],
+  },
 };
+
+/** Valeurs animées d'une tuile : l'habillage + une paire par calque de véhicule. */
+type CardAnim = {
+  headOpacity: Animated.Value; headShift: Animated.Value;
+  leaf: Animated.Value;
+  footOpacity: Animated.Value; footShift: Animated.Value;
+  layers: { op: Animated.Value; en: Animated.Value }[];
+};
+
+function makeCardAnim(layerCount: number): CardAnim {
+  return {
+    headOpacity: new Animated.Value(0), headShift: new Animated.Value(0),
+    leaf: new Animated.Value(0),
+    footOpacity: new Animated.Value(0), footShift: new Animated.Value(0),
+    layers: Array.from({ length: layerCount }, () => ({
+      op: new Animated.Value(0), en: new Animated.Value(0),
+    })),
+  };
+}
+
+const step = (v: Animated.Value, toValue: number, s: { delay?: number; dur: number; ease: EasingFunction }) =>
+  Animated.sequence([
+    Animated.delay(s.delay ?? 0),
+    Animated.timing(v, { toValue, duration: s.dur, easing: s.ease, useNativeDriver: true }),
+  ]);
+
+/** Rejoue toute la timeline de la tuile depuis le début. */
+function cardTimeline(art: ServiceArt, a: CardAnim) {
+  const tracks: Animated.CompositeAnimation[] = [
+    step(a.headOpacity, 1, CHROME.headOpacity),
+    step(a.headShift, 1, CHROME.headShift),
+    step(a.leaf, 1, CHROME.leaf),
+    step(a.footOpacity, 1, CHROME.footOpacity),
+    step(a.footShift, 1, CHROME.footShift),
+  ];
+  art.layers.forEach((layer, i) => {
+    const { op, en } = a.layers[i];
+    // Chaque palier d'opacité fait avancer la valeur d'un cran : 0 → 1 → 2…
+    tracks.push(Animated.sequence(
+      layer.opSegs.map((s, j) => Animated.timing(op, {
+        toValue: j + 1, duration: s.dur, easing: s.ease, useNativeDriver: true,
+      })),
+    ));
+    tracks.push(step(en, 1, layer.enter));
+  });
+  return Animated.parallel(tracks);
+}
+
+/** Pose la tuile à son état de repos, sans jouer l'animation. */
+function settleCard(art: ServiceArt, a: CardAnim) {
+  [a.headOpacity, a.headShift, a.leaf, a.footOpacity, a.footShift].forEach(v => v.setValue(1));
+  art.layers.forEach((layer, i) => {
+    a.layers[i].op.setValue(layer.opSegs.length);
+    a.layers[i].en.setValue(1);
+  });
+}
+
+function resetCard(art: ServiceArt, a: CardAnim) {
+  [a.headOpacity, a.headShift, a.leaf, a.footOpacity, a.footShift].forEach(v => v.setValue(0));
+  art.layers.forEach((_, i) => {
+    a.layers[i].op.setValue(0);
+    a.layers[i].en.setValue(0);
+  });
+}
 
 function openConfigure(service: SearchService, place: Place, departureName: string) {
   router.push({
-    pathname: service === 'livraison' ? '/livraison/methode' : '/transport/configure',
+    pathname: service === 'livraison' ? '/livraison/configure' : '/transport/configure',
     params: {
       departureName,
       destName: place.name,
@@ -124,95 +258,130 @@ function openConfigure(service: SearchService, place: Place, departureName: stri
   });
 }
 
-// Panneau illustré : fond blanc + bande bleue diagonale (carré pivoté clipé) +
-// illustration positionnée EXACTEMENT comme la maquette. L'illustration glisse
-// depuis le côté (`dx`) jusqu'à sa place quand `driveAnim` passe de 0 à 1 — effet
-// « le véhicule arrive en roulant et se gare » (le `dx` s'ajoute à `baseX`, donc
-// elle décélère pile sur sa position Figma).
-function IlloPanel({ serviceId, panelStyle, driveAnim, dx }: {
-  serviceId: string; panelStyle?: object; driveAnim: Animated.Value; dx: number;
-}) {
-  const band = SERVICE_BANDS[serviceId];
-  const illo = SERVICE_ILLOS[serviceId];
-  const translateX = driveAnim.interpolate({
-    inputRange: [0, 1], outputRange: [illo.baseX + dx, illo.baseX],
-  });
+// Panneau illustré : fond blanc, feuille décorative, puis les véhicules empilés
+// du plus lointain au plus proche. Chaque calque a sa propre entrée — les
+// traînées arrivent avant le véhicule de tête et s'estompent en se posant, ce
+// qui donne l'impression d'un sillage plutôt que d'un bloc qui glisse.
+function IlloPanel({ art, anim }: { art: ServiceArt; anim: CardAnim }) {
   return (
-    <View style={[styles.illoPanel, panelStyle]}>
-      <View
-        style={[styles.band, {
-          width: band.size, height: band.size, left: band.left, top: band.top,
-          borderRadius: band.radius ?? 0, transform: [{ rotate: band.rotate }],
-        }]}
-      />
+    <View style={styles.illoPanel}>
       <Animated.View
-        style={{
-          position: 'absolute',
-          left: illo.left as any, top: illo.top as any,
-          width: illo.size, height: illo.size,
-          opacity: driveAnim,
-          transform: [{ translateX }, { translateY: illo.baseY }],
-        }}
+        style={[styles.leafBox, {
+          left: art.leafLeft,
+          opacity: anim.leaf.interpolate({ inputRange: [0, 1], outputRange: [0, LEAF_OPACITY] }),
+          transform: [{ translateX: anim.leaf.interpolate({ inputRange: [0, 1], outputRange: [CHROME.leaf.fromX, 0] }) }],
+        }]}
+        pointerEvents="none"
       >
-        <Image
-          source={SERVICE_ILLUSTRATIONS[serviceId]}
-          style={[{ width: illo.size, height: illo.size }, illo.mirror && styles.mirror]}
-          resizeMode="contain"
-        />
+        <Svg
+          width={LEAF_SIZE}
+          height={LEAF_SIZE}
+          viewBox={`0 0 ${LEAF_SIZE} ${LEAF_SIZE}`}
+          style={styles.leafRotate}
+        >
+          <Path d={LEAF_PATH} fill={Colors.track} fillRule="evenodd" />
+        </Svg>
       </Animated.View>
+
+      {art.layers.map((layer, i) => {
+        const { op, en } = anim.layers[i];
+        return (
+          <Animated.View
+            key={i}
+            pointerEvents="none"
+            style={[styles.layerFrame, {
+              left: layer.frame.x, top: layer.frame.y,
+              width: layer.frame.w, height: layer.frame.h,
+              opacity: op.interpolate({
+                inputRange: layer.opSegs.map((_, j) => j).concat(layer.opSegs.length),
+                outputRange: [layer.opFrom, ...layer.opSegs.map(s => s.to)],
+              }),
+              transform: [
+                { translateX: en.interpolate({ inputRange: [0, 1], outputRange: [layer.enter.dx, 0] }) },
+                { translateY: en.interpolate({ inputRange: [0, 1], outputRange: [layer.enter.dy, 0] }) },
+                { scale: en.interpolate({ inputRange: [0, 1], outputRange: [layer.enter.scale, 1] }) },
+              ],
+            }]}
+          >
+            <Image
+              source={layer.src}
+              style={{
+                position: 'absolute',
+                left: layer.img.x, top: layer.img.y,
+                width: layer.img.w, height: layer.img.h,
+              }}
+              resizeMode="stretch"
+            />
+          </Animated.View>
+        );
+      })}
     </View>
   );
 }
 
-function ServiceCard({ service, variant, onPress, driveAnim, dx }: {
-  service: Service;
-  variant: 'hero' | 'small' | 'wide';
-  onPress: () => void;
-  driveAnim: Animated.Value;
-  dx: number;
-}) {
-  const props = {
-    activeOpacity: service.active ? 0.9 : 1,
-    disabled: !service.active,
-    onPress,
-  };
-
-  // Assistance : tuile carrée (illustration sur bande bleue) + texte + chevron.
-  if (variant === 'wide') {
-    return (
-      <TouchableOpacity style={[styles.card, styles.cardWide]} {...props}>
-        <IlloPanel serviceId={service.id} panelStyle={styles.wideTile} driveAnim={driveAnim} dx={dx} />
-        <View style={styles.flex1}>
-          <Text variant="label">{service.label}</Text>
-          <Text variant="caption" color={Colors.textSecondary} style={styles.cardTagline}>{service.tagline}</Text>
+// Bannière Affilié Réseau, en tête de feuille. La pastille de fermeture déborde
+// du coin haut-droit : elle est posée à côté de la carte, pas dedans, car un
+// enfant qui dépasse d'une vue à coins arrondis se fait rogner sur Android.
+function AffiliePromo({ onPress, onDismiss }: { onPress: () => void; onDismiss: () => void }) {
+  return (
+    <View style={styles.promoWrap}>
+      <TouchableOpacity style={styles.promoCard} activeOpacity={0.9} onPress={onPress}>
+        <View style={styles.promoTile}>
+          {/* Illustration 52 × 64 pivotée de 30°, centrée sur (25.52 ; 40.71). */}
+          <View style={styles.promoIllo}>
+            <HandWithCash width={52} />
+          </View>
+        </View>
+        <View style={styles.promoText}>
+          <Text variant="body" style={styles.promoTitle}>Gagnez de l’argent avec Fiw !</Text>
+          <Text variant="body" color={Colors.textSecondary} style={styles.promoSubtitle}>
+            Et si vous deveniez un affilié réseau ?
+          </Text>
         </View>
         <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
       </TouchableOpacity>
-    );
-  }
+      <TouchableOpacity
+        style={styles.promoClose}
+        activeOpacity={0.85}
+        onPress={onDismiss}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Icon name="close" size={18} color={Colors.primary} />
+      </TouchableOpacity>
+    </View>
+  );
+}
 
-  // Transport (hero) & Livraison/Location (small) : en-tête + panneau illustré.
-  const hero = variant === 'hero';
+// Tuile de service : titre + chevron, panneau illustré, phrase en pied.
+// L'en-tête descend, le pied remonte, les deux en fondu — comme la maquette.
+function ServiceCard({ service, onPress, anim }: {
+  service: Service;
+  onPress: () => void;
+  anim: CardAnim;
+}) {
+  const art = SERVICE_ART[service.id];
   return (
-    <TouchableOpacity
-      style={[styles.card, hero ? styles.cardHero : styles.cardSmall]}
-      {...props}
-    >
-      <View style={styles.cardHeader}>
-        <View style={styles.cardHeaderText}>
-          <Text variant={hero ? 'heading2' : 'label'}>{service.label}</Text>
-          {hero && (
-            <Text variant="caption" color={Colors.textSecondary} style={styles.cardTagline}>{service.tagline}</Text>
-          )}
-        </View>
+    <TouchableOpacity style={styles.card} activeOpacity={0.9} onPress={onPress}>
+      <Animated.View
+        style={[styles.cardHeader, {
+          opacity: anim.headOpacity,
+          transform: [{ translateY: anim.headShift.interpolate({ inputRange: [0, 1], outputRange: [CHROME.headShift.from, 0] }) }],
+        }]}
+      >
+        <Text variant="heading2" style={styles.flex1} numberOfLines={1}>{service.label}</Text>
         <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
-      </View>
-      <IlloPanel
-        serviceId={service.id}
-        panelStyle={hero ? styles.illoPanelHero : styles.illoPanelSmall}
-        driveAnim={driveAnim}
-        dx={dx}
-      />
+      </Animated.View>
+      <IlloPanel art={art} anim={anim} />
+      <Animated.View
+        style={[styles.cardFooter, {
+          opacity: anim.footOpacity,
+          transform: [{ translateY: anim.footShift.interpolate({ inputRange: [0, 1], outputRange: [CHROME.footShift.from, 0] }) }],
+        }]}
+      >
+        <Text variant="bodySmall" style={styles.cardBlurb} numberOfLines={2}>
+          {service.blurb}
+        </Text>
+      </Animated.View>
     </TouchableOpacity>
   );
 }
@@ -248,6 +417,8 @@ export default function HomeScreen() {
   // Mode de l'écran : grille de services ↔ recherche d'itinéraire (morph
   // in-place) ↔ choix d'un point sur la carte (pin fixe, carte mobile dessous).
   const [menuOpen, setMenuOpen] = useState(false);
+  // Bannière Affilié refermée : le proto ne la persiste pas d'un lancement à l'autre.
+  const [promoDismissed, setPromoDismissed] = useState(false);
   const [mode, setMode] = useState<'services' | 'search' | 'mappick'>('services');
   // Service porté par la recherche en cours (Transport ou Livraison).
   const [service, setService] = useState<SearchService>('transport');
@@ -350,36 +521,45 @@ export default function HomeScreen() {
     extrapolate: 'clamp',
   });
 
-  const [transport, livraison, location, assistance] = SERVICES;
+  const [course, livraison] = SERVICES;
 
-  const onService = (s: Service) => {
-    if (!s.active) return;
-    openSearch(s.id === 'livraison' ? 'livraison' : 'transport');
-  };
+  const onService = (s: Service) => openSearch(s.id);
 
-  // Animation d'entrée « les véhicules arrivent en roulant et se garent » : chaque
-  // illustration glisse depuis le côté (selon son sens) puis décélère (ressort).
-  // Rejouée à chaque fois que la vue services (re)devient active — focus de
-  // l'écran (premier lancement, retour de navigation, retour après absence) ou
-  // retour au mode services depuis la recherche.
-  const driveAnims = useRef(SERVICES.map(() => new Animated.Value(0))).current;
-  // Sens d'arrivée par service : auto/scooter roulent vers la droite (entrent
-  // par la gauche, dx<0) ; clé et dépanneuse (miroir) entrent par la droite.
-  const DRIVE_DX = [-96, -96, 64, 96];
-  const playDriveIn = useCallback(() => {
-    driveAnims.forEach((a) => a.setValue(0));
-    Animated.stagger(
-      90,
-      driveAnims.map((a) =>
-        Animated.spring(a, { toValue: 1, useNativeDriver: true, damping: 15, stiffness: 110, mass: 1 }),
-      ),
-    ).start();
-  }, [driveAnims]);
+  // Entrée des tuiles (Figma Motion, frame 357:1685) : les traînées arrivent du
+  // coin haut-gauche et s'éteignent en se posant, le véhicule de tête suit avec
+  // un dépassement d'échelle, puis l'en-tête descend et le pied remonte.
+  // Rejouée quand la vue services (re)devient active — focus de l'écran ou
+  // retour depuis la recherche. La timeline Figma boucle ; ici elle joue une
+  // fois, c'est une animation d'arrivée et non un motif de fond.
+  const cardAnims = useRef(SERVICES.map((s) => makeCardAnim(SERVICE_ART[s.id].layers.length))).current;
+  const reduceMotion = useRef(false);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then((on) => { reduceMotion.current = on; });
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (on) => {
+      reduceMotion.current = on;
+      if (on) SERVICES.forEach((s, i) => settleCard(SERVICE_ART[s.id], cardAnims[i]));
+    });
+    return () => sub.remove();
+  }, [cardAnims]);
+
+  const playCardsIn = useCallback(() => {
+    // « Réduire les animations » : on pose les tuiles à leur état final.
+    if (reduceMotion.current) {
+      SERVICES.forEach((s, i) => settleCard(SERVICE_ART[s.id], cardAnims[i]));
+      return;
+    }
+    SERVICES.forEach((s, i) => {
+      const art = SERVICE_ART[s.id];
+      resetCard(art, cardAnims[i]);
+      cardTimeline(art, cardAnims[i]).start();
+    });
+  }, [cardAnims]);
 
   useFocusEffect(
     useCallback(() => {
-      if (mode === 'services') playDriveIn();
-    }, [mode, playDriveIn]),
+      if (mode === 'services') playCardsIn();
+    }, [mode, playCardsIn]),
   );
 
   // --- Résultats de recherche : une seule liste qui suit la saisie du champ
@@ -624,42 +804,26 @@ export default function HomeScreen() {
             {/* Draggable header */}
             <View {...panHandlers} style={styles.sheetHeader}>
               <Handle style={styles.handle} />
-              <Text variant="heading1" style={styles.heading}>Que voulez-vous faire ?</Text>
+              <Text variant="heading1" style={styles.heading}>De quoi avez-vous besoin ?</Text>
             </View>
 
             <ScrollView
               showsVerticalScrollIndicator={false}
               contentContainerStyle={[styles.sheetContent, { paddingBottom: insets.bottom + 28 }]}
             >
-              {/* Bento service grid */}
-              <View style={styles.grid}>
-                <ServiceCard service={transport} variant="hero" onPress={() => onService(transport)}
-                  driveAnim={driveAnims[0]} dx={DRIVE_DX[0]} />
-                <View style={styles.rightCol}>
-                  <ServiceCard service={livraison} variant="small" onPress={() => onService(livraison)}
-                    driveAnim={driveAnims[1]} dx={DRIVE_DX[1]} />
-                  <ServiceCard service={location} variant="small" onPress={() => onService(location)}
-                    driveAnim={driveAnims[2]} dx={DRIVE_DX[2]} />
-                </View>
-              </View>
-              {/* Entrée temporaire — parcours Affilié Réseau */}
-              <TouchableOpacity
-                style={[styles.card, styles.cardWide]}
-                activeOpacity={0.9}
-                onPress={() => router.push('/affilie/presentation')}
-              >
-                <View style={styles.wideTile}>
-                  <Icon name="coins" size={48} color={Colors.primary} weight="fill" />
-                </View>
-                <View style={styles.flex1}>
-                  <Text variant="label">Gagner de l'argent</Text>
-                  <Text variant="caption" color={Colors.textSecondary} style={styles.cardTagline}>Devenez Affilié Réseau</Text>
-                </View>
-                <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
-              </TouchableOpacity>
+              {/* Bannière Affilié Réseau — refermable */}
+              {!promoDismissed && (
+                <AffiliePromo
+                  onPress={() => router.push('/affilie/presentation')}
+                  onDismiss={() => setPromoDismissed(true)}
+                />
+              )}
 
-              <ServiceCard service={assistance} variant="wide" onPress={() => onService(assistance)}
-                driveAnim={driveAnims[3]} dx={DRIVE_DX[3]} />
+              {/* Les deux services ouverts, à parts égales */}
+              <View style={styles.grid}>
+                <ServiceCard service={course} onPress={() => onService(course)} anim={cardAnims[0]} />
+                <ServiceCard service={livraison} onPress={() => onService(livraison)} anim={cardAnims[1]} />
+              </View>
 
               {/* Recents */}
               <Text variant="caption" color={Colors.textTertiary} style={styles.sectionLabel}>Récemment</Text>
@@ -734,77 +898,102 @@ const styles = StyleSheet.create({
     gap: CARD_GAP,
     alignItems: 'stretch',
   },
-  rightCol: {
-    flex: 1,
-    gap: CARD_GAP,
-  },
   flex1: { flex: 1 },
-  // Carte service : fond gris clair + liseré ténu, coins très arrondis (maquette).
-  card: {
-    borderRadius: 20,
-    padding: 6,
-    backgroundColor: Colors.track,
-    borderWidth: 1,
-    borderColor: 'rgba(242, 243, 245, 0.5)',
-  },
-  cardHero: {
-    flex: 1,
-    gap: 10,
-  },
-  cardSmall: {
-    width: '100%',
-    gap: 8,
-  },
-  cardWide: {
+
+  // --- Bannière Affilié Réseau ---
+  // Le wrapper n'a ni fond ni rayon : il ne rogne donc pas la pastille qui dépasse.
+  promoWrap: { marginBottom: CARD_GAP },
+  promoCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginTop: CARD_GAP,
+    borderRadius: 20,
+    backgroundColor: Colors.blue100,
     paddingLeft: 6,
     paddingRight: 14,
     paddingVertical: 6,
   },
-
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 8,
-    padding: 8,
-  },
-  cardHeaderText: { flex: 1 },
-  cardTagline: { marginTop: 3 },
-
-  // Panneau illustré : fond blanc, illustration centrée qui déborde (clipée).
-  illoPanel: {
-    width: '100%',
-    borderRadius: Radii.lg,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  illoPanelHero: { flex: 1 },
-  illoPanelSmall: { width: '100%', height: 104 },
-  // Bande bleue diagonale (« rampe ») derrière l'illustration : grand carré
-  // translucide pivoté (géométrie injectée par service), clipé par le panneau →
-  // une seule arête diagonale visible.
-  band: {
-    position: 'absolute',
-    backgroundColor: BAND_COLOR,
-  },
-  // Miroir horizontal pour la dépanneuse (Assistance) : elle « regarde » vers le texte.
-  mirror: { transform: [{ scaleX: -1 }] },
-  // Tuile carrée blanche de la carte Assistance (reçoit la bande + dépanneuse).
-  wideTile: {
+  promoTile: {
     width: 64, height: 64,
     borderRadius: Radii.md,
     backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
     overflow: 'hidden',
   },
+  // Position du carré non pivoté : la rotation RN se fait autour du centre, donc
+  // on vise le centre (25.52 ; 40.71) relevé sur la maquette.
+  promoIllo: {
+    position: 'absolute',
+    left: -0.48, top: 8.71,
+    width: 52, height: 64,
+    transform: [{ rotate: '30deg' }],
+  },
+  promoText: { flex: 1, gap: 3, overflow: 'hidden' },
+  promoTitle: { fontFamily: Outfit.medium, lineHeight: 19 },
+  promoSubtitle: { lineHeight: 19 },
+  promoClose: {
+    position: 'absolute',
+    top: -10, right: -10,
+    width: 38, height: 38,
+    borderRadius: 19,
+    backgroundColor: Colors.surface,
+    borderWidth: 2,
+    borderColor: Colors.blue100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
+  // Tuile de service : fond gris clair + liseré ténu, coins très arrondis.
+  // Le padding vaut 5 et non 6 : dans Figma le liseré est intérieur et chevauche
+  // le padding (encart total 6), alors qu'en RN `borderWidth` s'y ajoute. 5 + 1
+  // redonne les 6 de la maquette — donc un panneau de 149.5 × 217 exactement.
+  card: {
+    flex: 1,
+    height: CARD_H,
+    borderRadius: 20,
+    padding: 5,
+    gap: 10,
+    backgroundColor: Colors.track,
+    borderWidth: 1,
+    borderColor: 'rgba(242, 243, 245, 0.5)',
+  },
+
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    padding: 8,
+    overflow: 'hidden',
+  },
+  // Pied de tuile : la phrase tient sur deux lignes, interligne serré (maquette).
+  cardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 4,
+  },
+  cardBlurb: { flex: 1, lineHeight: 16 },
+
+  // Panneau illustré : fond blanc, calques positionnés en absolu et clipés.
+  illoPanel: {
+    flex: 1,
+    width: '100%',
+    borderRadius: Radii.lg,
+    backgroundColor: Colors.surface,
+    overflow: 'hidden',
+  },
+  // Feuille décorative : centrée dans sa boîte puis pivotée (rotation RN = Figma).
+  leafBox: {
+    position: 'absolute',
+    top: LEAF_TOP,
+    width: LEAF_BOX,
+    height: LEAF_BOX,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  leafRotate: { transform: [{ rotate: LEAF_ROTATE }] },
+  // Cadre de découpe d'un véhicule : l'image déborde et se fait couper ici.
+  layerFrame: { position: 'absolute', overflow: 'hidden' },
+  // Tuile carrée blanche de la carte Affilié Réseau.
   sectionLabel: {
     textTransform: 'uppercase',
     letterSpacing: 0.8,

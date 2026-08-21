@@ -12,7 +12,8 @@ _Avoid_ : passager, utilisateur, acheteur
 
 **Prestataire** :
 Chauffeur ou livreur inscrit sur la plateforme. Utilise l'application **Fiw Pro**. Un prestataire peut activer plusieurs services (Vélo, Moto, Voiture, Assistance…).
-_Avoid_ : chauffeur (trop restrictif), livreur (trop restrictif), conducteur
+_Avoid_ : livreur (trop restrictif), conducteur
+_Exception de copie (14 août 2026)_ : **« chauffeur » est autorisé dans les intitulés d'interface du flux Transport** — là le Prestataire est toujours au volant, et c'est le mot que le Client emploie en attendant sa course. Il reste **proscrit comme terme de domaine** (docs, modèle, code, commentaires) et **hors Transport** : un livreur à vélo n'est pas un chauffeur. Les surfaces multi-services — Livraison, Compte, Affiliation, historique — disent **Prestataire**. Le décompte générique « N prestataires à proximité » reste lui aussi en Prestataire : il annonce une disponibilité, pas une personne au volant.
 
 **Affilié Réseau** :
 Personne physique (particulier, étudiant, commerçant) qui recrute des clients et des prestataires et perçoit une commission de 2 % du montant brut de chaque course générée par son réseau (prélevée sur la part Fiw). **Rôle activé sur un compte Client existant**, dans l'app **Fiw uniquement** — pas un compte distinct, pas d'application séparée, pas de connexion séparée. Modèle « 1 affilié = 1 app » : Affilié Réseau vit dans Fiw (Client), Affilié Partenaire vit dans Fiw Pro (Prestataire). Un Prestataire ne peut pas activer le rôle Affilié Réseau depuis Fiw Pro.
