@@ -75,6 +75,7 @@ Point d'entrée post-connexion. Donne accès à tous les services.
 - Étapes de suivi : Récupéré → En route → Arrivé en ville → Remis
 
 ### 4.3 Livraison active
+- Jalons de suivi : Collecte → En route → Livraison — trois phases, chacune avec une durée. La remise est confirmée à la clôture (4.4), pas dans la barre : « Remis » est un état terminal du Colis dans Yobanté (4.2), pas un jalon de la Livraison standard.
 - Suivi du livreur en temps réel
 - Notifications à chaque étape
 - Annuler (avant départ du livreur, sans frais)
