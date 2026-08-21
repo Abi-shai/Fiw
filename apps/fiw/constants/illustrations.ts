@@ -51,12 +51,15 @@ export const TOPVIEW_ILLUSTRATIONS: Record<IlluKey, ReturnType<typeof require>> 
  *  (l'ombre portée élargit un peu la boîte des voitures). Sert à dimensionner
  *  le marqueur à partir de sa seule LONGUEUR, sans jamais l'étirer. */
 export const TOPVIEW_RATIOS: Record<IlluKey, number> = {
-  moto: 0.5,
-  velo: 0.375,
+  // Deux-roues redessinés le 14 août 2026 : la moto s'affine (silhouette plus
+  // serrée) tandis que le vélo s'élargit nettement — le cycliste y écarte les
+  // bras jusqu'aux poignées, et c'est cette envergure qui fait la largeur.
+  moto: 0.385,
+  velo: 0.51,
   auto: 0.549,
   luxe: 0.497,
   covoiturage: 0.569,
-  livraison: 0.5,
+  livraison: 0.385,
 };
 
 export const topviewIllustration = (illu: IlluKey) =>
@@ -106,6 +109,12 @@ export const topviewIllustration = (illu: IlluKey) =>
  * changer d'illustration impose de les revérifier. 0 = pas de découpage : sur
  * une voiture vue du dessus, les roues sont sous la carrosserie, invisibles.
  *
+ * Revérifiées sur les dessins du 14 août 2026 (profil alpha ligne à ligne) :
+ * inchangées. Sur les deux véhicules la bande avant ne contient que la ROUE —
+ * le guidon et les mains du pilote n'apparaissent qu'à ~30 % de la longueur.
+ * C'est ce qui rend le découpage encore possible malgré l'arrivée du pilote
+ * dans le dessin : découper plus bas trancherait les avant-bras.
+ *
  * `maxSteer` = angle de braquage maximal en degrés. Au-delà, l'arête droite de
  * la découpe finit par se voir.
  */
@@ -119,9 +128,15 @@ export const TOPVIEW_MARKER: Record<
   auto: { len: 48, ambLen: 34, pivot: 0.68, lean: 0, steerBand: 0, maxSteer: 0 },
   luxe: { len: 48, ambLen: 34, pivot: 0.68, lean: 0, steerBand: 0, maxSteer: 0 },
   covoiturage: { len: 48, ambLen: 34, pivot: 0.68, lean: 0, steerBand: 0, maxSteer: 0 },
-  moto: { len: 60, ambLen: 43, pivot: 0.72, lean: 0.14, steerBand: 0.24, maxSteer: 26 },
-  velo: { len: 63, ambLen: 44, pivot: 0.75, lean: 0.16, steerBand: 0.22, maxSteer: 28 },
-  livraison: { len: 60, ambLen: 43, pivot: 0.72, lean: 0.14, steerBand: 0.24, maxSteer: 26 },
+  // Deux-roues redessinés le 14 août 2026. Les LONGUEURS sont recalculées pour
+  // **conserver la largeur apparente** validée sur le terrain (moto 30 px,
+  // vélo 23,6 px) : c'est elle le critère de lisibilité, pas la longueur. Le
+  // nouveau ratio fait donc rallonger la moto (60 → 78, sous le plafond ×1,5
+  // constaté) et raccourcir le vélo (63 → 46), qui gagne en largeur ce qu'il
+  // perd en longueur. `ambLen` suit le même rapport qu'avant (≈ 0,70 · len).
+  moto: { len: 78, ambLen: 56, pivot: 0.72, lean: 0.14, steerBand: 0.24, maxSteer: 26 },
+  velo: { len: 46, ambLen: 32, pivot: 0.75, lean: 0.16, steerBand: 0.22, maxSteer: 28 },
+  livraison: { len: 78, ambLen: 56, pivot: 0.72, lean: 0.14, steerBand: 0.24, maxSteer: 26 },
 };
 
 export interface TopviewSprite {
@@ -151,13 +166,24 @@ export const ILLO_SLOT = 68;
  * sur les exports Figma, qui sont rognés au plus près du dessin.
  *
  * Aucune ne tient dans les 68 : les véhicules **débordent volontairement** leur
- * emplacement (76 de haut pour toute la famille, jusqu'à 93 de large pour les
- * voitures). C'est ce débord qui donne son expressivité à la carte gamme — le
- * rendre carré et « contenu » écrase l'illustration et casse la maquette.
+ * emplacement (76 de haut, 93 de large pour les voitures ; la moto pousse
+ * jusqu'à 106 × 87). C'est ce débord qui donne son expressivité à la carte
+ * gamme — le rendre carré et « contenu » écrase l'illustration et casse la
+ * maquette.
  */
 export const ILLO_SIZES: Record<IlluKey, { width: number; height: number }> = {
-  moto: { width: 59, height: 76 },
-  velo: { width: 47, height: 76 },
+  // Passe « craft » du 14 août 2026 : les deux-roues sont redessinés **sans
+  // pilote** sur cette vue (il ne reste que sur la vue de dessus, cf. plus bas)
+  // et en 3/4 plus couché. Ils passent donc de silhouettes étroites et debout
+  // (59 et 47 de large) à des gabarits couchés, comme les voitures.
+  //
+  // La moto **casse le gabarit commun** : elle est dessinée à 87 de haut là où
+  // le reste de la famille tient sur 76 (mesuré sur la maquette, boîte alpha
+  // 423 × 347 au ×4). C'est délibéré — elle est la gamme la plus vendue et
+  // occupe la carte en conséquence. Ne pas la « rentrer » à 76 : le débord sur
+  // la plateforme fait partie du dessin.
+  moto: { width: 106, height: 87 },
+  velo: { width: 78, height: 76 },
   auto: { width: 93, height: 76 },
   covoiturage: { width: 93, height: 76 },
   // Variante masquée dans le jeu Figma, mais l'illustration a le gabarit exact
