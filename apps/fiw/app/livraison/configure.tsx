@@ -14,14 +14,15 @@ import Icon from '@/components/Icon';
 import Button from '@/components/Button';
 import Avatar from '@/components/Avatar';
 import PaymentSheetContent from '@/components/PaymentSheet';
+import GammeCard from '@/components/GammeCard';
 import { Handle, SHEET_RADIUS } from '@/components/Sheet';
 import { groupedSheetSurface, SheetCard, RouteCard, CARD_GAP } from '@/components/RideSheet';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
 import { Colors, Radii, Outfit } from '@/constants/tokens';
 import {
-  CONTACTS, DAKAR_CENTER, livraisonGamme, makeTrackingNumber, makeCodeRemise,
+  CONTACTS, DAKAR_CENTER, LIVRAISON_GAMMES, livraisonGamme, makeTrackingNumber, makeCodeRemise,
 } from '@/constants/data';
-import { gammeIllustration, payIllustration } from '@/constants/illustrations';
+import { payIllustration } from '@/constants/illustrations';
 
 const SCREEN_H = Dimensions.get('window').height;
 const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/[\s  ]/g, '.');
@@ -54,9 +55,11 @@ export default function LivraisonConfigureScreen() {
   }>();
 
   const departureName = params.departureName || 'Ma position actuelle';
-  // Méthode retenue à l'étape précédente — relue depuis le seul `gammeId` (la
-  // mise en relation peut la remplacer par la gamme complémentaire).
-  const gamme = livraisonGamme(params.gammeId);
+  // La méthode se choisit désormais SUR cet écran (fusion des deux feuilles,
+  // maquette 305:664). `params.gammeId` ne sert plus qu'au retour depuis la mise
+  // en relation, qui peut avoir basculé sur la gamme complémentaire.
+  const [gammeId, setGammeId] = useState(params.gammeId || 'velo');
+  const gamme = livraisonGamme(gammeId);
   const destLat = parseFloat(params.destLat || String(DAKAR_CENTER.lat));
   const destLng = parseFloat(params.destLng || String(DAKAR_CENTER.lng));
   const mapCenter = { lat: (DAKAR_CENTER.lat + destLat) / 2, lng: (DAKAR_CENTER.lng + destLng) / 2 };
@@ -161,23 +164,6 @@ export default function LivraisonConfigureScreen() {
     setPayOpen(true);
   };
 
-  // Retour à l'étape méthode. `dismissTo` (et non `back`) : la mise en relation
-  // peut avoir réatterri ici en sautant l'étape 1 (« Passer en Moto Livraison »).
-  const editMethode = () => {
-    Haptics.selectionAsync();
-    router.dismissTo({
-      pathname: '/livraison/methode',
-      params: {
-        departureName,
-        destName: params.destName ?? '',
-        destDetail: params.destDetail ?? '',
-        destLat: params.destLat ?? '',
-        destLng: params.destLng ?? '',
-        preselectGamme: gamme.id,
-      },
-    });
-  };
-
   // Le prix définitif se joue en mise en relation (groupage détecté, frais de
   // rapprochement — Product Doc « B — Détection automatique ») : on confirme sur
   // le prix standard de la gamme, sans total figé.
@@ -238,11 +224,19 @@ export default function LivraisonConfigureScreen() {
           <View style={styles.handleFloat} pointerEvents="none"><Handle /></View>
           <SheetCard style={styles.headerCard}>
             <View style={styles.headerRow}>
-              <Text variant="heading1" style={styles.flex1} numberOfLines={1}>Votre livraison</Text>
+              <Text variant="heading1" style={styles.flex1} numberOfLines={1}>Planifier la livraison</Text>
               <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()} activeOpacity={0.85}>
                 <Icon name="close" size={18} weight="bold" color={Colors.textPrimary} />
               </TouchableOpacity>
             </View>
+            {/* L'itinéraire rejoint l'en-tête : c'est le cadre de tout ce qui
+                suit, et il reste visible quand la feuille est repliée. */}
+            <RouteCard
+              plain
+              departure={departureName}
+              destination={params.destName || ''}
+              onEdit={editItinerary}
+            />
           </SheetCard>
         </View>
 
@@ -254,73 +248,56 @@ export default function LivraisonConfigureScreen() {
           scrollEnabled={bodyContentH > bodyMaxH}
           showsVerticalScrollIndicator={false}
         >
-          {/* 1 — Point de collecte et de livraison. */}
+          {/* 1 — Méthode de livraison : le choix se fait ICI depuis la fusion
+              des deux écrans (maquette 305:664). Le prix affiché est le prix
+              standard ; le définitif se joue en mise en relation. */}
           <SheetCard>
-            <RouteCard
-              departure={departureName}
-              destination={params.destName || ''}
-              labels={{ from: 'Collecte', to: 'Livraison' }}
-              icons={{ from: 'package', to: 'flag' }}
-              onEdit={editItinerary}
-            />
-          </SheetCard>
-
-          {/* 2 — Moyen de livraison et prix. Colle à l'itinéraire : les deux
-              forment le cadre de la commande, décidé à l'étape précédente. */}
-          <SheetCard>
-            <TouchableOpacity style={styles.methodeRow} onPress={editMethode} activeOpacity={0.85}>
-              <View style={styles.methodeThumb}>
-                <Image source={gammeIllustration(gamme.illu)} style={styles.methodeImg} resizeMode="contain" />
-              </View>
-              <View style={styles.flex1}>
-                <Text variant="label" numberOfLines={1}>{gamme.label}</Text>
-                <Text variant="caption" color={Colors.textSecondary} numberOfLines={1}>
-                  {gamme.eta} · {gamme.capacity.toLowerCase()}
-                </Text>
-              </View>
-              <Text variant="heading2" color={Colors.primary}>{fmt(gamme.basePrice)} F</Text>
-              <Icon name="chevronRight" size={16} color={Colors.textTertiary} />
-            </TouchableOpacity>
+            <Text variant="heading2">Méthodes de livraison</Text>
+            <View style={styles.gRow}>
+              {LIVRAISON_GAMMES.map((g) => (
+                <GammeCard
+                  key={g.id}
+                  label={g.label}
+                  eta={g.eta}
+                  price={g.basePrice}
+                  illu={g.illu}
+                  selected={gammeId === g.id}
+                  onPress={() => { Haptics.selectionAsync(); setGammeId(g.id); }}
+                />
+              ))}
+            </View>
           </SheetCard>
 
 
           {/* 3 — Destinataire (le seul requis) : rangée-ACTION tant qu'il est
               vide, résumé compact une fois rempli. La note SMS est SON helper. */}
           <SheetCard>
+            <Text variant="heading2">Destinataire et description</Text>
+
             <TouchableOpacity style={styles.fieldRow} onPress={openDest} activeOpacity={0.85}>
-              <Icon name="user" size={18} color={Colors.primary} />
+              <Icon name="user" size={18} color={Colors.textSecondary} />
               {destinataireOk ? (
                 <View style={styles.flex1}>
                   <Text variant="label" numberOfLines={1}>{destinataireName}</Text>
                   <Text variant="caption" color={Colors.textSecondary}>{destinatairePhone}</Text>
                 </View>
               ) : (
-                <Text variant="label" color={Colors.primary} style={styles.flex1}>
-                  Ajouter le destinataire <Text variant="label" color={Colors.error}>*</Text>
+                <Text variant="body" color={Colors.textSecondary} style={styles.flex1}>
+                  Ajouter le destinataire <Text variant="body" color={Colors.error}>*</Text>
                 </Text>
               )}
               <Icon name="chevronRight" size={16} color={Colors.textTertiary} />
             </TouchableOpacity>
-            <View style={styles.noteRow}>
-              <Icon name="info" size={14} weight="bold" color={Colors.textTertiary} />
-              <Text variant="caption" color={Colors.textSecondary} style={styles.flex1}>
-                Le destinataire reçoit un SMS pour suivre sa livraison.
-              </Text>
-            </View>
-          </SheetCard>
 
-
-          {/* 4 — Description du colis, facultative : affaiblie, en dernier. */}
-          <SheetCard>
             <TouchableOpacity style={styles.fieldRow} onPress={openDesc} activeOpacity={0.85}>
-              <Icon name="edit" size={18} color={description ? Colors.textSecondary : Colors.textTertiary} />
+              <Icon name="edit" size={18} color={Colors.textSecondary} />
               {description ? (
                 <>
                   <Text variant="label" style={styles.flex1} numberOfLines={1}>{description}</Text>
                   <Icon name="chevronRight" size={16} color={Colors.textTertiary} />
                 </>
               ) : (
-                <Text variant="body" color={Colors.textTertiary} style={styles.flex1}>
+                <Text variant="body" color={Colors.textSecondary} style={styles.flex1}>
                   Ajouter une description (facultatif)
                 </Text>
               )}
@@ -538,21 +515,11 @@ const styles = StyleSheet.create({
 
   // Rappel de la méthode retenue — vignette illustrée sur plateforme `track`,
   // même langage que la carte gamme de l'étape précédente.
-  methodeRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: Colors.surfaceAlt,
-    borderRadius: Radii.lg,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
-    paddingHorizontal: 12, paddingVertical: 10,
-  },
-  methodeThumb: {
-    width: 48, height: 48, borderRadius: Radii.md,
-    backgroundColor: Colors.track,
-    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-  },
-  methodeImg: { width: 42, height: 42 },
 
   // Ligne d'ouverture d'une saisie (description, destinataire) — cadre surfaceAlt.
+  // Rangée de gammes — largeur naturelle des cartes (138), alignée à gauche.
+  gRow: { flexDirection: 'row', gap: 10, paddingTop: 2 },
+
   fieldRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: Colors.surfaceAlt,
@@ -560,7 +527,6 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.borderSubtle,
     paddingHorizontal: 14, paddingVertical: 13,
   },
-  noteRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 
   // Feuille destinataire — contacts.
   searchWrap: {

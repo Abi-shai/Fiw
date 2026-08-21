@@ -281,15 +281,56 @@ export function AltSuggestCard({ illu, title, subtitle, badgeLabel = 'Suggéré'
  *  drapeau relié par un trait + Départ/Arrivée, dans un cadre `surfaceAlt` bordé.
  *  Partagée entre la configuration et le suivi de course. `onEdit` ajoute l'icône
  *  crayon (édition) et rend la carte tappable. */
-export function RouteCard({ departure, destination, labels, icons, onEdit }: {
+export function RouteCard({ departure, destination, labels, icons, onEdit, plain }: {
   departure: string; destination: string;
   /** Libellés des deux points (défaut Départ/Arrivée ; Livraison : Collecte/Livraison). */
   labels?: { from: string; to: string };
   /** Icônes du rail (défaut walk/flag ; Livraison : package/flag). */
   icons?: { from: IconName; to: IconName };
   onEdit?: () => void;
+  /**
+   * Présentation « à plat » (maquettes 118:305 · 163:902 · 118:525 · 305:664 ·
+   * 311:664) : plus de carte grise ni de rail vertical reliant les deux points,
+   * mais deux lignes « icône + texte » séparées par un filet **en retrait** qui
+   * démarre sous le texte (32 = 20 d'icône + 12 de gouttière).
+   *
+   * **Transport et Livraison la partagent** depuis la fusion du 16 août : mêmes
+   * libellés Départ/Arrivée et mêmes icônes par défaut — **`walk` puis `flag`**
+   * (maquette 350:2704, qui remplace le `car` essayé la veille : le pictogramme
+   * du piéton dit le point de départ du CLIENT, pas le véhicule qui vient le
+   * chercher). Aucun écran n'a donc à surcharger `icons`.
+   */
+  plain?: boolean;
 }) {
   const Wrapper: React.ComponentType<any> = onEdit ? TouchableOpacity : View;
+
+  if (plain) {
+    return (
+      <Wrapper style={styles.routePlain} activeOpacity={onEdit ? 0.85 : 1} onPress={onEdit} disabled={!onEdit}>
+        <View style={styles.routePlainRow}>
+          <Icon name={icons?.from ?? 'walk'} size={20} weight="bold" color={Colors.gray700} />
+          <View style={styles.routePlainCol}>
+            <Text variant="bodySmall" color={Colors.textSecondary} style={styles.routePlainTight}>
+              {labels?.from ?? 'Départ'}
+            </Text>
+            <Text variant="label" numberOfLines={1} style={styles.routePlainTight}>{departure}</Text>
+          </View>
+          {onEdit && <Icon name="edit" size={18} color={Colors.textSecondary} />}
+        </View>
+        <View style={styles.routePlainDivider} />
+        <View style={styles.routePlainRow}>
+          <Icon name={icons?.to ?? 'flag'} size={20} weight="bold" color={Colors.gray700} />
+          <View style={styles.routePlainCol}>
+            <Text variant="bodySmall" color={Colors.textSecondary} style={styles.routePlainTight}>
+              {labels?.to ?? 'Arrivée'}
+            </Text>
+            <Text variant="label" numberOfLines={1} style={styles.routePlainTight}>{destination}</Text>
+          </View>
+        </View>
+      </Wrapper>
+    );
+  }
+
   return (
     <Wrapper style={styles.routeCard} activeOpacity={onEdit ? 0.85 : 1} onPress={onEdit} disabled={!onEdit}>
       <View style={styles.routeRail}>
@@ -451,7 +492,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceAlt,
     borderRadius: CARD_RADIUS,
     borderWidth: 1, borderColor: Colors.borderSubtle,
-    padding: 6,
+    // Sans padding : le VehicleBlock affleure le liseré du groupe, c'est ce que
+    // montrent les deux maquettes (Transport 118:305 et Livraison 311:664).
     gap: 12,
   },
 
@@ -485,6 +527,16 @@ const styles = StyleSheet.create({
   routeCol: { flex: 1, justifyContent: 'space-between', gap: 24 },
   routePoint: { gap: 2 },
   routeEdit: { alignSelf: 'flex-start', padding: 2 },
+
+  // RouteCard `plain` (maquette 271:1290) — hauteurs exactes : deux lignes de 34
+  // (16 + 2 + 16) séparées par 12 de part et d'autre du filet, plus 8 de marge
+  // haute et basse = 108. D'où l'interligne resserré à 16 : les variantes
+  // imposent 21 et 18, ce qui gonflerait chaque ligne de 7.
+  routePlain: { paddingVertical: 8, gap: 12 },
+  routePlainRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  routePlainCol: { flex: 1, gap: 2 },
+  routePlainTight: { lineHeight: 16 },
+  routePlainDivider: { height: 1, backgroundColor: Colors.borderSubtle, marginLeft: 32 },
 
   // ActionPill.
   pill: {

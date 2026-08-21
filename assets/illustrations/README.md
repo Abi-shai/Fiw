@@ -20,6 +20,32 @@ Ne jamais poser une vue de dessus sur une carte gamme, ni une vue isométrique
 sur la carte : c'est le partage observé chez toutes les références du
 [benchmark carte](../../docs/benchmark-carte-mobbin.md).
 
+## ⚠️ Deux pièges à connaître avant de retoucher ce jeu
+
+**1. Les variantes `moto` et `vélo` sont interverties dans Figma** (constaté le
+14 août 2026, sur la vue `Default`). La variante nommée `mobility option=moto`
+contient **le vélo**, et celle nommée `mobility option=vélo` contient **la
+moto** ; leurs calques internes portent eux aussi le nom de l'autre. Les vues
+`top view` sont, elles, correctement nommées. Un portage qui fait confiance au
+nom de variante intervertit les deux véhicules dans toute l'app. Les tableaux
+ci-dessous donnent le **bon** appariement. Tant que Figma n'est pas corrigé,
+vérifier le dessin, pas l'étiquette.
+
+**2. Les exports Figma de ces composants ne sont pas transparents.** Le rendu
+d'un nœud incruste le fond de la page (`#E3E3E3`) — y compris quand on exporte
+le rectangle porteur, et pas seulement la variante. Les assets **ne peuvent
+donc pas** être produits par un simple export. La méthode qui marche : prendre
+le **bitmap source** (transparent, ~1024 px), lui appliquer le cadrage du
+composant (`imageTransform` du fill, `scaleMode: CROP` — la zone visible va de
+`(tx, ty)` à `(tx + a, ty + d)` en coordonnées normalisées), puis la rotation
+du nœud et de son parent, et enfin `trim-alpha.py`.
+
+## Doctrine des deux vues : le pilote
+
+Depuis le 14 août 2026, le pilote ne figure **que sur la vue de dessus**. Les
+`Default` montrent le véhicule seul. La carte gamme vend une machine ; la carto
+suit quelqu'un.
+
 ## Vue `Default` — tailles, le point à ne pas rater
 
 Chaque variante occupe un emplacement de **68 × 68** dans le composant, mais
@@ -31,8 +57,8 @@ son expressivité à la carte. Les valeurs sont dans `ILLO_SIZES`
 
 | Variante | Taille de rendu (emplacement 68) | Asset app | État Figma |
 | --- | --- | --- | --- |
-| `moto` | 59 × 76 | `gamme-moto.png` | **nouveau rendu 3D** ([`55:63`](https://www.figma.com/design/MsKt5tJdmMUWIDTRtPh6L1/Fiw?node-id=199-886)) |
-| `velo` | 47 × 76 | `gamme-velo.png` | **nouveau rendu 3D** ([`198:750`](https://www.figma.com/design/MsKt5tJdmMUWIDTRtPh6L1/Fiw?node-id=198-750)) |
+| `moto` | **106 × 87** | `gamme-moto.png` | **redessinée le 14 août 2026, sans pilote** — source [`198:750`](https://www.figma.com/design/MsKt5tJdmMUWIDTRtPh6L1/Fiw?node-id=198-750) ⚠️ variante **nommée `vélo`** dans Figma |
+| `velo` | **78 × 76** | `gamme-velo.png` | **redessinée le 14 août 2026, sans pilote** — source [`55:63`](https://www.figma.com/design/MsKt5tJdmMUWIDTRtPh6L1/Fiw?node-id=55-63) ⚠️ variante **nommée `moto`** dans Figma |
 | `auto` | 93 × 76 | `gamme-auto.png` | inchangée (isométrique à plat) |
 | `covoiturage` | 93 × 76 | `gamme-covoit.png` | inchangée |
 | `luxe` | 93 × 76 | `gamme-luxe.png` | variante masquée dans le jeu — asset conservé |
@@ -51,8 +77,8 @@ tourné d'un quart de tour ferait rouler toute une gamme en crabe.
 
 | Variante | Taille Figma | Ratio l/L (asset) | Asset app | Master |
 | --- | --- | --- | --- | --- |
-| `moto` | 37 × 76 | 0,500 | `top-moto.png` | `mobility-moto-top@1024.png` |
-| `velo` | 28 × 77 | 0,375 | `top-velo.png` | `mobility-velo-top@1024.png` |
+| `moto` | 34 × 77 | **0,385** | `top-moto.png` | `mobility-moto-top@1024.png` |
+| `velo` | 51 × 76 | **0,510** | `top-velo.png` | `mobility-velo-top@1024.png` |
 | `auto` | 38 × 76 | 0,549 | `top-auto.png` | `mobility-auto-top@1024.png` |
 | `luxe` | 38 × 76 | 0,497 | `top-luxe.png` | `mobility-luxe-top@1024.png` |
 | `covoiturage` | 38 × 76 | 0,569 | `top-covoit.png` | `mobility-covoit-top@1024.png` |
@@ -74,8 +100,17 @@ Le critère de lisibilité est donc la **largeur apparente**, pas la longueur.
 | Véhicule | Suivi (L) | Figurants (L) | Pivot | Inclinaison | Bande avant | Braquage |
 | --- | --- | --- | --- | --- | --- | --- |
 | `auto` · `luxe` · `covoiturage` | 48 | 34 | 0,68 | — | — | — |
-| `moto` | 60 | 43 | 0,72 | 14 % | 24 % | 26° |
-| `velo` | 63 | 44 | 0,75 | 16 % | 22 % | 28° |
+| `moto` | 78 | 56 | 0,72 | 14 % | 24 % | 26° |
+| `velo` | 46 | 32 | 0,75 | 16 % | 22 % | 28° |
+
+Les longueurs des deux-roues ont été **recalculées le 14 août 2026** après le
+redessin : elles conservent la largeur apparente validée sur le terrain (moto
+30 px, vélo 23,6 px), puisque c'est elle le critère. Le nouveau ratio fait donc
+rallonger la moto (60 → 78) et raccourcir le vélo (63 → 46) — ce dernier gagne
+en envergure ce qu'il perd en longueur, le cycliste y écartant les bras. La
+**bande avant est inchangée** : vérifiée au profil alpha sur les nouveaux
+dessins, elle ne contient toujours que la roue, le guidon et les mains
+n'arrivant qu'à ~30 % de la longueur.
 
 Les longueurs diffèrent, les largeurs se rejoignent (24–30 px). Valeurs dans
 `TOPVIEW_MARKER` (`apps/fiw/constants/illustrations.ts`). Ce calibre passe
