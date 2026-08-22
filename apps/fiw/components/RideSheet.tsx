@@ -30,7 +30,7 @@ import { gammeIllustration, type IlluKey } from '@/constants/illustrations';
  */
 
 // Rayon des cartes groupées : 20 dans les maquettes (palier propre à ce motif).
-export const CARD_RADIUS = 20;
+export const CARD_RADIUS = Radii.card;
 // Interstice gris entre cartes (= fond `track` qui transparaît).
 export const CARD_GAP = 6;
 

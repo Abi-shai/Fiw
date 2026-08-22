@@ -183,6 +183,7 @@ Base : **4px**. Tous les espacements internes (padding, margin, gap) sont des mu
 | `radius-sm` | 8px | Tags, badges |
 | `radius-md` | 12px | Boutons, **champs de saisie & SearchBar**, cards |
 | `radius-lg` | 16px | Grandes cartes |
+| `radius-card` | 20px | **Cartes de feuille** — `SheetCard`, `VehicleBlock`, `VehicleGroup`, `InfoBanner`, `TotalBar`. Palier propre aux cartes empilées dans un `GroupedSheet` : entre `lg` et `xl`, il épouse le rayon 28 de la feuille sans le répéter. Exposé en code sous `Radii.card` (ex-constante locale `CARD_RADIUS`). |
 | `radius-xl` | 28px | **Bottom sheets, modals** |
 
 ---
@@ -254,7 +255,7 @@ Deux familles : **pleine** (fond de couleur, pour le CTA) et **transparente** (s
 
 **Bibliothèque** : [Phosphor Icons](https://phosphoricons.com) via `phosphor-react-native` (+ `react-native-svg`). Exposée **uniquement** via l'atome `Icon` (sous-ensemble nommé et curé) — jamais d'import direct, pour empêcher le mélange de familles.
 
-- **Poids** : `bold` par défaut partout — outline à trait épais, style graphique affirmé cohérent avec le logo et les éléments de marque (on évite le trait fin de `regular`). `fill` réservé aux états **actifs/sélectionnés** (onglet courant, marqueur carte actif, favori activé, étoile pleine) — emphase au-dessus du `bold`. Ni `regular` ni `duotone` ne sont utilisés comme style de base.
+- **Poids** : exposé dans Figma comme axe `Weight=bold | fill` du set `Icon` (71 glyphes × 2 poids = 142 variantes, géométrie extraite de `phosphor-react-native`). `bold` par défaut partout — outline à trait épais, style graphique affirmé cohérent avec le logo et les éléments de marque (on évite le trait fin de `regular`). `fill` réservé aux états **actifs/sélectionnés** (onglet courant, marqueur carte actif, favori activé, étoile pleine) — emphase au-dessus du `bold`. Ni `regular` ni `duotone` ne sont utilisés comme style de base.
 - Taille standard dans les boutons : 18px
 - Taille standard inline (texte) : 16px
 - Taille grande (actions flottantes, écrans vides) : 24px
