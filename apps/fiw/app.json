@@ -26,6 +26,13 @@
     "plugins": [
       "expo-router",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c8244fd3-d597-411f-a78d-25aa26a6f90c"
+      }
+    },
+    "owner": "yp-abishai"
   }
 }
