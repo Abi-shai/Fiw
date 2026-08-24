@@ -3,7 +3,7 @@ import { View, ScrollView, StyleSheet, TouchableOpacity, type StyleProp, type Vi
 import * as Haptics from 'expo-haptics';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import { Colors, Radii, Strokes } from '@/constants/tokens';
 
 export type ChipItem = { id: string; label: string; icon?: IconName; hint?: string };
 
@@ -49,9 +49,8 @@ export default function ChipGroup({ items, value, onChange, showHint, scrollable
           />
         )}
         <Text
-          variant="bodySmall"
+          variant={active ? 'infoValue' : 'bodySmall'}
           color={active ? Colors.primaryPressed : Colors.textPrimary}
-          style={active ? styles.labelActive : undefined}
         >
           {item.label}
         </Text>
@@ -86,13 +85,19 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   scrollRow: { flexDirection: 'row', gap: 8 },
   chip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 14, paddingVertical: 9,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 12, paddingVertical: 8,
     borderRadius: Radii.pill,
     backgroundColor: Colors.track,
-    borderWidth: 1.5, borderColor: 'transparent',
   },
-  chipActive: { backgroundColor: Colors.primarySubtle, borderColor: Colors.primary },
-  labelActive: { fontFamily: Outfit.semibold },
+  // Le liseré de l'état actif est INTÉRIEUR dans la maquette : il ne pousse pas
+  // l'empreinte. En RN il s'ajoute, donc le padding le compense — la chip garde
+  // la même largeur d'un état à l'autre, seule sa hauteur suit l'interligne du
+  // libellé (18 au repos, 20 en actif).
+  chipActive: {
+    backgroundColor: Colors.primarySubtle,
+    borderWidth: Strokes.medium, borderColor: Colors.primary,
+    paddingHorizontal: 12 - Strokes.medium, paddingVertical: 8 - Strokes.medium,
+  },
   hint: { marginTop: 8 },
 });

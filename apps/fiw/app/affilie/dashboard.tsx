@@ -7,7 +7,7 @@ import IconButton from '@/components/IconButton';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
-import { Colors, Radii, Spacing, Shadows } from '@/constants/tokens';
+import { Colors, Radii, Spacing, Shadows, Strokes } from '@/constants/tokens';
 import { AMBASSADEUR, COMMISSIONS, WITHDRAW_MIN, fcfa } from '@/constants/affilie';
 
 type Stat = { key: string; icon: IconName; value: string; label: string };
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: Spacing[4],
     paddingTop: Spacing[3],
-    borderTopWidth: 1,
+    borderTopWidth: Strokes.thin,
     borderTopColor: 'rgba(255,255,255,0.25)',
   },
   lockNoteText: { flex: 1, opacity: 0.9 },
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     flexBasis: '47%',
     backgroundColor: Colors.surface,
     borderRadius: Radii.md,
-    borderWidth: 1,
+    borderWidth: Strokes.thin,
     borderColor: Colors.borderSubtle,
     padding: Spacing[4],
     gap: Spacing[2],
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing[3],
   },
   commBorder: {
-    borderTopWidth: 1,
+    borderTopWidth: Strokes.thin,
     borderTopColor: Colors.borderSubtle,
   },
   commIcon: {

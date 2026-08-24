@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Pressable, Animated, StyleSheet, ActivityIndicator, ViewStyle, View } from 'react-native';
-import { Colors, Radii, Shadows, Outfit } from '@/constants/tokens';
+import { Colors, Radii, Shadows, type TextVariant, Strokes } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 
@@ -63,11 +63,20 @@ const BORDER: Partial<Record<Variant, string>> = {
   secondary: Colors.border,
 };
 
-// Hauteurs « pouce-friendly » (cibles tactiles ≥ 48px) + typo par taille.
-const SIZING: Record<Size, { height: number; padX: number; font: number; family: string; icon: number; gap: number }> = {
-  lg: { height: 56, padX: 28, font: 16, family: Outfit.semibold, icon: 20, gap: 10 },
-  md: { height: 48, padX: 20, font: 15, family: Outfit.semibold, icon: 18, gap: 8 },
-  sm: { height: 40, padX: 16, font: 14, family: Outfit.medium,   icon: 16, gap: 6 },
+// Hauteurs « pouce-friendly » (cibles tactiles ≥ 48px) + géométrie par taille.
+const SIZING: Record<Size, { height: number; padX: number; icon: number; gap: number }> = {
+  lg: { height: 56, padX: 28, icon: 20, gap: 10 },
+  md: { height: 48, padX: 20, icon: 18, gap: 8 },
+  sm: { height: 40, padX: 16, icon: 16, gap: 6 },
+};
+
+// Typo du libellé : une variante par (taille × lien). Les variantes `link`
+// descendent d'une graisse — le lien se lit comme du texte, pas comme un plein.
+// `sm` est déjà en Medium, les deux colonnes y coïncident.
+const LABEL: Record<Size, { plain: TextVariant; link: TextVariant }> = {
+  lg: { plain: 'bodySemibold', link: 'bodyMedium' },
+  md: { plain: 'buttonMd',     link: 'buttonMdLink' },
+  sm: { plain: 'buttonSm',     link: 'buttonSm' },
 };
 
 export default function Button({
@@ -99,7 +108,7 @@ export default function Button({
           { backgroundColor: pressed ? BG[variant].pressed : BG[variant].rest },
           // Contour des variantes à fond transparent (secondary = gris neutre,
           // destructive = rouge Error).
-          BORDER[variant] && { borderWidth: 1.5, borderColor: BORDER[variant] },
+          BORDER[variant] && { borderWidth: Strokes.medium, borderColor: BORDER[variant] },
           filled && !isDisabled && Shadows.sm,
           isDisabled && styles.disabled,
           isLink && pressed && styles.linkPressed,
@@ -110,7 +119,7 @@ export default function Button({
         ) : (
           <View style={[styles.content, { gap: s.gap }]}>
             {icon && <Icon name={icon} size={s.icon} color={fg} />}
-            <Text variant="label" color={fg} style={{ fontFamily: isLink ? Outfit.medium : s.family, fontSize: s.font }}>{label}</Text>
+            <Text variant={LABEL[size][isLink ? 'link' : 'plain']} color={fg}>{label}</Text>
             {trailingIcon && <Icon name={trailingIcon} size={s.icon} color={fg} />}
           </View>
         )}

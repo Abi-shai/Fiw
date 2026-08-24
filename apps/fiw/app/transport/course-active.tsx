@@ -6,17 +6,22 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import LeafletMap, { LeafletMapHandle } from '@/components/LeafletMap';
-import { Handle, SHEET_RADIUS } from '@/components/Sheet';
+import { CARD_GAP, Handle, SHEET_RADIUS, SheetCard, groupedSheetSurface } from '@/components/Sheet';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 import Button from '@/components/Button';
 import BottomSheet from '@/components/BottomSheet';
-import {
-  groupedSheetSurface, SheetCard, VehicleGroup, RouteCard, InfoBanner, ActionPill, CARD_GAP,
-} from '@/components/RideSheet';
+import ActionPill from '@/components/ActionPill';
+import ActionTile, { ActionTileRow } from '@/components/ActionTile';
+import AlertBadge from '@/components/AlertBadge';
+import Divider from '@/components/Divider';
+import InfoBanner from '@/components/InfoBanner';
+import InfoRow from '@/components/InfoRow';
+import RouteCard from '@/components/RouteCard';
+import VehicleGroup from '@/components/VehicleGroup';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
 import { Colors, Radii, Outfit } from '@/constants/tokens';
-import { DRIVER, MOTO_DRIVER, DAKAR_CENTER, WAIT_FEE_PER_MIN } from '@/constants/data';
+import { PRESTATAIRE, PRESTATAIRE_MOTO, DAKAR_CENTER, WAIT_FEE_PER_MIN } from '@/constants/data';
 import { payIllustration, topviewSprite, type IlluKey } from '@/constants/illustrations';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -40,7 +45,7 @@ const STEPS: { key: StepKey; duration: number }[] = [
   { key: 'finished', duration: 0 },
 ];
 
-const DRIVER_START = { lat: 14.7100, lng: -17.4500 };
+const PRESTATAIRE_START = { lat: 14.7100, lng: -17.4500 };
 // Délai gratuit COMPRESSÉ pour la démo (règle réelle : WAIT_GRACE_MINUTES).
 const GRACE_SECONDS_SIM = 3;
 
@@ -61,18 +66,18 @@ function getMapConfig(stepKey: StepKey, destLat: number, destLng: number) {
   switch (stepKey) {
     case 'en_route':
       return {
-        center: { lat: (DRIVER_START.lat + DAKAR_CENTER.lat) / 2, lng: (DRIVER_START.lng + DAKAR_CENTER.lng) / 2 },
+        center: { lat: (PRESTATAIRE_START.lat + DAKAR_CENTER.lat) / 2, lng: (PRESTATAIRE_START.lng + DAKAR_CENTER.lng) / 2 },
         zoom: 13,
         markers: [
           { lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'origin' as const },
-          { lat: DRIVER_START.lat, lng: DRIVER_START.lng, type: 'driver' as const },
+          { lat: PRESTATAIRE_START.lat, lng: PRESTATAIRE_START.lng, type: 'prestataire' as const },
         ],
-        route: { from: DRIVER_START, to: DAKAR_CENTER, animateDuration: 54000 },
+        route: { from: PRESTATAIRE_START, to: DAKAR_CENTER, animateDuration: 54000 },
       };
     case 'arrived':
       return {
         center: DAKAR_CENTER, zoom: 16,
-        markers: [{ lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'driver' as const }],
+        markers: [{ lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'prestataire' as const }],
         route: undefined,
       };
     case 'in_progress':
@@ -80,7 +85,7 @@ function getMapConfig(stepKey: StepKey, destLat: number, destLng: number) {
         center: { lat: (DAKAR_CENTER.lat + destLat) / 2, lng: (DAKAR_CENTER.lng + destLng) / 2 },
         zoom: 13,
         markers: [
-          { lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'driver' as const },
+          { lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'prestataire' as const },
           { lat: destLat, lng: destLng, type: 'destination' as const },
         ],
         route: { from: DAKAR_CENTER, to: { lat: destLat, lng: destLng }, animateDuration: 59000 },
@@ -97,7 +102,7 @@ export default function CourseActiveScreen() {
     destLat: string; destLng: string;
   }>();
 
-  const driver = params.gammeId === 'moto' ? MOTO_DRIVER : DRIVER;
+  const prestataire = params.gammeId === 'moto' ? PRESTATAIRE_MOTO : PRESTATAIRE;
   const illu = (params.gammeIllu || (params.gammeId === 'moto' ? 'moto' : 'auto')) as IlluKey;
   // Le véhicule suivi porte la gamme commandée, vu du dessus : c'est LUI qu'on
   // regarde rouler, pivoter aux carrefours et remonter la rue jusqu'au client.
@@ -116,10 +121,10 @@ export default function CourseActiveScreen() {
   const mapRef = useRef<LeafletMapHandle>(null);
 
   // Actions de comm/sécurité — aucun numéro brut du prestataire n'est exposé.
-  const onCall = () => router.push({ pathname: '/transport/call', params: { name: driver.name } });
-  const onChat = () => router.push({ pathname: '/transport/chat', params: { name: driver.name } });
+  const onCall = () => router.push({ pathname: '/transport/call', params: { name: prestataire.name } });
+  const onChat = () => router.push({ pathname: '/transport/chat', params: { name: prestataire.name } });
   const onShare = () => {
-    Share.share({ message: `Suivez ma course Fiw en direct : https://fiw.sn/suivi/${driver.plate.replace(/-/g, '')}` });
+    Share.share({ message: `Suivez ma course Fiw en direct : https://fiw.sn/suivi/${prestataire.plate.replace(/-/g, '')}` });
   };
   const onSos = () => setSosOpen(true);
 
@@ -269,44 +274,45 @@ export default function CourseActiveScreen() {
                   Vous payez {WAIT_FEE_PER_MIN}F de frais d'attente dans {mmss(graceRemaining)}
                 </InfoBanner>
               ) : (
-                <InfoBanner icon="coins" tone="warn">
+                <InfoBanner icon="coins" tone="alerte">
                   Frais d'attente en cours · {fmt(waitFrais)} F
                 </InfoBanner>
               )
             )}
-            <VehicleGroup driver={driver} illu={illu} onPress={expand} />
+            <VehicleGroup prestataire={prestataire} illu={illu} onPress={expand} />
           </SheetCard>
 
           {/* InfosCourse — titre + itinéraire à plat + paiement (maquette 271:1288). */}
           <SheetCard>
             <Text variant="heading2">Détails de la course</Text>
             <RouteCard
-              plain
               departure="Ma position actuelle"
               destination={params.destName}
             />
-            <View style={styles.paymentRow}>
-              <View style={styles.paymentLeft}>
+            <Divider />
+            <InfoRow
+              label="Paiement"
+              value={`${fmt(currentPrice)} F`}
+              emphase="montant"
+              leading={
                 <Image
                   source={payIllustration(params.paymentId)}
-                  style={styles.paymentIllu}
+                  style={styles.payIllu}
                   resizeMode="contain"
                 />
-                <Text variant="body">Paiement</Text>
-              </View>
-              <Text style={styles.paymentAmount}>{fmt(currentPrice)} F</Text>
-            </View>
+              }
+            />
           </SheetCard>
 
           {/* Actions — contacts, urgence, annulation. Dernière carte : blanc
               jusqu'en bas (zone sûre absorbée), pas de vide gris. */}
           <SheetCard style={[styles.lastCard, { paddingBottom: 20 + insets.bottom }]}>
-            <View style={styles.tilesRow}>
+            <ActionTileRow>
               <ActionTile icon="phone" label="Appeler" onPress={onCall} />
               <ActionTile icon="chat" label="Chat" onPress={onChat} />
               <ActionTile icon="share" label="Partager" onPress={onShare} />
               <ActionTile icon="sos" label="Urgence" danger onPress={onSos} />
-            </View>
+            </ActionTileRow>
             <Button
               label="Annuler la course"
               variant="destructive"
@@ -319,13 +325,10 @@ export default function CourseActiveScreen() {
       {/* Confirmation d'annulation — dissuade (prestataire déjà en route),
           action primaire = garder, action destructive = annuler (façon Bolt/Uber). */}
       {cancelOpen && (
-        <BottomSheet onClose={() => setCancelOpen(false)}>
+        <BottomSheet title="Annuler la course ?" onClose={() => setCancelOpen(false)}>
           {(close) => (
             <View style={styles.cancelSheet}>
-              <View style={styles.cancelBadge}>
-                <Icon name="car" size={28} weight="bold" color={Colors.error} />
-              </View>
-              <Text variant="heading1" align="center">Annuler la course ?</Text>
+              <AlertBadge icon="car" />
               <Text variant="body" color={Colors.textSecondary} align="center" style={styles.cancelText}>
                 Votre chauffeur est déjà en route vers vous. Annuler maintenant peut allonger votre prochaine attente.
               </Text>
@@ -346,9 +349,7 @@ export default function CourseActiveScreen() {
         <BottomSheet title="Alerte SOS envoyée" onClose={() => setSosOpen(false)}>
           {(close) => (
             <View style={styles.sosSheet}>
-              <View style={styles.sosBadge}>
-                <Icon name="sos" size={28} weight="fill" color={Colors.error} />
-              </View>
+              <AlertBadge icon="sos" weight="fill" />
               <Text variant="body" color={Colors.textSecondary} align="center" style={styles.sosText}>
                 Votre position a été partagée avec vos contacts de confiance et le service de sécurité Fiw. Un agent vous contacte immédiatement.
               </Text>
@@ -361,21 +362,10 @@ export default function CourseActiveScreen() {
   );
 }
 
-/* Tuile d'action (contact / sécurité) — icône + libellé, fond `bg` (maquette). */
-function ActionTile({ icon, label, danger, onPress }: {
-  icon: IconName; label: string; danger?: boolean; onPress?: () => void;
-}) {
-  const color = danger ? Colors.error : Colors.primary;
-  return (
-    <TouchableOpacity style={[styles.tile, danger && styles.tileDanger]} onPress={onPress} activeOpacity={0.85}>
-      <Icon name={icon} size={20} color={color} weight={danger ? 'fill' : 'bold'} />
-      <Text variant="caption" color={danger ? Colors.error : Colors.textPrimary}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  payIllu: { width: 24, height: 16 },
   flex1: { flex: 1 },
 
   // Feuille de suivi à 3 crans — géométrie GroupedSheet (fond track, aucun padding
@@ -407,43 +397,15 @@ const styles = StyleSheet.create({
   // libellé, et la ligne devient une carte pleine : c'est elle qui porte le
   // fond maintenant que l'itinéraire a perdu le sien. Rayon 20 : la maquette
   // le demande et l'échelle saute de 16 (`lg`) à 28 (`xl`), donc pas de token.
-  paymentRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: Colors.bg,
-    borderRadius: 20,
-    padding: 12,
-  },
-  paymentLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  paymentAmount: { fontFamily: Outfit.bold, fontSize: 20, lineHeight: 28, color: Colors.primary },
-  paymentIllu: { width: 40, height: 26 },
 
-  tilesRow: { flexDirection: 'row', gap: 8 },
-  tile: {
-    flex: 1, alignItems: 'center', gap: 8,
-    paddingVertical: 12,
-    backgroundColor: Colors.bg,
-    borderRadius: Radii.md,
-  },
-  tileDanger: { backgroundColor: Colors.errorSubtle },
 
   // Confirmation d'annulation.
   cancelSheet: { alignItems: 'center', gap: 10, paddingTop: 4, paddingBottom: 8 },
-  cancelBadge: {
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: Colors.errorSubtle,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 4,
-  },
   cancelText: { maxWidth: 320, marginBottom: 6 },
   cancelBtn: { alignSelf: 'stretch' },
 
   // SOS.
   sosSheet: { alignItems: 'center', gap: 14, paddingTop: 4, paddingBottom: 8 },
-  sosBadge: {
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: Colors.errorSubtle,
-    alignItems: 'center', justifyContent: 'center',
-  },
   sosText: { maxWidth: 300 },
   sosCta: { alignSelf: 'stretch', marginTop: 4 },
 });

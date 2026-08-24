@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import Text from '@/components/Text';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import { Colors, Radii, Strokes } from '@/constants/tokens';
 
 type Props = {
   /** Code court (ex. « 4832 ») — un caractère par case. */
@@ -19,7 +19,7 @@ export default function CodePill({ code, style }: Props) {
     <View style={[styles.row, style]}>
       {code.split('').map((char, i) => (
         <View key={`${char}-${i}`} style={styles.cell}>
-          <Text style={styles.digit}>{char}</Text>
+          <Text variant="codeCell">{char}</Text>
         </View>
       ))}
     </View>
@@ -30,10 +30,9 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 8, justifyContent: 'center' },
   cell: {
     width: 52, height: 60,
-    borderRadius: Radii.md,
-    backgroundColor: Colors.surface,
-    borderWidth: 1.5, borderColor: Colors.border,
+    borderRadius: Radii.lg,
+    backgroundColor: Colors.borderSubtle,
+    borderWidth: Strokes.medium, borderColor: Colors.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  digit: { fontFamily: Outfit.bold, fontSize: 28, lineHeight: 36, color: Colors.textPrimary },
 });

@@ -3,17 +3,17 @@ import {
   View, StyleSheet, ScrollView, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import { Colors, Radii, inputTypo, Strokes } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
 import Text from '@/components/Text';
 import IconButton from '@/components/IconButton';
 
-type Msg = { id: string; from: 'me' | 'driver'; text: string };
+type Msg = { id: string; from: 'me' | 'prestataire'; text: string };
 
 const INITIAL: Msg[] = [
-  { id: 'm1', from: 'driver', text: 'Bonjour, je suis en route vers vous.' },
+  { id: 'm1', from: 'prestataire', text: 'Bonjour, je suis en route vers vous.' },
   { id: 'm2', from: 'me', text: "D'accord, merci beaucoup." },
-  { id: 'm3', from: 'driver', text: 'Je serai là dans quelques minutes.' },
+  { id: 'm3', from: 'prestataire', text: 'Je serai là dans quelques minutes.' },
 ];
 
 const REPLY = 'Bien reçu, à tout de suite.';
@@ -35,7 +35,7 @@ export default function ChatScreen() {
     setDraft('');
     setTimeout(() => {
       counter.current += 1;
-      setMessages((prev) => [...prev, { id: `m${counter.current}`, from: 'driver', text: REPLY }]);
+      setMessages((prev) => [...prev, { id: `m${counter.current}`, from: 'prestataire', text: REPLY }]);
     }, 1200);
   };
 
@@ -85,13 +85,13 @@ const styles = StyleSheet.create({
   bubbleDriver: {
     alignSelf: 'flex-start',
     backgroundColor: Colors.surface,
-    borderWidth: 1, borderColor: Colors.border,
+    borderWidth: Strokes.thin, borderColor: Colors.border,
     borderBottomLeftRadius: Radii.sm,
   },
   inputRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingHorizontal: 16, paddingVertical: 10, paddingBottom: 24,
-    borderTopWidth: 1, borderTopColor: Colors.borderSubtle,
+    borderTopWidth: Strokes.thin, borderTopColor: Colors.borderSubtle,
     backgroundColor: Colors.surface,
   },
   input: {
@@ -99,6 +99,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg,
     borderRadius: Radii.pill,
     paddingHorizontal: 16,
-    fontFamily: Outfit.regular, fontSize: 15, color: Colors.textPrimary,
+    ...inputTypo('body'), color: Colors.textPrimary,
   },
 });

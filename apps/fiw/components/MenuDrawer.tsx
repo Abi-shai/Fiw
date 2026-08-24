@@ -9,7 +9,7 @@ import * as Haptics from 'expo-haptics';
 import Avatar from '@/components/Avatar';
 import Icon, { type IconName } from '@/components/Icon';
 import Text from '@/components/Text';
-import { Colors, Radii, Shadows } from '@/constants/tokens';
+import { Colors, Radii, Shadows, Strokes } from '@/constants/tokens';
 import { CLIENT } from '@/constants/data';
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: Radii.pill,
     paddingVertical: 8, paddingHorizontal: 12,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: Colors.hairline,
+    borderWidth: Strokes.hairline, borderColor: Colors.hairline,
     ...Shadows.float,
   },
   // Pied de menu épinglé
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 8,
     backgroundColor: Colors.primarySubtle, // carte claire, dans le mood de la sidebar
-    borderWidth: 1,
+    borderWidth: Strokes.thin,
     borderColor: Colors.blue100,
     borderRadius: Radii.lg,
     paddingVertical: 12,

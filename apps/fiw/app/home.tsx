@@ -12,14 +12,15 @@ import * as Haptics from 'expo-haptics';
 import LeafletMap, { LeafletMapHandle } from '@/components/LeafletMap';
 import MenuDrawer from '@/components/MenuDrawer';
 import IconButton from '@/components/IconButton';
-import PlaceRow from '@/components/PlaceRow';
+import ListRow from '@/components/ListRow';
+import Medallion from '@/components/Medallion';
 import Button from '@/components/Button';
 import Scrim from '@/components/Scrim';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 import { Handle, SheetHeader, sheetSurface } from '@/components/Sheet';
 import { useSnapSheet, SHEET_SPRING } from '@/hooks/useSnapSheet';
-import { Colors, Radii, Outfit, Shadows } from '@/constants/tokens';
+import { Colors, Radii, Shadows, inputTypo, Strokes } from '@/constants/tokens';
 import { DAKAR_CENTER, SUGGESTIONS, RECENT_PLACES } from '@/constants/data';
 import { usePlaces } from '@/stores/places';
 
@@ -333,7 +334,7 @@ function AffiliePromo({ onPress, onDismiss }: { onPress: () => void; onDismiss: 
           </View>
         </View>
         <View style={styles.promoText}>
-          <Text variant="body" style={styles.promoTitle}>Gagnez de l’argent avec Fiw !</Text>
+          <Text variant="bodyMedium">Gagnez de l’argent avec Fiw !</Text>
           <Text variant="body" color={Colors.textSecondary} style={styles.promoSubtitle}>
             Et si vous deveniez un affilié réseau ?
           </Text>
@@ -742,7 +743,7 @@ export default function HomeScreen() {
                     autoFocus
                   />
                 ) : (
-                  <Text variant="body" style={styles.fieldValue} numberOfLines={1}>{departureName}</Text>
+                  <Text variant="bodyMedium" style={styles.fieldValue} numberOfLines={1}>{departureName}</Text>
                 )}
               </View>
               {activeField === 'departure' && (
@@ -783,11 +784,11 @@ export default function HomeScreen() {
               keyboardShouldPersistTaps="handled"
               contentContainerStyle={{ paddingBottom: kbHeight + insets.bottom + 16, paddingTop: 8 }}
               renderItem={({ item }) => (
-                <PlaceRow
-                  icon={item.icon}
-                  accent={item.accent}
+                <ListRow
+                  leading={<Medallion icon={item.icon} ton={item.accent ? 'accent' : 'neutre'} />}
                   title={item.title}
                   subtitle={item.subtitle}
+                  trailing={null}
                   onPress={() => handleSelect(item.place)}
                 />
               )}
@@ -828,12 +829,11 @@ export default function HomeScreen() {
               {/* Recents */}
               <Text variant="caption" color={Colors.textTertiary} style={styles.sectionLabel}>Récemment</Text>
               {RECENTS.map((r) => (
-                <PlaceRow
+                <ListRow
                   key={r.name}
-                  icon="clock"
+                  leading={<Medallion icon="clock" />}
                   title={r.name}
                   subtitle={r.detail}
-                  trailing="chevronRight"
                   onPress={() => openConfigure('transport', r, departureName)}
                 />
               ))}
@@ -928,7 +928,6 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '30deg' }],
   },
   promoText: { flex: 1, gap: 3, overflow: 'hidden' },
-  promoTitle: { fontFamily: Outfit.medium, lineHeight: 19 },
   promoSubtitle: { lineHeight: 19 },
   promoClose: {
     position: 'absolute',
@@ -936,7 +935,7 @@ const styles = StyleSheet.create({
     width: 38, height: 38,
     borderRadius: 19,
     backgroundColor: Colors.surface,
-    borderWidth: 2,
+    borderWidth: Strokes.thick,
     borderColor: Colors.blue100,
     alignItems: 'center',
     justifyContent: 'center',
@@ -953,7 +952,7 @@ const styles = StyleSheet.create({
     padding: 5,
     gap: 10,
     backgroundColor: Colors.track,
-    borderWidth: 1,
+    borderWidth: Strokes.thin,
     borderColor: 'rgba(242, 243, 245, 0.5)',
   },
 
@@ -1020,15 +1019,15 @@ const styles = StyleSheet.create({
     paddingLeft: 16,
     paddingRight: 8,
     minHeight: 60,
-    borderWidth: 1.5,
+    borderWidth: Strokes.medium,
     borderColor: 'transparent',
     marginBottom: 12,
   },
   fieldA: { marginBottom: 4 },
   fieldIcon: { width: 28, alignItems: 'center' },
   fieldBody: { flex: 1, paddingVertical: 10 },
-  fieldValue: { marginTop: 1, fontFamily: Outfit.medium },
-  fieldInput: { fontSize: 15, color: Colors.textPrimary, fontFamily: Outfit.medium, marginTop: 1, padding: 0 },
+  fieldValue: { marginTop: 1 },
+  fieldInput: { ...inputTypo('bodyMedium'), color: Colors.textPrimary, marginTop: 1, padding: 0 },
   fieldActive: { borderColor: Colors.primary, backgroundColor: Colors.primarySubtle },
 
   // Bouton « Choisir sur la carte », présent à droite du champ actif.
@@ -1038,7 +1037,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    borderWidth: Strokes.thin,
     borderColor: Colors.border,
   },
 

@@ -54,7 +54,7 @@ export const RECENT_PLACES = [
   { id: 'r-2', name: 'Aéroport AIBD', detail: 'Rufisque', lat: 14.6740, lng: -17.0730 },
 ];
 
-export const DRIVER = {
+export const PRESTATAIRE = {
   name: 'Moussa Diallo',
   vehicle: 'Toyota Corolla',
   color: 'Blanche',
@@ -65,7 +65,7 @@ export const DRIVER = {
   emoji: '👨🏾',
 };
 
-export const MOTO_DRIVER = {
+export const PRESTATAIRE_MOTO = {
   name: 'Ibrahima Sy',
   vehicle: 'Yamaha FZ',
   color: 'Rouge',
@@ -280,31 +280,31 @@ export const WAIT_FEE_PER_MIN = 100;
 export const COURSE_HISTORY: {
   id: string; date: string; destName: string; destDetail: string;
   gammeId: string; gammeLabel: string;
-  driverName: string; driverPlate: string; vehicle: string; paymentLabel: string;
+  prestataireName: string; prestatairePlate: string; vehicle: string; paymentLabel: string;
   base: number; fraisRapprochement: number; fraisAttente: number; total: number;
 }[] = [
   {
     id: 'h-1', date: "Aujourd'hui · 14:32", destName: 'Almadies', destDetail: 'Dakar Ouest',
     gammeId: 'simple', gammeLabel: 'Taxi Auto',
-    driverName: 'Moussa Diallo', driverPlate: 'DK-4521-A', vehicle: 'Toyota Corolla Blanche', paymentLabel: 'Wave',
+    prestataireName: 'Moussa Diallo', prestatairePlate: 'DK-4521-A', vehicle: 'Toyota Corolla Blanche', paymentLabel: 'Wave',
     base: 1500, fraisRapprochement: 0, fraisAttente: 0, total: 1500,
   },
   {
     id: 'h-2', date: 'Hier · 08:15', destName: 'Aéroport AIBD', destDetail: 'Rufisque',
     gammeId: 'confort', gammeLabel: 'Taxi Auto Confort',
-    driverName: 'Awa Ndiaye', driverPlate: 'DK-3092-C', vehicle: 'Hyundai Accent Grise', paymentLabel: 'Orange Money',
+    prestataireName: 'Awa Ndiaye', prestatairePlate: 'DK-3092-C', vehicle: 'Hyundai Accent Grise', paymentLabel: 'Orange Money',
     base: 5200, fraisRapprochement: 350, fraisAttente: 200, total: 5750,
   },
   {
     id: 'h-3', date: '28 juin · 19:40', destName: 'Plateau', destDetail: 'Dakar Centre',
     gammeId: 'moto', gammeLabel: 'Taxi Moto',
-    driverName: 'Ibrahima Sy', driverPlate: 'DK-7734-B', vehicle: 'Yamaha FZ Rouge', paymentLabel: 'Espèces',
+    prestataireName: 'Ibrahima Sy', prestatairePlate: 'DK-7734-B', vehicle: 'Yamaha FZ Rouge', paymentLabel: 'Espèces',
     base: 800, fraisRapprochement: 0, fraisAttente: 0, total: 800,
   },
   {
     id: 'h-4', date: '25 juin · 12:05', destName: 'Parcelles Assainies', destDetail: 'Dakar Nord',
     gammeId: 'simple', gammeLabel: 'Taxi Auto',
-    driverName: 'Fatou Sarr', driverPlate: 'DK-1188-D', vehicle: 'Kia Picanto Bleue', paymentLabel: 'Wave',
+    prestataireName: 'Fatou Sarr', prestatairePlate: 'DK-1188-D', vehicle: 'Kia Picanto Bleue', paymentLabel: 'Wave',
     base: 2100, fraisRapprochement: 350, fraisAttente: 0, total: 2450,
   },
 ];

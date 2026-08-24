@@ -11,14 +11,15 @@ import BottomSheet from '@/components/BottomSheet';
 import IconButton from '@/components/IconButton';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
+import SearchBar from '@/components/SearchBar';
 import Button from '@/components/Button';
-import Avatar from '@/components/Avatar';
+import Avatar, { AVATAR_ROW } from '@/components/Avatar';
 import PaymentSheetContent from '@/components/PaymentSheet';
 import GammeCard from '@/components/GammeCard';
-import { Handle, SHEET_RADIUS } from '@/components/Sheet';
-import { groupedSheetSurface, SheetCard, RouteCard, CARD_GAP } from '@/components/RideSheet';
+import { CARD_GAP, Handle, SHEET_RADIUS, SheetCard, groupedSheetSurface } from '@/components/Sheet';
+import RouteCard from '@/components/RouteCard';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import { Colors, Radii, inputTypo, Typography, Strokes } from '@/constants/tokens';
 import {
   CONTACTS, DAKAR_CENTER, LIVRAISON_GAMMES, livraisonGamme, makeTrackingNumber, makeCodeRemise,
 } from '@/constants/data';
@@ -232,7 +233,6 @@ export default function LivraisonConfigureScreen() {
             {/* L'itinéraire rejoint l'en-tête : c'est le cadre de tout ce qui
                 suit, et il reste visible quand la feuille est repliée. */}
             <RouteCard
-              plain
               departure={departureName}
               destination={params.destName || ''}
               onEdit={editItinerary}
@@ -367,16 +367,13 @@ export default function LivraisonConfigureScreen() {
           {(close) => destMode === 'contacts' ? (
             <View style={{ paddingBottom: kbHeight }}>
               {/* Recherche dans le répertoire (réf. Careem). */}
-              <View style={styles.searchWrap}>
-                <Icon name="search" size={18} color={Colors.textTertiary} />
-                <TextInput
-                  style={styles.searchInput}
-                  value={contactQuery}
-                  onChangeText={setContactQuery}
-                  placeholder="Rechercher un nom ou un numéro…"
-                  placeholderTextColor={Colors.textTertiary}
-                />
-              </View>
+              <SearchBar
+                value={contactQuery}
+                onChangeText={setContactQuery}
+                onClear={() => setContactQuery('')}
+                placeholder="Rechercher un nom ou un numéro…"
+                style={styles.searchWrap}
+              />
               {contactMatches.map((c, i) => (
                 <View key={c.id}>
                   <TouchableOpacity
@@ -389,7 +386,7 @@ export default function LivraisonConfigureScreen() {
                       close();
                     }}
                   >
-                    <Avatar name={c.name} size={44} />
+                    <Avatar name={c.name} size={AVATAR_ROW} />
                     <View style={styles.flex1}>
                       <Text variant="label" numberOfLines={1}>{c.name}</Text>
                       <Text variant="caption" color={Colors.textSecondary}>{c.phone}</Text>
@@ -524,26 +521,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: Colors.surfaceAlt,
     borderRadius: Radii.lg,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderWidth: Strokes.thin, borderColor: Colors.borderSubtle,
     paddingHorizontal: 14, paddingVertical: 13,
   },
 
   // Feuille destinataire — contacts.
-  searchWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: Colors.bg,
-    borderRadius: Radii.md,
-    paddingHorizontal: 14,
-    minHeight: 48,
-    marginBottom: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: Outfit.regular,
-    color: Colors.textPrimary,
-    paddingVertical: 12,
-  },
+  // Géométrie du champ dans `SearchBar` — ici seule la marge de l'emplacement.
+  searchWrap: { marginBottom: 8 },
   noContact: { paddingVertical: 18 },
   contactRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10 },
   contactDivider: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.borderSubtle, marginLeft: 58 },
@@ -567,9 +551,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg,
     borderRadius: Radii.md,
     padding: 14,
-    fontSize: 15,
-    lineHeight: 21,
-    fontFamily: Outfit.regular,
+    ...Typography.body,
     color: Colors.textPrimary,
     minHeight: 84,
   },
@@ -584,8 +566,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 15,
-    fontFamily: Outfit.medium,
+    ...inputTypo('bodyMedium'),
     color: Colors.textPrimary,
     paddingVertical: 16,
   },

@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import ScreenHeader from '@/components/ScreenHeader';
-import Avatar from '@/components/Avatar';
+import Avatar, { AVATAR_ROW } from '@/components/Avatar';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
-import { Colors, Radii, Spacing } from '@/constants/tokens';
+import { Colors, Radii, Spacing, Strokes } from '@/constants/tokens';
 import { MEMBERS, kindLabel, type Member } from '@/constants/affilie';
 
 // Section « Mon Réseau » : affiliés prestataires / clients, actifs ou inactifs.
@@ -16,7 +16,7 @@ type Tab = 'prestataires' | 'clients';
 function MemberRow({ m }: { m: Member }) {
   return (
     <View style={styles.row}>
-      <Avatar name={m.name} size={44} bordered={m.active} />
+      <Avatar name={m.name} size={AVATAR_ROW} bordered={m.active} />
       <View style={styles.rowText}>
         <Text variant="label">{m.name}</Text>
         <Text variant="caption" color={Colors.textSecondary}>
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing[4],
     backgroundColor: Colors.surface,
     borderRadius: Radii.pill,
-    borderWidth: 1,
+    borderWidth: Strokes.thin,
     borderColor: Colors.borderSubtle,
     padding: 4,
     marginBottom: Spacing[2],

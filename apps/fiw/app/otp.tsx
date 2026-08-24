@@ -3,7 +3,7 @@ import {
   View, StyleSheet, TextInput, TouchableOpacity
 } from 'react-native';
 import { router } from 'expo-router';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import { Colors, Radii, Strokes } from '@/constants/tokens';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import IconButton from '@/components/IconButton';
@@ -38,7 +38,7 @@ export default function OTPScreen() {
         <Text variant="display" style={styles.title}>Code de vérification</Text>
         <Text variant="body" color={Colors.textSecondary} style={styles.subtitle}>
           Nous avons envoyé un code au{'\n'}
-          <Text variant="body" style={styles.phone}>+221 77 000 00 00</Text>
+          <Text variant="bodySemibold">+221 77 000 00 00</Text>
         </Text>
 
         <TouchableOpacity
@@ -55,7 +55,7 @@ export default function OTPScreen() {
                 digit !== '' && styles.codeBoxFilled,
               ]}
             >
-              <Text color={Colors.primary} style={styles.codeDigit}>{digit}</Text>
+              <Text variant="codeCell" color={Colors.primary}>{digit}</Text>
             </View>
           ))}
         </TouchableOpacity>
@@ -92,7 +92,6 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingTop: 24 },
   title: { marginBottom: 12 },
   subtitle: { lineHeight: 22, marginBottom: 40 },
-  phone: { fontFamily: Outfit.semibold },
   codeRow: {
     flexDirection: 'row',
     gap: 12,
@@ -103,7 +102,7 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: Radii.md,
     backgroundColor: Colors.bg,
-    borderWidth: 1.5,
+    borderWidth: Strokes.medium,
     borderColor: Colors.border,
     justifyContent: 'center',
     alignItems: 'center',
@@ -115,10 +114,6 @@ const styles = StyleSheet.create({
   codeBoxFilled: {
     borderColor: Colors.primary,
     backgroundColor: Colors.primarySubtle,
-  },
-  codeDigit: {
-    fontFamily: Outfit.bold,
-    fontSize: 28,
   },
   hiddenInput: {
     position: 'absolute',

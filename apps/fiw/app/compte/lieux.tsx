@@ -2,9 +2,10 @@ import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Radii } from '@/constants/tokens';
+import { Colors, Radii, Strokes } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
-import PlaceRow from '@/components/PlaceRow';
+import ListRow from '@/components/ListRow';
+import Medallion from '@/components/Medallion';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import { usePlaces } from '@/stores/places';
@@ -29,10 +30,9 @@ export default function LieuxScreen() {
       >
         <View style={styles.card}>
           {places.map((p) => (
-            <PlaceRow
+            <ListRow
               key={p.id}
-              icon={iconFor(p.kind)}
-              accent
+              leading={<Medallion icon={iconFor(p.kind)} ton="accent" />}
               title={p.label}
               // Maison et Travail restent dans la liste même vidés de leur
               // adresse : la seconde ligne devient alors l'invitation à la
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
     borderRadius: Radii.lg,
-    borderWidth: 1,
+    borderWidth: Strokes.thin,
     borderColor: Colors.borderSubtle,
     paddingHorizontal: 12,
     paddingVertical: 4,

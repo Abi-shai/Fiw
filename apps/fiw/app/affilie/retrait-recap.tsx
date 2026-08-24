@@ -5,7 +5,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
-import { Colors, Radii, Spacing, Shadows } from '@/constants/tokens';
+import { Colors, Radii, Spacing, Shadows, Strokes } from '@/constants/tokens';
 import { AMBASSADEUR, fcfa, detectOperator } from '@/constants/affilie';
 
 // JS3 — Récapitulatif de retrait (point de non-retour avant confirmation).
@@ -91,14 +91,14 @@ const styles = StyleSheet.create({
   details: {
     backgroundColor: Colors.surface,
     borderRadius: Radii.lg,
-    borderWidth: 1,
+    borderWidth: Strokes.thin,
     borderColor: Colors.borderSubtle,
     paddingHorizontal: Spacing[4],
     marginTop: Spacing[8],
     ...Shadows.sm,
   },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing[4] },
-  detailBorder: { borderTopWidth: 1, borderTopColor: Colors.borderSubtle },
+  detailBorder: { borderTopWidth: Strokes.thin, borderTopColor: Colors.borderSubtle },
 
   footer: { paddingHorizontal: Spacing[4], paddingTop: Spacing[3], paddingBottom: Spacing[8], gap: Spacing[2] },
   cancel: { alignItems: 'center', paddingVertical: Spacing[3] },

@@ -5,7 +5,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
-import { Colors, Radii, Spacing, Outfit, Shadows } from '@/constants/tokens';
+import { Colors, Radii, Spacing, Outfit, Shadows, Strokes } from '@/constants/tokens';
 import { AMBASSADEUR, WITHDRAW_MIN, fcfa } from '@/constants/affilie';
 
 type Method = { id: string; name: string; color: string };
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   details: {
     backgroundColor: Colors.surface,
     borderRadius: Radii.lg,
-    borderWidth: 1,
+    borderWidth: Strokes.thin,
     borderColor: Colors.borderSubtle,
     paddingHorizontal: Spacing[4],
     ...Shadows.sm,
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     gap: Spacing[3],
     paddingVertical: Spacing[4],
   },
-  detailBorder: { borderTopWidth: 1, borderTopColor: Colors.borderSubtle },
+  detailBorder: { borderTopWidth: Strokes.thin, borderTopColor: Colors.borderSubtle },
   detailRowSelected: { backgroundColor: Colors.primarySubtle },
   methodDot: { width: 12, height: 12, borderRadius: 6 },
 

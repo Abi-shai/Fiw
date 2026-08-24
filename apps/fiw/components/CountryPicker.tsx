@@ -3,9 +3,10 @@ import {
   View, StyleSheet, Animated, Dimensions, TextInput, FlatList, TouchableOpacity, Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import { Colors, Radii } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
+import SearchBar from '@/components/SearchBar';
 import FlagChip from '@/components/FlagChip';
 import { Handle, sheetSurface } from '@/components/Sheet';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
@@ -83,23 +84,14 @@ export default function CountryPicker({ visible, selectedCode, onSelect, onClose
             <Text variant="heading1">Indicatif pays</Text>
           </View>
 
-          <View style={styles.search}>
-            <Icon name="search" size={18} color={Colors.textTertiary} />
-            <TextInput
-              style={styles.searchInput}
-              value={q}
-              onChangeText={setQ}
-              onFocus={() => snapTo(TY_EXPANDED)}
-              placeholder="Rechercher un pays ou un indicatif"
-              placeholderTextColor={Colors.textTertiary}
-              autoCorrect={false}
-            />
-            {q.length > 0 && (
-              <TouchableOpacity onPress={() => setQ('')} hitSlop={8}>
-                <Icon name="close" size={16} color={Colors.textTertiary} />
-              </TouchableOpacity>
-            )}
-          </View>
+          <SearchBar
+            value={q}
+            onChangeText={setQ}
+            onClear={() => setQ('')}
+            onFocus={() => snapTo(TY_EXPANDED)}
+            placeholder="Rechercher un pays ou un indicatif"
+            style={styles.search}
+          />
 
           <FlatList
             data={data}
@@ -110,7 +102,7 @@ export default function CountryPicker({ visible, selectedCode, onSelect, onClose
             renderItem={({ item }) => (
               <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={() => onSelect(item)}>
                 <FlagChip code={item.code} />
-                <Text variant="body" style={styles.name} numberOfLines={1}>{item.name}</Text>
+                <Text variant="bodyMedium" style={styles.name} numberOfLines={1}>{item.name}</Text>
                 <Text variant="body" color={Colors.textSecondary}>{item.dial}</Text>
                 {item.code === selectedCode && <Icon name="tick" size={18} color={Colors.primary} />}
               </TouchableOpacity>
@@ -137,23 +129,11 @@ const styles = StyleSheet.create({
   inner: { height: SHEET_H },
   dragZone: { paddingTop: 10, paddingBottom: 10 },
   handle: { marginBottom: 14 },
-  search: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: Colors.bg,
-    borderRadius: Radii.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: 14,
-    height: 48,
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  searchInput: { flex: 1, fontSize: 15, color: Colors.textPrimary, fontFamily: Outfit.regular, padding: 0 },
+  // Géométrie du champ dans `SearchBar` — ici seules les marges de l'emplacement.
+  search: { marginTop: 12, marginBottom: 8 },
   list: { flex: 1 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
-  name: { flex: 1, fontFamily: Outfit.medium },
+  name: { flex: 1 },
   sep: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.borderSubtle },
   empty: { marginTop: 40 },
 });

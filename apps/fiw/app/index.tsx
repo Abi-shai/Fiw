@@ -4,7 +4,7 @@ import {
   Platform, TouchableOpacity, ScrollView
 } from 'react-native';
 import { router } from 'expo-router';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import { Colors, Radii, Outfit, inputTypo, Strokes } from '@/constants/tokens';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 
@@ -48,7 +48,7 @@ export default function OnboardingScreen() {
 
           <TouchableOpacity onPress={() => router.push('/otp')} style={styles.createLink}>
             <Text variant="bodySmall" color={Colors.textSecondary}>
-              Pas encore de compte ? <Text variant="bodySmall" color={Colors.primary} style={styles.createBold}>Créer un compte</Text>
+              Pas encore de compte ? <Text variant="bodySmallSemibold" color={Colors.primary}>Créer un compte</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.bg,
     borderRadius: Radii.md,
-    borderWidth: 1.5,
+    borderWidth: Strokes.medium,
     borderColor: Colors.border,
     paddingHorizontal: 16,
     marginBottom: 16,
@@ -108,12 +108,10 @@ const styles = StyleSheet.create({
   flag: { fontSize: 22, marginRight: 10 },
   input: {
     flex: 1,
-    fontSize: 17,
+    ...inputTypo('bodyMedium'),
     color: Colors.textPrimary,
-    fontFamily: Outfit.medium,
   },
   btn: { marginTop: 8 },
   createLink: { marginTop: 20, alignItems: 'center' },
-  createBold: { fontFamily: Outfit.semibold },
   footer: { paddingVertical: 32, alignItems: 'center' },
 });

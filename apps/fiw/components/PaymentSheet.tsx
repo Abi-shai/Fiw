@@ -4,7 +4,7 @@ import * as Haptics from 'expo-haptics';
 import Text from '@/components/Text';
 import Button from '@/components/Button';
 import Radio from '@/components/Radio';
-import { Colors, Radii } from '@/constants/tokens';
+import {Colors, Radii} from '@/constants/tokens';
 import { PAYMENT_METHODS } from '@/constants/data';
 import { PAY_ILLUSTRATIONS } from '@/constants/illustrations';
 
@@ -24,7 +24,7 @@ function PayRow({ method, selected, onPress }: {
           <Text style={styles.payEmoji}>{method.icon}</Text>
         </View>
       )}
-      <Text variant="label" style={styles.payName}
+      <Text variant="bodyMedium" style={styles.payName}
         color={selected ? Colors.primary : Colors.textPrimary}>{method.label}</Text>
       <Radio selected={selected} />
     </TouchableOpacity>
@@ -61,6 +61,6 @@ const styles = StyleSheet.create({
   payIlloWrap: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
   payIllo: { width: 52, height: 52, borderRadius: 14 },
   payEmoji: { fontSize: 28 },
-  payName: { flex: 1, fontSize: 16 },
+  payName: { flex: 1 },
   payCta: { marginTop: 16 },
 });

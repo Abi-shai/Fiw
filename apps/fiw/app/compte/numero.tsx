@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import { Colors, Radii, Strokes } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
 import Icon from '@/components/Icon';
@@ -76,7 +76,7 @@ export default function NumeroScreen() {
           <View style={styles.infoRow}>
             <Icon name="phone" size={14} color={Colors.textTertiary} />
             <Text variant="caption" color={Colors.textTertiary}>
-              Numéro actuel : <Text variant="caption" color={Colors.textSecondary} style={styles.currentPhone}>{CLIENT.phone}</Text>
+              Numéro actuel : <Text variant="captionSemibold" color={Colors.textSecondary}>{CLIENT.phone}</Text>
             </Text>
           </View>
 
@@ -103,13 +103,13 @@ export default function NumeroScreen() {
       >
         <Text variant="body" color={Colors.textSecondary} style={styles.intro}>
           Entrez le code envoyé par SMS au{'\n'}
-          <Text variant="body" style={styles.phone}>{newNumber}</Text>
+          <Text variant="bodySemibold">{newNumber}</Text>
         </Text>
 
         <TouchableOpacity style={styles.codeRow} activeOpacity={1} onPress={() => codeRef.current?.focus()}>
           {boxes.map((d, i) => (
             <View key={i} style={[styles.codeBox, (code.length === i || d !== '') && styles.codeBoxActive]}>
-              <Text color={Colors.primary} style={styles.codeDigit}>{d}</Text>
+              <Text variant="codeCell" color={Colors.primary}>{d}</Text>
             </View>
           ))}
         </TouchableOpacity>
@@ -138,20 +138,17 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8 },
   intro: { lineHeight: 22, marginBottom: 28 },
   label: { marginBottom: 8, marginLeft: 4 },
-  phone: { fontFamily: Outfit.semibold },
 
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, marginBottom: 24, paddingHorizontal: 4 },
-  currentPhone: { fontFamily: Outfit.semibold },
   cta: { marginTop: 8 },
 
   codeRow: { flexDirection: 'row', gap: 12, marginBottom: 32 },
   codeBox: {
     flex: 1, height: 64, borderRadius: Radii.md,
-    backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: Colors.border,
+    backgroundColor: Colors.surface, borderWidth: Strokes.medium, borderColor: Colors.border,
     justifyContent: 'center', alignItems: 'center',
   },
   codeBoxActive: { borderColor: Colors.primary, backgroundColor: Colors.primarySubtle },
-  codeDigit: { fontFamily: Outfit.bold, fontSize: 28 },
   hiddenInput: { position: 'absolute', width: 1, height: 1, opacity: 0 },
   resend: { marginTop: 20, alignItems: 'center' },
 });

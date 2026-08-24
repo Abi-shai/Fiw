@@ -6,7 +6,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
-import { Colors, Radii, Spacing } from '@/constants/tokens';
+import { Colors, Radii, Spacing, Strokes } from '@/constants/tokens';
 
 // JS1 — Conditions d'utilisation (contrat d'affiliation).
 // « J'accepte et je commence » → tableau de bord (premier accès).
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing[4],
     paddingTop: Spacing[4],
     paddingBottom: Spacing[8],
-    borderTopWidth: 1,
+    borderTopWidth: Strokes.thin,
     borderTopColor: Colors.borderSubtle,
     backgroundColor: Colors.bg,
     gap: Spacing[4],
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 24, height: 24,
     borderRadius: Radii.sm,
-    borderWidth: 1.5,
+    borderWidth: Strokes.medium,
     borderColor: Colors.border,
     alignItems: 'center',
     justifyContent: 'center',

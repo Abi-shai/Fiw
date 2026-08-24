@@ -3,8 +3,8 @@ import { View, StyleSheet, ScrollView, Switch, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
-import SettingsGroup from '@/components/SettingsGroup';
-import SettingsRow from '@/components/SettingsRow';
+import List from '@/components/List';
+import ListRow from '@/components/ListRow';
 import Button from '@/components/Button';
 import { CLIENT, TRUSTED_CONTACTS } from '@/constants/data';
 
@@ -32,14 +32,14 @@ export default function SecuriteScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
-        <SettingsGroup
+        <List
           title="Partage de trajet"
           footnote="Quand c'est activé, vos Contacts de confiance reçoivent votre position en temps réel dès le départ de chaque course."
         >
-          <SettingsRow
+          <ListRow
             icon="share"
-            label="Partager mon trajet au départ"
-            right={
+            title="Partager mon trajet au départ"
+            trailing={
               <Switch
                 value={shareOnStart}
                 onValueChange={setShareOnStart}
@@ -49,33 +49,33 @@ export default function SecuriteScreen() {
               />
             }
           />
-        </SettingsGroup>
+        </List>
 
-        <SettingsGroup title="Contacts de confiance">
+        <List title="Contacts de confiance">
           {contacts.length === 0 ? (
-            <SettingsRow icon="user" label="Aucun contact" subtitle="Ajoutez-en un ci-dessous" chevron={false} />
+            <ListRow icon="user" title="Aucun contact" subtitle="Ajoutez-en un ci-dessous" trailing={null} />
           ) : (
             contacts.map((c) => (
-              <SettingsRow
+              <ListRow
                 key={c.id}
                 icon="user"
-                label={c.name}
+                title={c.name}
                 subtitle={c.phone}
-                chevron={false}
+                trailing={null}
                 onPress={() => removeContact(c.id)}
               />
             ))
           )}
-        </SettingsGroup>
+        </List>
 
         <Button label="Ajouter un contact de confiance" variant="secondary" icon="add" onPress={addContact} />
 
-        <SettingsGroup title="Connexion" style={styles.connexion}>
-          <SettingsRow icon="phone" label="Numéro de téléphone" value={CLIENT.phone}
+        <List title="Connexion" style={styles.connexion}>
+          <ListRow icon="phone" title="Numéro de téléphone" value={CLIENT.phone}
             onPress={() => Alert.alert('Numéro', 'Modification du numéro à venir dans le proto.')} />
-          <SettingsRow icon="lock" label="Code de connexion"
+          <ListRow icon="lock" title="Code de connexion"
             onPress={() => Alert.alert('Code', 'Changement de code à venir dans le proto.')} />
-        </SettingsGroup>
+        </List>
       </ScrollView>
     </View>
   );

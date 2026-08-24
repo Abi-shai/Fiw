@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { Colors, Radii } from '@/constants/tokens';
+import { Colors, Radii, Strokes } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: Colors.brandYellowSubtle,
     borderRadius: Radii.lg,
-    borderWidth: 1,
+    borderWidth: Strokes.thin,
     borderColor: Colors.brandYellow100,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -75,5 +75,5 @@ const styles = StyleSheet.create({
   // Pas de `paddingTop` : le texte s'aligne par le haut sur la pastille. Le
   // centrer sur elle (`(30 - 17) / 2`) ne vaudrait que pour une ligne unique —
   // dès deux lignes, le bloc décroche visiblement vers le bas.
-  text: { flex: 1, lineHeight: 17 },
+  text: { flex: 1 },
 });

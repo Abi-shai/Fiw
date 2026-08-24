@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Colors, Radii } from '@/constants/tokens';
+import { Colors, Radii, Strokes } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
 import ReceiptCard from '@/components/ReceiptCard';
 import Button from '@/components/Button';
@@ -37,9 +37,9 @@ export default function HistoryDetailScreen() {
           rows={[
             { label: 'Destination', value: course.destName },
             { label: 'Service', value: course.gammeLabel },
-            { label: 'Prestataire', value: course.driverName },
+            { label: 'Prestataire', value: course.prestataireName },
             { label: 'Véhicule', value: course.vehicle },
-            { label: 'Plaque', value: course.driverPlate },
+            { label: 'Plaque', value: course.prestatairePlate },
             { label: 'Paiement', value: course.paymentLabel },
           ]}
           lines={lines}
@@ -53,7 +53,7 @@ export default function HistoryDetailScreen() {
             <View style={styles.lostDone}>
               <Icon name="check" size={22} weight="fill" color={Colors.success} />
               <Text variant="bodySmall" color={Colors.textSecondary} style={styles.flex1}>
-                Demande transmise au service client. Un conseiller vous recontacte avec la référence {course.driverPlate}.
+                Demande transmise au service client. Un conseiller vous recontacte avec la référence {course.prestatairePlate}.
               </Text>
             </View>
           ) : (
@@ -63,7 +63,7 @@ export default function HistoryDetailScreen() {
                 <Text variant="label" style={styles.flex1}>Un objet oublié dans ce véhicule ?</Text>
               </View>
               <Text variant="caption" color={Colors.textSecondary}>
-                Le service client vous met en relation en toute sécurité à partir de la plaque {course.driverPlate}.
+                Le service client vous met en relation en toute sécurité à partir de la plaque {course.prestatairePlate}.
               </Text>
               <Button
                 label="Contacter le service client"
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   lostCard: {
     backgroundColor: Colors.surface,
     borderRadius: Radii.lg,
-    borderWidth: 1,
+    borderWidth: Strokes.thin,
     borderColor: Colors.border,
     padding: 16,
     gap: 10,
