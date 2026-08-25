@@ -11,12 +11,13 @@ import IconButton from '@/components/IconButton';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import Button from '@/components/Button';
+import ListRow from '@/components/ListRow';
 import GammeCard from '@/components/GammeCard';
 import { GroupedSheet, SheetCard } from '@/components/Sheet';
 import RouteCard from '@/components/RouteCard';
 import PaymentSheetContent from '@/components/PaymentSheet';
 import { Colors, Radii, Shadows, Strokes } from '@/constants/tokens';
-import { GAMMES, COVOITURAGE, COVOITURAGE_NODETOUR_PRICE, DAKAR_CENTER, WAIT_GRACE_MINUTES, WAIT_FEE_PER_MIN } from '@/constants/data';
+import { GAMMES, COVOITURAGE, COVOITURAGE_NODETOUR_PRICE, DAKAR_CENTER, PAYMENT_METHODS, WAIT_GRACE_MINUTES, WAIT_FEE_PER_MIN } from '@/constants/data';
 import { topviewSprite } from '@/constants/illustrations';
 
 // Carte gamme : composant partagé avec la Livraison (`components/GammeCard`).
@@ -140,6 +141,7 @@ export default function ConfigureScreen() {
   };
 
   const payImg = PAY_ILLUSTRATIONS[selectedPayment] ?? PAY_ILLUSTRATIONS.cash;
+  const payLabel = (PAYMENT_METHODS.find((p) => p.id === selectedPayment) ?? PAYMENT_METHODS[0]).label;
 
   return (
     <View style={styles.container}>
@@ -269,12 +271,16 @@ export default function ConfigureScreen() {
                 {WAIT_GRACE_MINUTES} min d'attente offertes à l'arrivée, puis {WAIT_FEE_PER_MIN} F/min
               </Text>
             </View>
-            <View style={styles.footerRow}>
-              <TouchableOpacity style={styles.payBtn} onPress={openPay} activeOpacity={0.85}>
-                <Image source={payImg} style={styles.payImg} />
-              </TouchableOpacity>
-              <Button label="Confirmer la course" onPress={confirm} style={styles.cta} />
-            </View>
+            {/* Le moyen de paiement se lit en rangée pleine largeur au-dessus du
+                CTA — Uber, Careem, Gojek, Waymo et Grab le posent tous là. La
+                pastille carrée d'avant ne disait ni lequel ni qu'on pouvait en
+                changer. */}
+            <ListRow
+              leading={<Image source={payImg} style={styles.payLogo} />}
+              title={payLabel}
+              onPress={openPay}
+            />
+            <Button label="Confirmer la course" onPress={confirm} />
           </SheetCard>
       </GroupedSheet>
 
@@ -349,10 +355,7 @@ const styles = StyleSheet.create({
   // Carte confirmation.
   confirmCard: { gap: 12 },
   waitNote: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  footerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  payBtn: { padding: 4 },
-  payImg: { width: 40, height: 40, borderRadius: 11 },
-  cta: { flex: 1 },
+  payLogo: { width: 40, height: 40, borderRadius: 11 },
 
   radio: {
     width: 26, height: 26, borderRadius: 13,

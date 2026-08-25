@@ -12,7 +12,7 @@ import Icon, { type IconName } from '@/components/Icon';
 import Button from '@/components/Button';
 import BottomSheet from '@/components/BottomSheet';
 import StepProgress, { type Step } from '@/components/StepProgress';
-import CodePill from '@/components/CodePill';
+import CodeField from '@/components/CodeField';
 import ActionPill from '@/components/ActionPill';
 import ActionTile, { ActionTileRow } from '@/components/ActionTile';
 import AlertBadge from '@/components/AlertBadge';
@@ -352,7 +352,7 @@ export default function LivraisonSuiviScreen() {
             />
             {showCode && (
               <View style={styles.codeWrap}>
-                <CodePill code={params.codeRemise || '0000'} />
+                <CodeField code={params.codeRemise || '0000'} mode="lecture" />
                 <Text variant="body" color={Colors.textSecondary} align="center">
                   Communiquez ce code à {params.destinataireName || 'votre destinataire'} — le prestataire le demandera à la remise.
                 </Text>

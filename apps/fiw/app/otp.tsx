@@ -3,17 +3,16 @@ import {
   View, StyleSheet, TextInput, TouchableOpacity
 } from 'react-native';
 import { router } from 'expo-router';
-import { Colors, Radii, Strokes } from '@/constants/tokens';
+import { Colors } from '@/constants/tokens';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import IconButton from '@/components/IconButton';
+import CodeField from '@/components/CodeField';
 
 export default function OTPScreen() {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<TextInput>(null);
-
-  const digits = code.split('').concat(Array(Math.max(0, 4 - code.length)).fill(''));
 
   const handleChange = (text: string) => {
     const cleaned = text.replace(/[^0-9]/g, '').slice(0, 4);
@@ -46,18 +45,7 @@ export default function OTPScreen() {
           onPress={() => inputRef.current?.focus()}
           activeOpacity={1}
         >
-          {digits.map((digit, i) => (
-            <View
-              key={i}
-              style={[
-                styles.codeBox,
-                code.length === i && styles.codeBoxCursor,
-                digit !== '' && styles.codeBoxFilled,
-              ]}
-            >
-              <Text variant="codeCell" color={Colors.primary}>{digit}</Text>
-            </View>
-          ))}
+          <CodeField code={code} />
         </TouchableOpacity>
 
         <TextInput
@@ -92,29 +80,7 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingTop: 24 },
   title: { marginBottom: 12 },
   subtitle: { lineHeight: 22, marginBottom: 40 },
-  codeRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 40,
-  },
-  codeBox: {
-    flex: 1,
-    height: 64,
-    borderRadius: Radii.md,
-    backgroundColor: Colors.bg,
-    borderWidth: Strokes.medium,
-    borderColor: Colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  codeBoxCursor: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primarySubtle,
-  },
-  codeBoxFilled: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primarySubtle,
-  },
+  codeRow: { marginBottom: 40 },
   hiddenInput: {
     position: 'absolute',
     width: 1,

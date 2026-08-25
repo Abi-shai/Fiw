@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Avatar from '@/components/Avatar';
+import Divider from '@/components/Divider';
 import Icon, { type IconName } from '@/components/Icon';
 import Text from '@/components/Text';
 import { Colors, Radii, Shadows, Strokes } from '@/constants/tokens';
@@ -187,7 +188,7 @@ export default function MenuDrawer({ visible, onClose }: Props) {
           <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
         </TouchableOpacity>
 
-        <View style={styles.divider} />
+        <View style={styles.rule}><Divider /></View>
 
         <MenuItem icon="account" label="Mon compte & sécurité" onPress={goCompte} />
         <MenuItem
@@ -197,7 +198,7 @@ export default function MenuDrawer({ visible, onClose }: Props) {
         />
         <MenuItem icon="gift" label="Fidélité" badge="240 pts" />
 
-        <View style={styles.divider} />
+        <View style={styles.rule}><Divider /></View>
 
         {isAffiliate ? (
           <MenuItem
@@ -212,7 +213,7 @@ export default function MenuDrawer({ visible, onClose }: Props) {
           <MenuItem icon="group" label="Affiliation" subtitle="Gagner de l'argent" />
         )}
 
-        <View style={styles.divider} />
+        <View style={styles.rule}><Divider /></View>
 
         <MenuItem icon="help" label="Aide & support" />
 
@@ -277,13 +278,8 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
-  // Séparateur de section : pleine largeur (bord à bord) + plus d'air, pour une
-  // coupure nette entre groupes (option 1 retenue).
-  divider: {
-    height: 1,
-    backgroundColor: Colors.border,
-    marginVertical: 14,
-  },
+  // Le filet de section garde son air : la primitive ne porte que le trait.
+  rule: { marginVertical: 14 },
   item: {
     paddingHorizontal: 24,
     paddingVertical: 14,
@@ -313,7 +309,7 @@ const styles = StyleSheet.create({
   },
   badgeWrap: {
     backgroundColor: Colors.primarySubtle,
-    borderRadius: 20,
+    borderRadius: Radii.pill,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },

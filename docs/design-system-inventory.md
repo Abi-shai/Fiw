@@ -2433,3 +2433,372 @@ La maquette flotte, l'app est ancrée au bord de l'écran — même nature que
 n'a été faite** : les hauteurs annoncées (117 pour `RouteCard`, 64 pour
 `AltSuggestCard`, 65 pour `StepProgress`) sont déduites de la maquette, pas
 mesurées à l'écran.
+
+---
+
+# Partie XXXI — Les quatre contrôles manquants (24 août 2026)
+
+Premier lot des « composants manquants de la maquette » relevés dans
+[`design-system-ecarts-client.md`](design-system-ecarts-client.md). Les atomes
+d'abord : ce sont eux dont les molécules dépendront.
+
+| Composant | Nœud | Axes | Où |
+|---|---|---|---|
+| `Checkbox` | `757:32` | `Selected=false\|true` × `État=actif\|désactivé` | `01 — Primitives` › Contrôles |
+| `Toggle` | `759:34` | `On=false\|true` × `État=actif\|désactivé` | idem |
+| `SegmentedControl` | `760:57` | `Segments=2\|3` × `Actif=0\|1\|2` (5 variantes, matrice creuse) | idem |
+| `Spinner` | `761:30` | `Taille=sm\|lg` | `01 — Primitives` › Indicateurs |
+
+## Les deux arbitrages rendus
+
+- **Checkbox : 24 px, `radius/sm`, liseré `stroke/thick`.** Le code portait deux
+  versions (22 / rayon 6 dans `presentation.tsx`, 24 / `radius/sm` dans
+  `conditions.tsx`). La seconde gagne : à côté du `Radio` (26, même poids de
+  trait) elle se lit comme un membre de la même famille, et son rayon reste dans
+  l'échelle. Au repos le liseré est `textTertiary` comme celui du `Radio` — pas
+  `border`, qui est le liseré des *surfaces*, pas des contrôles.
+- **Contrôle segmenté : piste `track`, pastille active `surface` + `shadow/sm`.**
+  Celui de `transport/configure.tsx`, contre la piste blanche à liseré d'
+  `affilie/reseau.tsx`. Il réemploie la piste `track` déjà tenue par `Chip` et
+  `ActionPill`, et il laisse le bleu à ce qui *sélectionne une valeur* plutôt
+  qu'à ce qui *filtre une vue*.
+
+## Deux notes de construction
+
+- **`Toggle` ne dessine pas un interrupteur Fiw** : l'app rend le `Switch` natif
+  de React Native. La maquette en reprend donc la géométrie iOS (51 × 31, pouce
+  27, marge 2) et n'y applique que les couleurs du système. Inventer une autre
+  empreinte aurait produit une maquette que le code ne peut pas rendre.
+- **L'axe s'appelle `On` et non `Actif`** : `État` porte déjà `actif |
+  désactivé`, les deux se seraient télescopés.
+
+## Vérifications
+
+Capture de chaque set, et **audit de liaison sur les quatre** : zéro peinture non
+liée. Un défaut trouvé au passage et corrigé — la coche de `Checkbox` était
+peinte en dur après le swap d'icône (la couleur d'un vecteur ne survit pas au
+swap, c'est le piège déjà rencontré en Partie XVIII).
+
+`01 — Primitives` passe de 18 à **22 composants**.
+
+## Reste du lot
+
+Priorité 1 : `RatingCard`, `ResultState`, `Toast`, `CodeField`, `MapPin` +
+`MapPickDock`, `Radar` + `MapBanner`, `ScreenFooter`, `Hint`. Puis les 13 objets
+de priorité 2. **Aucun des quatre n'a encore de pendant code** — c'est la passe
+d'alignement suivante.
+
+---
+
+# Partie XXXII — Signalétique, chrome et saisie de code (24 août 2026)
+
+Deuxième lot des composants manquants. Cinq objets, dont trois qui ne demandaient
+aucun arbitrage et deux qui en ont demandé un.
+
+| Composant | Nœud | Page › section | Propriétés |
+|---|---|---|---|
+| `Toast` | `764:259` | `02` › Signalétique | `Libellé` · `Icône` · `IconName` |
+| `Hint` | `765:256` | `02` › Signalétique | `Texte` · `Icône` · `IconName` |
+| `ScreenFooter` | `766:1605` | `03` › Chrome d'écran | slot `Actions` · `Liseré` |
+| `ResultState` | `768:1623` | `03` › Chrome d'écran | `Ton=succès\|erreur\|accent` × `Titre` · `Corps` |
+| `CodeField` | `770:302` | `02` › Saisie | `Saisis=0…4` × `Chiffre 1…4` |
+
+## Les trois notes du système, enfin distinctes
+
+`Hint` manquait, et c'est ce qui laissait huit sites du code refaire la même note
+sous quatre noms (`infoRow`, `help`, `hint`, `noteHint`). Le partage est
+maintenant écrit dans les descriptions :
+
+- **`Hint`** — précise, sans rien réclamer. Aucun fond, `caption` tertiaire.
+- **`Callout`** — énonce une **règle** ou une affordance non devinable. Pastille jaune.
+- **`InfoBanner`** — porte un fait qui change le prix ou le délai, dans une feuille.
+
+## Deux arbitrages
+
+- **`ResultState` ne porte pas ses actions.** Elles restent dans un
+  `ScreenFooter` posé dessous, comme en code. Un état de résultat dit ce qui
+  s'est passé ; ce qu'on peut faire ensuite appartient au pied d'écran. Ça évite
+  au passage le piège des slots sur un set à variantes (n° 10 et n° 12).
+- **`CodeField` n'est pas `CodePill`.** L'un se remplit au clavier (cases
+  extensibles de 64, rayon `md`, fond `surface` au repos, `primarySubtle` dès
+  qu'une case est active), l'autre restitue le code de remise d'un Colis (cases
+  fixes 52×60, rayon `lg`, fond `borderSubtle`). Deux gestes, deux composants —
+  le code avait raison de les traiter séparément, il avait tort de les traiter
+  chacun deux fois.
+
+## Ce qui reste en suspens
+
+**Le ton `marque` de `ResultState`** — celui de `affilie/celebration.tsx`, plein
+`primary` avec un médaillon blanc translucide — n'est pas construit : il attend
+un **jeton d'opacité sur fond primaire**, qui n'existe pas dans les fondations
+(cf. §4 n° 1 du relevé d'écarts : neuf valeurs `rgba` en dur dans sept fichiers).
+C'est une décision de fondation, pas de composant.
+
+## Pièges rencontrés
+
+- **`addComponentProperty` en `INSTANCE_SWAP` attend un identifiant de nœud**,
+  pas une clé de composant. `tickMain.key` est refusé, `tickMain.id` passe.
+- **Un slot n'est pas auto-layout par défaut** : le bouton posé dedans hugge son
+  libellé au lieu de remplir la barre. Il faut donner au slot son propre
+  `layoutMode`, comme le fait déjà `ActionTileRow`.
+- **`createSlot()` pose une peinture blanche par défaut** sur le slot — la seule
+  peinture non liée trouvée à l'audit des cinq. Retirée.
+
+Audit de liaison sur les cinq : **zéro peinture non liée**. `02 · Composants`
+passe de 24 à **27**, `03 · Patterns` de 7 à **9**.
+
+---
+
+# Partie XXXIII — `CodeField` et `CodePill` fusionnés (25 août 2026)
+
+Décision prise contre celle de la Partie XXXII : j'y avais conclu « deux gestes,
+deux composants ». Arbitrage rendu — **un seul objet code**, dont la saisie et la
+restitution sont deux états. Conçu d'abord dans la maquette, benchmark à l'appui.
+
+## Ce que dit le benchmark mobile
+
+Dix écrans de saisie de code relevés sur Mobbin (Truecaller, Urban Company, Pi,
+MoonPay, Agoda, ShopBack, Oportun, Tesla, Superpower, Zomato) et huit écrans de
+restitution (Postmates, Uber Eats ×2, Grubhub ×2, foodpanda, Honest Greens,
+inDrive). Deux enseignements nets :
+
+1. **Seule la case active est marquée.** Urban Company, Agoda, Tesla, ShopBack et
+   Oportun accentuent la case où l'on écrit et laissent les cases déjà remplies
+   au repos — le regard cherche le curseur, pas les cases pleines. Fiw faisait
+   l'inverse : cinq accents bleus à l'écran pour un seul point d'attention.
+2. **Une restitution n'est pas un champ.** Postmates, Uber Eats et Grubhub
+   traitent le code de remise en **cases pleines et calmes**, jamais en cases
+   à liseré : il se lit à voix haute, il ne se remplit pas. foodpanda va plus
+   loin et le pose en simple pilule.
+
+## Le composant
+
+`CodeField` (`779:320`) — un axe, sept états :
+
+| État | Traitement |
+|---|---|
+| `vide · 1 · 2 · 3` | La case courante en `primarySubtle` + liseré `primary` **épais** ; les remplies en `surface` + `border`, chiffre en encre ; les suivantes vides |
+| `complet` | Les quatre remplies, aucune case marquée — la saisie est finie |
+| `erreur` | Les quatre en liseré `error`, chiffres à l'encre rouge. **Cet état n'existait pas** dans le code |
+| `lecture` | Cases pleines `borderSubtle`, sans liseré, chiffres en encre — le code de remise d'un Colis |
+
+Quatre propriétés `Chiffre N`, câblées uniquement sur les cases qui affichent
+quelque chose : une case vide n'a rien à montrer, et une propriété partagée y
+aurait fait apparaître le chiffre par défaut.
+
+## Ce que ça change côté code
+
+- Les chiffres saisis passent de `primary` à **l'encre** : le bleu n'appartient
+  plus qu'à la case active.
+- Le rayon des cases s'unifie sur **`radius/lg`** — `otp.tsx` et
+  `compte/numero.tsx` disaient `md`, l'ancien `CodePill` disait `lg`. C'est `lg`
+  qui gagne, celui de la famille `Field`.
+- Le fond des cases au repos s'unifie sur **`surface`** (`otp.tsx` disait `bg`).
+- **L'état `erreur` est à écrire** : aucun des deux écrans OTP ne dit aujourd'hui
+  qu'un code est refusé.
+
+## Migration faite dans la maquette
+
+Les **4 instances** de `CodePill` sont basculées sur `CodeField / État=lecture`,
+puis `CodePill` est supprimé. Trois des quatre vivaient dans du contenu mort —
+l'ancien set `BottomSheet` (`119:407`, que la Partie X croyait supprimé) et la
+page `🗑️ Dump`. La quatrième est celle du suivi de Livraison.
+
+> **Reste un orphelin** : la primitive `CodeCell` (`453:18`) n'a plus aucun
+> consommateur — `CodePill` était son seul. Le nouveau composant dessine ses
+> cases lui-même. À supprimer, ou à conserver comme atome si un autre code
+> devait apparaître ; ce n'est pas une décision que j'ai prise seul, `CodeCell`
+> n'était pas dans le périmètre de la fusion.
+
+## Partie XXXIII bis — `CodeField` retravaillé, et l'orphelin retiré (25 août 2026)
+
+`CodeCell` (`453:18`) est **supprimé** : plus aucun consommateur depuis
+l'absorption de `CodePill`. La section `Étiquettes` de `01 — Primitives` perd sa
+quatrième entrée.
+
+Le composant lui-même a été jugé faible visuellement, et il l'était. Second tour
+de relevé Mobbin, cette fois sur les écrans de code **bancaires** — Chime, Wise,
+State Farm, Afterpay, ANZ Plus, Starling, Alan, Shell — qui sont les plus soignés
+du genre. Trois enseignements, tous appliqués :
+
+1. **Une case au repos garde toujours son liseré.** Ma deuxième passe l'avait
+   creusée en fond `bg` sans contour : sur un écran clair, les cases en attente
+   **disparaissaient purement et simplement**. Aucun des produits relevés ne fait
+   ça — la case vide doit se voir, c'est elle qui annonce combien de chiffres on
+   attend.
+2. **La case active se marque par son liseré, pas par un fond teinté.** Chime et
+   Wise épaississent le contour et ne touchent pas au fond. Le halo bleu que
+   j'avais ajouté est retiré : aucun de ces produits n'en pose, et le soin y vient
+   de la retenue.
+3. **Une case remplie redevient ordinaire** — même boîte qu'une case vide, seul
+   le chiffre la distingue.
+
+Géométrie revue au passage : cases **60 × 68** (portrait) au lieu de 72 × 64
+(paysage). Tous les écrans relevés emploient des cases plus hautes que larges ;
+c'était la première raison pour laquelle le composant faisait « boîtes grises ».
+Ajout d'un **curseur** de 2 × 28 dans la case active, rayon lié à `radius/pill`.
+
+Audit final : **80 peintures, toutes liées**.
+
+## Partie XXXIII ter — `CodeField` porté dans le code (25 août 2026)
+
+`components/CodeField.tsx` remplace **trois** implémentations : les cases faites à
+la main d'`otp.tsx` et de `compte/numero.tsx`, et `CodePill.tsx` — supprimé.
+
+| | Avant | Après |
+|---|---|---|
+| Fichiers | 2 blocs inline + 1 composant | **1 composant** |
+| Géométrie | 64 de haut, largeur flexible (paysage) | **60 × 68**, rangée centrée |
+| Rayon | `md` (OTP) / `lg` (CodePill) | **`lg`** partout |
+| Fond au repos | `bg` (otp) / `surface` (numero) | **`surface`** |
+| Case remplie | fond `primarySubtle` + liseré `primary` | **ordinaire** — seul le chiffre la distingue |
+| Case active | même traitement que remplie | **liseré `primary` épais + curseur** |
+| Chiffre | `primary` | **encre** |
+| Erreur | *n'existait pas* | `error` — liseré et chiffres |
+
+API : `code`, `length = 4`, `mode = 'saisie' | 'lecture'`, `error`.
+
+**Un ajout que la maquette ne peut pas porter** : le curseur clignote (480 ms,
+`useNativeDriver`). Figma le montre fixe parce qu'il ne sait pas dire autrement ;
+un curseur figé dans une app en marche se lit comme un champ bloqué. Même nature
+que les springs de feuille, qui n'ont jamais eu de pendant dans le fichier.
+
+**Reste à faire** : `error` est exposé mais **aucun écran ne le passe** — les deux
+écrans OTP acceptent encore n'importe quel code à quatre chiffres. Câbler un vrai
+refus est une décision de produit, pas de design system.
+
+`npx tsc --noEmit` propre. Aucune vérification visuelle : la rangée fait 276 de
+large (4 × 60 + 3 × 12), elle tient dans les trois écrans (327, 335 et 315
+disponibles), mais ça reste calculé, pas mesuré.
+
+## Partie XXXIV — La migration soldée (25 août 2026)
+
+Les quatre chantiers laissés ouverts par la Partie XXX sont faits.
+
+| Chantier | Ce qui remplace quoi |
+|---|---|
+| **Champs De/À de l'accueil** | Les deux blocs `styles.field` de `home.tsx` passent sur **`PlaceField`**. Huit styles morts retirés. |
+| **Feuille de paiement** | `PaymentSheet.PayRow` passe sur **`ListRow`** dans une **`List`** à plat — la maquette avait absorbé `PaymentMethodRow` depuis la Partie XVIII. |
+| **Contacts du destinataire** | `styles.contactRow` de `livraison/configure.tsx` passe sur **`ListRow`** + `Avatar`, filet en retrait 76. |
+| **Écran de connexion** | `app/index.tsx` cesse de redessiner la marque : **`Logo`**, **`PhoneField`** et **`CountryPicker`** remplacent le carré bleu à ombre écrite en dur, le drapeau emoji et le champ maison. |
+
+### Trois décisions prises en chemin
+
+- **Le libellé d'un moyen de paiement ne change plus de couleur à la sélection.**
+  C'est le `Radio` qui dit l'élu. Deux signaux pour la même chose, c'en était un
+  de trop — et `ListRow` n'a pas de ton « sélectionné », à raison.
+- **La `key` des champs De/À bascule avec `actif`.** Le rendu conditionnel
+  d'avant remontait la saisie et `autoFocus` reprenait la main ; `PlaceField`
+  rend toujours son `TextInput`, donc la `key` restaure ce comportement. Elle ne
+  bouge pas pendant la frappe.
+- **Le retrait du filet de l'accueil passe de 56 à 54** — `Medallion` 42 +
+  gouttière 12. Il se déduit maintenant de la géométrie réelle au lieu d'être
+  approché.
+
+### Ce qui reste, et qui n'est plus de la migration
+
+- `ListRow.subtitleAccent` n'a toujours pas de contrepartie dans la maquette.
+- Les boutons `payBtn` / `payImg` des deux écrans `configure` — la pastille
+  carrée qui ouvre la feuille de paiement — n'ont **pas** de composant en face.
+  Ce n'est pas un retard du code : c'est un motif que la maquette ne connaît pas.
+- Le `MenuDrawer`, le `WheelPicker` et le `CountryPicker` restent des
+  compositions sans source de design depuis leur suppression du fichier.
+
+`npx tsc --noEmit` propre. **Rien n'a été vérifié à l'écran** : cette passe touche
+l'accueil (la feuille la plus animée du produit) et l'écran de connexion, les deux
+méritent un passage au simulateur avant commit.
+
+## Partie XXXIV bis — Mauvaise variante d'`IconButton` dans `PlaceField` (25 août 2026)
+
+Défaut vu **à l'écran**, pas au typecheck : sur la ligne active de l'accueil, le
+bouton « choisir sur la carte » s'affichait en **disque blanc** posé sur le
+`primarySubtle` de la ligne. Trois erreurs cumulées de ma part au moment du
+portage :
+
+| | Ce que j'avais écrit | Ce que dit la maquette (`558:174`) |
+|---|---|---|
+| Variante au repos | *bouton absent* | `IconButton / Variant=flat` |
+| Variante à l'actif | `flat` (fond `bg`) → disque blanc | **`link`** — nu, glyphe `primary` |
+| Glyphe | `pin` (`MapPin`) | **`location`** (`MapPinLine`) |
+
+**Le correctif n'est pas dans l'écran, il est dans le composant.** `PlaceField`
+prenait un `action: ReactNode` — un emplacement libre, donc un endroit où
+l'appelant pouvait se tromper de variante, et il s'est trompé. Il prend
+maintenant `onAction` + `actionIcon`, et c'est **lui** qui choisit l'habillage
+selon son état : `flat` au repos, `link` sur la ligne active. L'erreur n'est plus
+exprimable.
+
+Règle générale à retenir : *un slot libre là où la maquette impose un traitement
+par état est un bug en attente*. Quand la maquette fait varier l'habillage d'un
+enfant selon l'état du parent, c'est le parent qui doit le porter.
+
+**Vérification de la même classe d'erreur ailleurs** : `ScreenHeader` et
+`SheetHeader` emploient tous deux `IconButton / flat` avec le glyphe en
+`textPrimary` — le code le force déjà, les deux sont conformes.
+
+---
+
+# Partie XXXV — Les trois sujets restants, traités (25 août 2026)
+
+## 1. `Sous-titre accent` porté dans la maquette
+
+`ListRow` gagne un troisième axe : **`Sous-titre = neutre | accent`**. En `accent`
+la seconde ligne passe en `primary` — elle cesse d'être un fait pour devenir une
+invitation (« Ajouter une adresse » sous un emplacement encore vide).
+
+À ne pas confondre avec `Ton=action`, qui accentue le **titre**. Les deux disent
+« cette rangée agit », mais pas au même endroit : `Ton=action` quand la rangée
+EST l'action et n'a rien d'autre à dire (registre Grab, « Renvoyer le code ») ;
+`Sous-titre=accent` quand le titre est un fait — Maison et Travail sont des
+emplacements permanents, leur nom ne bouge pas — et que c'est la ligne du dessous
+qui invite à le compléter.
+
+Matrice creuse assumée : `accent` n'existe qu'en `État=repos, Ton=neutre`. Une
+rangée désactivée n'invite à rien, une rangée déjà accentuée par son ton n'a pas
+besoin d'un second accent. **7 variantes.**
+
+> Le clonage de variante a rejoué les pièges n° 9, 10 et 12 d'un coup : slots
+> dégradés en frames, références de propriétés perdues, clés surnuméraires. La
+> parade documentée les corrige toutes les trois — et confirme qu'**il faut
+> toujours auditer après avoir cloné une variante à slots**.
+
+## 2. Les pastilles de paiement remplacées par une rangée
+
+Relevé Mobbin sur la confirmation de course : **Uber, Careem, Gojek, Waymo et
+Grab posent tous le moyen de paiement en rangée pleine largeur au-dessus du CTA**,
+jamais en pastille. Gojek va jusqu'à passer la rangée en rouge quand aucun moyen
+n'est choisi — exactement notre `ListRow / Ton=action`.
+
+Le carré à logo des deux écrans `configure` disparaît donc au profit d'une
+`ListRow` (logo en `leading`, **libellé du moyen** en titre, chevron). Le motif
+sans composant n'est pas comblé : il est **retiré**. C'est la bonne façon de
+solder un écart — se demander d'abord si le motif méritait d'exister.
+
+Gain de lecture concret : la pastille montrait un logo et rien d'autre. Elle ne
+disait ni quel moyen était sélectionné, ni qu'on pouvait en changer.
+
+## 3. Les trois compositions auditées
+
+Vérification que `CountryPicker`, `WheelPicker` et `MenuDrawer` ne sont bâtis que
+de composants du système. Ils ne l'étaient pas.
+
+| Composition | Corrigé |
+|---|---|
+| `CountryPicker` | Rangées de pays refaites à la main → **`ListRow`** (drapeau en `leading`, indicatif en `Valeur`, coche en `trailing`) · séparateur `hairlineWidth` maison → **`Divider`** · voile `#000` en dur → **`Scrim`** |
+| `WheelPicker` | Valeur en `Outfit.semibold` 22/30 écrit en dur → **`heading1`**. Une des huit dernières tailles hors échelle du code |
+| `MenuDrawer` | Filet de section fait main → **`Divider`** (l'air de 14 passe dans un conteneur, la primitive ne porte que le trait) · pastille de comptage en rayon 20 brut → **`Radii.pill`** |
+
+### Ce qui reste sans contrepartie, et pourquoi
+
+- **`proCard`** du tiroir (« Devenir prestataire ») — c'est la `PromoCard` du
+  relevé d'écarts, pas encore construite.
+- **La pastille de comptage** (« 240 pts ») — un `Badge` à ton neutre, l'axe `Ton`
+  de `Badge` n'existe pas encore.
+- **Les sous-rangées** de l'item Affiliation — laissées telles quelles par
+  décision du 24 août : le tiroir sera repris en entier dans sa passe de design.
+- **La roue elle-même** — aucun produit du système ne la décrit ; c'est une
+  primitive de plateforme, comme le `Switch`.
+
+`npx tsc --noEmit` propre. Rien vérifié à l'écran : les rangées de pays passent
+d'un padding vertical de 14 à celui de `ListRow` (8), et les deux écrans
+`configure` changent de mise en page en pied de feuille.

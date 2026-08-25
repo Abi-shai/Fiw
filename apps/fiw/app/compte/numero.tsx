@@ -2,12 +2,13 @@ import React, { useState, useRef } from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Radii, Strokes } from '@/constants/tokens';
+import { Colors } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
 import Icon from '@/components/Icon';
 import Text from '@/components/Text';
 import PhoneField from '@/components/PhoneField';
+import CodeField from '@/components/CodeField';
 import CountryPicker from '@/components/CountryPicker';
 import { COUNTRIES, fullNumber, isComplete, type Country } from '@/constants/countries';
 import { CLIENT } from '@/constants/data';
@@ -35,7 +36,6 @@ export default function NumeroScreen() {
     setTimeout(() => codeRef.current?.focus(), 250);
   };
 
-  const boxes = code.split('').concat(Array(Math.max(0, 4 - code.length)).fill(''));
   const onCode = (t: string) => {
     const cleaned = t.replace(/[^0-9]/g, '').slice(0, 4);
     setCode(cleaned);
@@ -107,11 +107,7 @@ export default function NumeroScreen() {
         </Text>
 
         <TouchableOpacity style={styles.codeRow} activeOpacity={1} onPress={() => codeRef.current?.focus()}>
-          {boxes.map((d, i) => (
-            <View key={i} style={[styles.codeBox, (code.length === i || d !== '') && styles.codeBoxActive]}>
-              <Text variant="codeCell" color={Colors.primary}>{d}</Text>
-            </View>
-          ))}
+          <CodeField code={code} />
         </TouchableOpacity>
 
         <TextInput
@@ -142,13 +138,7 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, marginBottom: 24, paddingHorizontal: 4 },
   cta: { marginTop: 8 },
 
-  codeRow: { flexDirection: 'row', gap: 12, marginBottom: 32 },
-  codeBox: {
-    flex: 1, height: 64, borderRadius: Radii.md,
-    backgroundColor: Colors.surface, borderWidth: Strokes.medium, borderColor: Colors.border,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  codeBoxActive: { borderColor: Colors.primary, backgroundColor: Colors.primarySubtle },
+  codeRow: { marginBottom: 32 },
   hiddenInput: { position: 'absolute', width: 1, height: 1, opacity: 0 },
   resend: { marginTop: 20, alignItems: 'center' },
 });

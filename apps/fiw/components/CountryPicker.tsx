@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, StyleSheet, Animated, Dimensions, TextInput, FlatList, TouchableOpacity, Pressable,
+  View, StyleSheet, Animated, Dimensions, FlatList, Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Radii } from '@/constants/tokens';
+import { Colors } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import SearchBar from '@/components/SearchBar';
 import FlagChip from '@/components/FlagChip';
+import ListRow from '@/components/ListRow';
+import Divider from '@/components/Divider';
+import Scrim from '@/components/Scrim';
 import { Handle, sheetSurface } from '@/components/Sheet';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
 import { COUNTRIES, type Country } from '@/constants/countries';
@@ -72,7 +75,8 @@ export default function CountryPicker({ visible, selectedCode, onSelect, onClose
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents={visible ? 'auto' : 'none'}>
-      <Animated.View style={[StyleSheet.absoluteFill, styles.scrim, { opacity: scrimOpacity }]}>
+      <Animated.View style={StyleSheet.absoluteFill}>
+        <Scrim opacity={scrimOpacity} />
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
       </Animated.View>
 
@@ -100,14 +104,17 @@ export default function CountryPicker({ visible, selectedCode, onSelect, onClose
             style={styles.list}
             contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
             renderItem={({ item }) => (
-              <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={() => onSelect(item)}>
-                <FlagChip code={item.code} />
-                <Text variant="bodyMedium" style={styles.name} numberOfLines={1}>{item.name}</Text>
-                <Text variant="body" color={Colors.textSecondary}>{item.dial}</Text>
-                {item.code === selectedCode && <Icon name="tick" size={18} color={Colors.primary} />}
-              </TouchableOpacity>
+              <ListRow
+                leading={<FlagChip code={item.code} />}
+                title={item.name}
+                value={item.dial}
+                trailing={item.code === selectedCode
+                  ? <Icon name="tick" size={18} color={Colors.primary} />
+                  : null}
+                onPress={() => onSelect(item)}
+              />
             )}
-            ItemSeparatorComponent={() => <View style={styles.sep} />}
+            ItemSeparatorComponent={() => <Divider />}
             ListEmptyComponent={
               <Text variant="body" color={Colors.textTertiary} align="center" style={styles.empty}>Aucun pays trouvé</Text>
             }
@@ -119,7 +126,6 @@ export default function CountryPicker({ visible, selectedCode, onSelect, onClose
 }
 
 const styles = StyleSheet.create({
-  scrim: { backgroundColor: '#000' },
   sheet: {
     position: 'absolute',
     left: 0, right: 0, bottom: 0,
@@ -132,8 +138,5 @@ const styles = StyleSheet.create({
   // Géométrie du champ dans `SearchBar` — ici seules les marges de l'emplacement.
   search: { marginTop: 12, marginBottom: 8 },
   list: { flex: 1 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
-  name: { flex: 1 },
-  sep: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.borderSubtle },
   empty: { marginTop: 40 },
 });

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View, StyleSheet, TouchableOpacity, Animated, ScrollView,
-  PanResponder, Dimensions, TextInput, FlatList, Keyboard, Image,
+  PanResponder, Dimensions, FlatList, Keyboard, Image,
   Easing, AccessibilityInfo, type EasingFunction,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -14,13 +14,14 @@ import MenuDrawer from '@/components/MenuDrawer';
 import IconButton from '@/components/IconButton';
 import ListRow from '@/components/ListRow';
 import Medallion from '@/components/Medallion';
+import PlaceField from '@/components/PlaceField';
 import Button from '@/components/Button';
 import Scrim from '@/components/Scrim';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 import { Handle, SheetHeader, sheetSurface } from '@/components/Sheet';
 import { useSnapSheet, SHEET_SPRING } from '@/hooks/useSnapSheet';
-import { Colors, Radii, Shadows, inputTypo, Strokes } from '@/constants/tokens';
+import { Colors, Radii, Shadows, Strokes } from '@/constants/tokens';
 import { DAKAR_CENTER, SUGGESTIONS, RECENT_PLACES } from '@/constants/data';
 import { usePlaces } from '@/stores/places';
 
@@ -722,60 +723,37 @@ export default function HomeScreen() {
 
             <SheetHeader title={SEARCH_COPY[service].title} onClose={closeSearch} />
 
-            {/* Champ « De » — passager (Transport) ou colis (Livraison) + géoloc si actif */}
-            <TouchableOpacity
-              style={[styles.field, activeField === 'departure' && styles.fieldActive]}
-              activeOpacity={0.85}
-              onPress={() => setActiveField('departure')}
-            >
-              <View style={styles.fieldIcon}>
-                <Icon name={service === 'livraison' ? 'package' : 'walk'} size={22} color={Colors.textSecondary} />
-              </View>
-              <View style={styles.fieldBody}>
-                <Text variant="caption" color={Colors.textTertiary}>{SEARCH_COPY[service].fromLabel}</Text>
-                {activeField === 'departure' ? (
-                  <TextInput
-                    style={styles.fieldInput}
-                    value={departureQuery}
-                    onChangeText={setDepartureQuery}
-                    placeholder={SEARCH_COPY[service].fromPlaceholder}
-                    placeholderTextColor={Colors.textTertiary}
-                    autoFocus
-                  />
-                ) : (
-                  <Text variant="bodyMedium" style={styles.fieldValue} numberOfLines={1}>{departureName}</Text>
-                )}
-              </View>
-              {activeField === 'departure' && (
-                <TouchableOpacity style={styles.fieldBtn} onPress={openMapPick} activeOpacity={0.85}>
-                  <Icon name="pin" size={20} color={Colors.primary} />
-                </TouchableOpacity>
-              )}
-            </TouchableOpacity>
+            {/* Champ « De » — passager (Transport) ou colis (Livraison) + géoloc si actif.
+                La `key` bascule quand le champ devient actif : elle remonte la saisie,
+                donc `autoFocus` reprend la main comme le faisait le rendu conditionnel
+                d'avant. Elle ne bouge pas pendant la frappe. */}
+            <PlaceField
+              key={`dep-${activeField === 'departure'}`}
+              label={SEARCH_COPY[service].fromLabel}
+              icon={service === 'livraison' ? 'package' : 'walk'}
+              actif={activeField === 'departure'}
+              value={activeField === 'departure' ? departureQuery : departureName}
+              onChangeText={setDepartureQuery}
+              onFocus={() => setActiveField('departure')}
+              placeholder={SEARCH_COPY[service].fromPlaceholder}
+              autoFocus={activeField === 'departure'}
+              onAction={openMapPick}
+              style={styles.fieldSpace}
+            />
 
             {/* Champ « À » — géoloc si actif */}
-            <View style={[styles.field, styles.fieldA, activeField === 'destination' && styles.fieldActive]}>
-              <View style={styles.fieldIcon}>
-                <Icon name="search" size={20} color={Colors.textSecondary} />
-              </View>
-              <View style={styles.fieldBody}>
-                <Text variant="caption" color={Colors.textTertiary}>{SEARCH_COPY[service].toLabel}</Text>
-                <TextInput
-                  style={styles.fieldInput}
-                  value={destinationQuery}
-                  onFocus={() => setActiveField('destination')}
-                  onChangeText={setDestinationQuery}
-                  placeholder={SEARCH_COPY[service].toPlaceholder}
-                  placeholderTextColor={Colors.textTertiary}
-                  autoFocus={activeField === 'destination'}
-                />
-              </View>
-              {activeField === 'destination' && (
-                <TouchableOpacity style={styles.fieldBtn} onPress={openMapPick} activeOpacity={0.85}>
-                  <Icon name="pin" size={20} color={Colors.primary} />
-                </TouchableOpacity>
-              )}
-            </View>
+            <PlaceField
+              label={SEARCH_COPY[service].toLabel}
+              icon="search"
+              actif={activeField === 'destination'}
+              value={destinationQuery}
+              onChangeText={setDestinationQuery}
+              onFocus={() => setActiveField('destination')}
+              placeholder={SEARCH_COPY[service].toPlaceholder}
+              autoFocus={activeField === 'destination'}
+              onAction={openMapPick}
+              style={styles.fieldSpaceLast}
+            />
 
             {/* Résultats — une seule liste, suit la saisie du champ actif */}
             <FlatList
@@ -993,6 +971,8 @@ const styles = StyleSheet.create({
   // Cadre de découpe d'un véhicule : l'image déborde et se fait couper ici.
   layerFrame: { position: 'absolute', overflow: 'hidden' },
   // Tuile carrée blanche de la carte Affilié Réseau.
+  fieldSpace: { marginBottom: 12 },
+  fieldSpaceLast: { marginBottom: 4 },
   sectionLabel: {
     textTransform: 'uppercase',
     letterSpacing: 0.8,
@@ -1010,38 +990,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   // Champs De / À — coins arrondis (registre bouton, sans aller jusqu'au pill).
-  field: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: Colors.bg,
-    borderRadius: Radii.lg,
-    paddingLeft: 16,
-    paddingRight: 8,
-    minHeight: 60,
-    borderWidth: Strokes.medium,
-    borderColor: 'transparent',
-    marginBottom: 12,
-  },
-  fieldA: { marginBottom: 4 },
-  fieldIcon: { width: 28, alignItems: 'center' },
-  fieldBody: { flex: 1, paddingVertical: 10 },
-  fieldValue: { marginTop: 1 },
-  fieldInput: { ...inputTypo('bodyMedium'), color: Colors.textPrimary, marginTop: 1, padding: 0 },
-  fieldActive: { borderColor: Colors.primary, backgroundColor: Colors.primarySubtle },
 
   // Bouton « Choisir sur la carte », présent à droite du champ actif.
-  fieldBtn: {
-    width: 40, height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: Strokes.thin,
-    borderColor: Colors.border,
-  },
 
-  separator: { height: 1, backgroundColor: Colors.borderSubtle, marginLeft: 56 },
+  separator: { height: 1, backgroundColor: Colors.borderSubtle, marginLeft: 54 },
 
   // --- Choix sur carte (overlay) ---
   pinWrap: {

@@ -3,14 +3,19 @@ import { View, TextInput, StyleSheet, type StyleProp, type ViewStyle, type TextI
 import { Colors, Radii, Strokes, inputTypo } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
+import IconButton from '@/components/IconButton';
 
 type Props = Omit<TextInputProps, 'style'> & {
   /** Libellé de la ligne — « De », « À », « Collecte », « Livraison ». */
   label: string;
   /** Glyphe 22 de tête, dans une gouttière de 28. */
   icon?: IconName;
-  /** Bouton de fin de ligne (choisir sur la carte). Boîte de 40. */
-  action?: React.ReactNode;
+  /** Action de fin de ligne — choisir le point sur la carte. Sans elle, pas de
+   *  bouton. C'est le composant qui décide de son habillage, jamais l'écran :
+   *  `flat` au repos, `link` quand la ligne est active (voir plus bas). */
+  onAction?: () => void;
+  /** Glyphe du bouton d'action. `location` par défaut, comme la maquette. */
+  actionIcon?: IconName;
   /** Ligne en cours de saisie : fond `primarySubtle`, liseré `primary`. */
   actif?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -24,7 +29,9 @@ type Props = Omit<TextInputProps, 'style'> & {
  * porte un point d'un trajet et garde son libellé visible pendant la saisie.
  * C'est la grammaire des champs De/À de l'accueil.
  */
-export default function PlaceField({ label, icon, action, actif, style, ...input }: Props) {
+export default function PlaceField({
+  label, icon, onAction, actionIcon = 'location', actif, style, ...input
+}: Props) {
   return (
     <View style={[styles.field, actif && styles.fieldActif, style]}>
       {icon ? (
@@ -40,7 +47,18 @@ export default function PlaceField({ label, icon, action, actif, style, ...input
           style={styles.input}
         />
       </View>
-      {action}
+      {onAction ? (
+        // La variante suit l'état de la ligne, et l'écran n'a pas son mot à dire :
+        // au repos le bouton est une pastille `flat` à glyphe neutre ; sur la ligne
+        // active il devient `link` — nu, glyphe `primary`. Un fond posé sur le
+        // `primarySubtle` de la ligne active y ferait un disque blanc.
+        <IconButton
+          name={actionIcon}
+          variant={actif ? 'link' : 'flat'}
+          size="md"
+          onPress={onAction}
+        />
+      ) : null}
     </View>
   );
 }
