@@ -96,7 +96,10 @@ export default function ProfilScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+  // Toute la partie Compte est sur fond blanc ; ce sont les blocs qui sont gris.
+  // Une carte blanche sur une page blanche ne tient que par son liseré — on
+  // inverse donc figure et fond, comme les tuiles de service de l'accueil.
+  container: { flex: 1, backgroundColor: Colors.surface },
   content: { paddingHorizontal: 20, paddingTop: 8 },
   flex1: { flex: 1 },
 
@@ -104,7 +107,7 @@ const styles = StyleSheet.create({
   photoBtn: { paddingVertical: 4 },
 
   noteCard: {
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.bg,
     borderRadius: Radii.lg,
     borderWidth: Strokes.thin,
     borderColor: Colors.borderSubtle,
@@ -121,7 +124,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.bg,
     borderRadius: Radii.md,
     borderWidth: Strokes.thin,
     borderColor: Colors.border,

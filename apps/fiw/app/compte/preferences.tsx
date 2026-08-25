@@ -53,6 +53,7 @@ export default function PreferencesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+  // Fond blanc, comme le hub Compte et la sidebar (todo P5).
+  container: { flex: 1, backgroundColor: Colors.surface },
   content: { paddingHorizontal: 20, paddingTop: 8 },
 });

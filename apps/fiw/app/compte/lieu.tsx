@@ -329,7 +329,8 @@ export default function LieuScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+  // Fond blanc comme toute la partie Compte ; les blocs sont gris.
+  container: { flex: 1, backgroundColor: Colors.surface },
   map: { flex: 1 },
   flex1: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8 },

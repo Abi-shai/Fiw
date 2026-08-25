@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Radii, Strokes } from '@/constants/tokens';
+import { Colors } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
 import List from '@/components/List';
 import ListRow from '@/components/ListRow';
@@ -10,11 +10,33 @@ import Avatar, { AVATAR_CARD } from '@/components/Avatar';
 import Icon from '@/components/Icon';
 import Text from '@/components/Text';
 import { CLIENT } from '@/constants/data';
+import { usePlaces } from '@/stores/places';
+import { usePayment, configuredMethods } from '@/stores/payment';
+import { useSafety, safetySummary } from '@/stores/safety';
 
 const APP_VERSION = 'Fiw 1.0.0 (proto)';
 
 export default function CompteScreen() {
   const insets = useSafeAreaInsets();
+
+  // Les résumés de rangée sont lus depuis la source réelle, jamais écrits en
+  // dur : un lieu ajouté, un compte retiré, un contact supprimé se voient ici
+  // aussitôt. Si la ligne déborde, le sous-titre se tronque (`numberOfLines`
+  // dans `ListRow`) — on perd la fin d'une énumération, pas le nom de la
+  // rangée.
+  const paymentSummary = configuredMethods(usePayment().numbers)
+    .map((m) => m.label)
+    .join(', ');
+  const placesSummary = usePlaces()
+    .filter((p) => p.detail)
+    .map((p) => p.label)
+    .join(', ');
+  // Seule rangée dont le résumé dit un ÉTAT plutôt qu'une liste de valeurs :
+  // « Sécurité » couvre deux rubriques, et énumérer les contacts n'en
+  // résumait qu'une. L'état les couvre toutes les deux et répond à la seule
+  // question qu'on ne peut pas deviner de l'extérieur — le partage est-il en
+  // marche ? (Tranché le 20 août 2026, question 4.)
+  const securiteSummary = safetySummary(useSafety());
 
   const logout = () =>
     Alert.alert('Se déconnecter', 'Voulez-vous vous déconnecter de Fiw ?', [
@@ -57,22 +79,25 @@ export default function CompteScreen() {
           <Icon name="chevronRight" size={20} color={Colors.textTertiary} />
         </TouchableOpacity>
 
-        <List title="Compte">
-          <ListRow icon="card" title="Moyens de paiement" value="Wave · +1" onPress={() => router.push('/compte/paiement')} />
-          <ListRow icon="location" title="Lieux enregistrés" value="Maison, Travail" onPress={() => router.push('/compte/lieux')} />
+        {/* Toutes les rangées portent leur résumé en SOUS-TITRE, jamais en valeur
+            alignée à droite : la valeur de droite dispute sa largeur au label et
+            le fait passer à la ligne, ce qui donne des rangées de hauteurs
+            inégales. Sous le label, le résumé a toute la largeur.
+            « Sécurité » et non « Contacts de confiance » : l'écran couvre aussi
+            le partage de trajet — la rangée portait le nom d'une seule de ses
+            sections (réunion du 16 août 2026). */}
+        {/* Une seule liste, sans titres de section : quatre portes ne demandent
+            pas de taxonomie, et les titres répétaient le nom de leurs rangées. */}
+        <List style_="plat" bleed={20}>
+          <ListRow icon="card" title="Moyens de paiement" subtitle={paymentSummary} onPress={() => router.push('/compte/paiement')} style={styles.row} />
+          <ListRow icon="location" title="Lieux enregistrés" subtitle={placesSummary} onPress={() => router.push('/compte/lieux')} style={styles.row} />
+          <ListRow icon="shield" title="Sécurité" subtitle={securiteSummary} onPress={() => router.push('/compte/securite')} style={styles.row} />
+          <ListRow icon="bell" title="Préférences" subtitle="Notifications" onPress={() => router.push('/compte/preferences')} style={styles.row} />
         </List>
 
-        <List
-          title="Sécurité & préférences"
-          footnote="Vos Contacts de confiance reçoivent votre trajet en temps réel et peuvent être alertés en cas d'urgence."
-        >
-          <ListRow icon="shield" title="Contacts de confiance" onPress={() => router.push('/compte/securite')} />
-          <ListRow icon="bell" title="Préférences" subtitle="Notifications" onPress={() => router.push('/compte/preferences')} />
-        </List>
-
-        <List>
-          <ListRow icon="signOut" title="Se déconnecter" ton="destructif" trailing={null} onPress={logout} />
-          <ListRow icon="trash" title="Supprimer mon compte" ton="destructif" trailing={null} onPress={deleteAccount} />
+        <List style_="plat" bleed={20}>
+          <ListRow icon="signOut" title="Se déconnecter" ton="destructif" trailing={null} onPress={logout} style={styles.row} />
+          <ListRow icon="trash" title="Supprimer mon compte" ton="destructif" trailing={null} onPress={deleteAccount} style={styles.row} />
         </List>
 
         <Text variant="caption" color={Colors.textTertiary} align="center" style={styles.legal}>
@@ -87,20 +112,26 @@ export default function CompteScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+  // Page blanche : la surface de la sidebar. Sans carte, ce sont les filets qui
+  // portent la structure — gris sur blanc tient un contraste que le gris sur
+  // gris perdait, ce qui compte pour un écran lu dehors.
+  container: { flex: 1, backgroundColor: Colors.surface },
   content: { paddingHorizontal: 20, paddingTop: 8 },
 
+  // Le bloc identité n'a pas de carte non plus : ce serait la seule surface
+  // encadrée d'une page qui n'en a plus.
   identity: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
-    borderWidth: Strokes.thin,
-    borderColor: Colors.borderSubtle,
-    padding: 16,
-    marginBottom: 24,
+    paddingVertical: 12,
+    // Même respiration que celle qui sépare deux listes, pour que le bloc
+    // identité entre dans le rythme de la page au lieu d'avoir son propre écart.
+    marginBottom: 28,
   },
+  // La gouttière de page, reprise par chaque rangée : le débord de la liste
+  // fait filer les filets aux bords, le texte reste aligné sous le titre.
+  row: { paddingHorizontal: 20 },
   identityText: { flex: 1, gap: 2 },
   noteRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 },
 

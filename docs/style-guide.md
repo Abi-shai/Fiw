@@ -439,10 +439,83 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 | `Field` | Toute saisie | Set à **trois axes** : `Type` = `texte` · `téléphone` · `zone`, `État` = `repos` · `actif` · `erreur` · `désactivé`, `Contenu` = `rempli` · `vide` — 24 variantes. Vide et rempli sont orthogonaux à l'état : un champ focus peut être vide, un requis en erreur l'est par définition. Le champ **vide** affiche un `Placeholder` en `text-tertiary` et **n'a pas de bouton d'effacement** (rien à effacer) ; le champ **rempli** le porte dans les trois types — au centre à droite en `texte` et `téléphone`, **en haut à droite** en `zone`. La couleur du × suit l'état (`text-tertiary` / `primary` / `error` / `text-disabled`). Libellé avec astérisque requis, icône de tête, slot trailing, texte d'aide sous le contrôle. `Type=téléphone` porte le chip indicatif (drapeau + `+code` + caret) ouvrant le `CountryPicker`, numéro **formaté par pays** (`constants/countries.ts`), **tous pays acceptés** — point d'entrée unique de toute saisie de téléphone, changement de numéro **et** onboarding (cf. `sitemap-client.md` §1). _(Absorbe `PhoneField` et `TextArea`, retirés le 23 août 2026.)_ |
 | `PlaceField` | Saisie d'un Lieu | Départ / arrivée : deux lignes (libellé + valeur), icône de tête, bouton rond « choisir sur la carte » optionnel, état `actif`. Distinct de `Field` — on y saisit un Lieu, pas du texte libre. Pendant de `PlaceRow`, qui **affiche** un Lieu. |
 | `CountryPicker` | Choix du pays | Feuille **3 crans** (`hooks/useSnapSheet`) + barre de recherche + liste monde triée. Drapeaux = **PNG plats locaux** (`assets/flags/`, map `constants/flags.ts`) rendus via `FlagChip` — **pas de SVG** (`SvgXml` plante sur les drapeaux à bloc `<style>`). |
-| `SettingsRow` | Ligne de réglage | Icône ligne + label + sous-titre + `value`/slot `right` + chevron. Variante `destructive` (label rouge). Page Compte et sous-écrans. **Volontairement pauvre** : un objet plus riche (logo de service, badge d'état, action sur une 2ᵉ ligne — cf. carte de `compte/paiement.tsx`) mérite **son propre composant**, pas des slots ajoutés ici un par un. |
-| `SettingsGroup` | Carte de réglages | Regroupe des `SettingsRow` (séparateurs auto), label de section en capitales + `footnote`. |
+| `SettingsRow` | Ligne de réglage | Icône ligne + label + **sous-titre** + slot `right` + chevron. Variante `destructive` (label rouge) ; prop `accent` = **rangée d'objet** (pastille bleue 42 px, voir la règle plus bas). Page Compte et sous-écrans. **Volontairement pauvre** : un objet plus riche (logo de service, badge d'état, action sur une 2ᵉ ligne — cf. carte de `compte/paiement.tsx`) mérite **son propre composant**, pas des slots ajoutés ici un par un. Le résumé de la rangée passe **toujours par `subtitle`**, jamais par une valeur alignée à droite : la valeur de droite dispute sa largeur au label et le fait passer à la ligne, d'où des rangées de hauteurs inégales. `subtitle` est en `numberOfLines={1}` — un résumé trop long se tronque, il ne déforme pas la liste. |
+| `SettingsGroup` | Groupe de réglages | Regroupe des `SettingsRow` séparées par un filet 1 px **de bord à bord**, label de section en capitales (`label` 13 px medium, gris secondaire) + `footnote`. **Sans carte** — voir la règle ci-dessous. |
 | `Radio` | Pastille de sélection | Coché = fond bleu marque + tick blanc ; décoché = cercle vide `text-disabled`. Marque l'élu d'un ensemble à choix unique **dans une feuille de choix** (`PaymentSheet`). Non tappable en propre — c'est la rangée qui porte l'action. Dans une **liste persistante**, préférer `SettingsRow selected` + badge (voir ci-dessous). |
 | `Callout` | Encart d'information | Fond `brand-yellow-subtle` + liseré `brand-yellow-100` + **pastille `brand-yellow` à glyphe sombre** (structure de la carte « Devenir prestataire » — le jaune remplit, le glyphe dessus porte le contraste). Pour une **règle** ou une **affordance non devinable** que le Client doit lire. Jaune et **pas bleu** : cf. répartition des rôles bleu/jaune. **Un seul par écran** — au-delà, c'est un problème de hiérarchie. À distinguer du motif `infoRow` (icône + `caption` tertiaire **sans fond**), qui précise sans réclamer l'attention. |
+
+> **Les cartes sont pour les objets ; les portes sont à plat.** Une carte blanche
+> encadrée représente **une chose qui a un état** — un moyen de paiement (configuré /
+> par défaut), une gamme, un reçu, un lieu. Une rangée de réglage ne représente
+> rien : c'est une **porte** vers un écran. Lui donner une carte, c'est ajouter du
+> cadre là où il n'y a pas de contenu à cadrer — la page se charge visuellement sans
+> livrer une information de plus.
+>
+> Donc : **les écrans de réglages sont à plat sur fond blanc** (`color-surface`),
+> rangées séparées par un filet 1 px `color-border` de bord à bord, sections
+> séparées par un label en capitales et de l'air. C'est la géométrie déjà retenue
+> pour la **sidebar** (`MenuDrawer`) — même nature de liste, même traitement — et le
+> contraste gris-sur-blanc résiste mieux à une lecture en plein soleil que le
+> gris-sur-gris d'une carte posée sur `color-bg`.
+>
+> ⚠️ **Précision sur le benchmark.** `benchmark-compte-mobbin.md` décrit la carte de
+> réglages comme le « motif unanime » de Bolt / Careem / Réglages iOS. Cette
+> unanimité est celle d'un **échantillon iOS** : toutes les recherches Mobbin ont été
+> faites en `platform: "ios"`, et la carte blanche sur gris est précisément l'idiome
+> des Réglages iOS. L'idiome natif Android — la plateforme dominante du marché
+> dakarois — est l'inverse : rangées à plat, filets pleine largeur, en-têtes de
+> section. _(Décidé en rendant le 11 août 2026, todo P5.)_
+
+> **Une liste d'objets porte la pastille ; un groupe de réglages porte l'icône
+> nue.** Dans une liste d'**éléments que le Client possède** — un Lieu
+> enregistré, un Contact de confiance — le glyphe de tête passe en bleu marque
+> dans une pastille `color-primary-subtle` de **42 px** (géométrie de
+> `Medallion / Ton=accent`, glyphe 20 ; une `ListRow` l'obtient en posant un
+> `Medallion` dans son `leading`). Dans un groupe de **réglages**, il reste une icône ligne nue de
+> 22 px.
+>
+> La pastille se met alors sur **toutes** les rangées de la liste, y compris
+> l'état vide : c'est la liste entière qui change de grammaire, pas une rangée
+> qui se distingue. Elle décale le label d'une douzaine de pixels par rapport à
+> un groupe de réglages voisin — c'est la marque de la liste, et à l'intérieur
+> d'une liste rien n'est désaligné.
+>
+> Corollaire : la même pastille sur les deux écrans. Les Lieux enregistrés et
+> les Contacts de confiance sont deux listes de même nature ; deux tailles de
+> pastille pour un même motif se lisent comme une erreur, pas comme une nuance.
+> _(Décidé en rendant le 15 août 2026 ; la pastille, née à 34 px pour la seule
+> rangée « Ajouter… », est passée à 42.)_
+>
+> _Amendement du 25 août 2026 : `SettingsRow` et `SettingsGroup` sont absorbés
+> par `ListRow` et `List`, comme dans la maquette. La règle ne change pas — la
+> pastille est désormais un `Medallion / Ton=accent` posé dans le `leading` de la
+> rangée, et le mode `plat` de `List` porte la géométrie sans carte décrite
+> ci-dessus (débord de la gouttière pour que les filets filent aux bords)._
+
+> **L'action « ajouter » d'un écran de gestion est un bouton `primary` sous la
+> liste.** Sur un écran dont c'est la **seule** action — Lieux enregistrés,
+> Contacts de confiance — la forme retenue n'est ni le `secondary` (elle n'est
+> pas une action secondaire, il n'y en a pas d'autre) ni la rangée « + Ajouter »
+> en dernière ligne de liste (motif Bolt / Uber). Une rangée d'ajout **se range
+> parmi les objets** : elle se lit comme un élément de plus dans la liste, alors
+> qu'elle en crée un. Le bouton plein la sort de la liste et la nomme pour ce
+> qu'elle est.
+> _(Tranché par le client le 20 août 2026, après comparaison des deux formes sur
+> interrupteur de démo. Aligne Sécurité, qui était resté en `secondary`.)_
+
+> **La seconde ligne d'une rangée d'objet dit ce qui MANQUE, pas ce qu'il y a.**
+> Un Lieu enregistré tient deux informations — l'adresse et le **Repère** — et
+> une rangée n'a qu'une seconde ligne. Elle porte donc l'adresse quand le lieu
+> est complet, et sinon l'invitation à combler le trou : « Ajouter une adresse »
+> d'abord (sans elle le lieu n'existe pas), « Ajouter un Repère » ensuite, en
+> `color-primary` — le bleu de l'action, cf. `subtitleAccent`.
+>
+> Le raisonnement vaut au-delà des lieux : **on ne relit pas un texte qu'on a
+> écrit soi-même**, mais on doit voir l'objet qui va échouer. Afficher le contenu
+> du Repère aurait demandé une troisième ligne, donc une carte — un cadre bâti
+> pour montrer un état, occupé à afficher ce que personne ne relit.
+> _(Tranché le 20 août 2026 ; variante carte à trois lignes construite,
+> comparée, écartée.)_
 
 ### Axes de taille : `sm|md|lg` ou pixels ?
 

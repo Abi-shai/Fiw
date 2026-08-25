@@ -81,6 +81,53 @@ benchmark carte/PayPal ; le minimalisme cash-first de [inDrive](https://mobbin.c
 > liste du compte** (pas enterré). → Fiw doit rendre les Contacts de confiance
 > **visibles**, cohérent avec l'axe sécurité produit.
 
+> ⚠️ **La section Sécurité est à ajuster.** L'écran `compte/securite.tsx` porte
+> trois sections hétérogènes — partage de trajet (un switch), Contacts de
+> confiance (une liste + un CTA), connexion (numéro + code) — sous un seul titre.
+> La rangée du hub qui y mène s'appelait « Contacts de confiance », soit le nom
+> d'**une** de ses trois sections ; renommée **« Sécurité »** le 11 août 2026,
+> mais le problème de fond reste : **son sous-titre n'énumère toujours que les
+> contacts**, donc il résume un tiers de l'écran. Questions ouvertes : le
+> sous-titre doit-il décrire l'écran entier ou sa partie la plus actionnable ?
+> « Connexion » a-t-elle sa place ici plutôt que dans le hub ? Et le signal du
+> benchmark ci-dessus — rendre les Contacts **visibles** depuis le compte —
+> est-il encore tenu maintenant que la rangée ne les nomme plus ? Suivi : todo
+> **P11**.
+>
+> **Amendement du 20 août 2026 — l'écran Sécurité est gardé, et son nom aussi.**
+> Depuis la rédaction ci-dessus, la section **Connexion a été retirée** (elle
+> doublait Profil, et aucune app du bench ne range le téléphone sous Safety) :
+> l'écran ne porte plus que **deux** rubriques, partage de trajet et Contacts de
+> confiance. D'où la question posée : un écran si maigre mérite-t-il encore un
+> écran, ou redevient-il la rangée « Contacts de confiance » du benchmark
+> d'origine ?
+>
+> **Réponse : on garde « Sécurité ».** L'argument est celui relevé en réunion le
+> 16 août 2026 (`meeting-recaps/08-16.md`) — *« garder "Sécurité" permet d'y
+> ajouter d'autres paramètres à l'avenir »*. Il ne nie pas la maigreur, il la
+> requalifie : l'écran est court **parce qu'il n'a pas encore reçu ce qui lui
+> reviendra**, pas parce qu'il n'a pas de raison d'être. Nommer la rangée d'après
+> sa seule liste actuelle rendrait tout ajout futur soit invisible, soit
+> renommant. Un contenant se nomme d'après ce qu'il est fait pour tenir.
+>
+> **Et son sous-titre dit l'ÉTAT de la protection**, pas la liste des contacts :
+> « Partage activé · 2 contacts de confiance ». Trois formes ont été pesées —
+> énumérer les contacts (statu quo), nommer les deux rubriques, ou dire l'état.
+> L'énumération ne résumait qu'une rubrique sur deux et allait vieillir avec
+> l'écran ; nommer les rubriques décrit bien l'écran mais tient mal sur une
+> ligne et n'apprend rien. **L'état couvre les deux rubriques, garde les
+> Contacts visibles depuis le compte — le signal du bench ci-dessus est donc
+> tenu — et répond à la seule question qu'on ne peut pas deviner de l'extérieur :
+> le partage est-il en marche ?** C'est la seule rangée du hub dont le résumé
+> n'est pas une liste de valeurs ; l'écart est assumé, les autres rangées
+> ouvrent sur des inventaires, celle-ci sur une protection qui est en marche ou
+> non.
+>
+> Conséquence technique : l'état de sécurité sort de l'écran pour vivre dans
+> **`stores/safety.ts`** — le hub affiche ce que `compte/securite` règle, les
+> deux doivent voir la même chose. Même motif que `stores/payment` (D6) et
+> `stores/places`. _(P11 est close.)_
+
 **4 · Préférences** → notifications (push / SMS), groupées par canal — réf.
 [Sumeria (FR)](https://mobbin.com/screens/8def4c2c-d55b-4da5-8210-30a9d4e8ec12),
 [Zomato](https://mobbin.com/screens/ea6bdb86-bce1-4794-9c47-39c84af745ac). Le
@@ -308,6 +355,17 @@ lieu d'une absence de rangée. **Logos** tirés du registre partagé
   `MenuItem` du drawer. Variante toggle pour les Préférences.
 - **`SectionList`** — regroupement en sections étiquetées (Profil / Paiement /
   Sécurité / Préférences), motif unanime du benchmark.
+
+  > ⚠️ **Amendement du 11 août 2026.** Le *regroupement en sections* est bien
+  > unanime — mais la **carte** blanche à liseré qui l'habillait ne l'est pas :
+  > toutes les recherches Mobbin de ce benchmark ont été faites en
+  > `platform: "ios"`, et cette carte est l'idiome des Réglages iOS. L'idiome
+  > natif Android, plateforme dominante du marché dakarois, est l'inverse —
+  > rangées à plat sur fond blanc, filets pleine largeur, en-têtes de section.
+  > C'est la forme retenue après comparaison des deux en rendu (todo P5) :
+  > `SettingsGroup` n'a plus de carte. Les cartes restent aux **objets** (un
+  > moyen de paiement, une gamme, un reçu), pas aux portes. Règle détaillée dans
+  > `style-guide.md`, section « Composants & organismes ».
 - **`TrustedContactRow`** — contact de confiance : avatar/initiales + nom + état de
   partage, menant aux réglages par contact (partage au départ, appel d'urgence).
 
