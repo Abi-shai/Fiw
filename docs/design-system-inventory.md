@@ -2802,3 +2802,56 @@ de composants du système. Ils ne l'étaient pas.
 `npx tsc --noEmit` propre. Rien vérifié à l'écran : les rangées de pays passent
 d'un padding vertical de 14 à celui de `ListRow` (8), et les deux écrans
 `configure` changent de mise en page en pied de feuille.
+
+---
+
+# Partie XXXVI — La fusion avec `main` (25 août 2026)
+
+La PR #6 était bloquée : `main` avait reçu trois commits de Diana (14 et 20 août)
+qui refont **exactement** les mêmes fichiers. Dix conflits, tous sur Compte, dont
+deux « modification/suppression » — j'avais supprimé `SettingsRow` et
+`SettingsGroup` pendant qu'elle les enrichissait.
+
+## Ce que ce n'était pas
+
+Ce n'était pas un conflit mécanique. Deux décisions de design se rencontraient :
+
+| | Sa branche (main) | La nôtre |
+|---|---|---|
+| Rangée de réglage | `SettingsRow` enrichie d'un ton `accent` | supprimée au profit de `ListRow` |
+| Valeur à droite | **retirée** — « elle dispute sa largeur au label et le fait passer à la ligne, d'où des rangées de hauteurs inégales » | `ListRow` en porte une (`Valeur`) |
+| Surface | **page blanche, rangées à plat, filets bord à bord** (todo P5) | cartes `List / Style=carte` |
+| Résumés | lus depuis `stores/payment` et `stores/safety` | écrits en dur |
+
+## Règle de résolution retenue
+
+**L'architecture est la nôtre, la grammaire est la sienne.** `ListRow` et `List`
+restent — c'est ce que dit la maquette — mais ils adoptent ses décisions :
+
+- **Aucune valeur alignée à droite dans Compte.** Les résumés passent en
+  sous-titre. `ListRow` sait faire les deux : il suffit de ne pas passer `value`.
+  Sa raison tient, et la maquette n'a rien à changer.
+- **`List` absorbe la géométrie de `SettingsGroup`** : mode `plat` sans carte,
+  nouveau prop `bleed` qui annule la gouttière de page pour que les filets filent
+  d'un bord à l'autre, et titre en `label` secondaire plutôt qu'en `caption`
+  tertiaire — sans carte, c'est le titre qui porte la coupure de section.
+- **Ses deux stores sont conservés intacts**, ainsi que ses renommages
+  (« Contacts de confiance » → « Sécurité »), sa suppression du groupe
+  « Connexion », son bouton d'ajout en `primary`, et sa liste d'objets à pastille
+  — qui devient un `Medallion / Ton=accent` dans le `leading` de la rangée.
+- **Le style guide garde ses trois règles**, amendées de façon datée là où elles
+  nommaient des composants supprimés.
+
+## Ce qui a été tranché contre elle, et pourquoi
+
+- **`PhoneField`** garde le rayon `lg` et le fond `surface` de la maquette, là où
+  elle avait mis `md` et `bg`. La maquette fait autorité sur un composant ; c'est
+  la consigne du 24 août.
+- **Les champs de `compte/lieu` et `compte/profil`** restent sur `Field` : ses
+  styles visaient l'ancien balisage, que le composant a remplacé.
+
+## Reste à vérifier à l'écran
+
+Le hub Compte et Sécurité changent de surface (page blanche, plus de cartes) et
+de rythme. `npx tsc --noEmit` est propre, mais **cette fusion n'a pas été vue
+tourner** — c'est le premier écran à ouvrir.
