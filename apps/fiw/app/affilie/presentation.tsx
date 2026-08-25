@@ -3,10 +3,11 @@ import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
+import ScreenFooter from '@/components/ScreenFooter';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 import Checkbox from '@/components/Checkbox';
-import { Colors, Radii, Spacing, Strokes } from '@/constants/tokens';
+import { Colors, Radii, Spacing } from '@/constants/tokens';
 
 type Step = { icon: IconName; title: string; body: string };
 
@@ -58,7 +59,7 @@ export default function Presentation() {
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <ScreenFooter rule>
         <TouchableOpacity style={styles.checkRow} activeOpacity={0.7} onPress={() => setAccepted((v) => !v)}>
           <Checkbox checked={accepted} />
           <Text variant="bodySmall" color={Colors.textSecondary} style={styles.checkLabel}>
@@ -78,7 +79,7 @@ export default function Presentation() {
           disabled={!accepted}
           onPress={() => router.replace('/affilie/dashboard')}
         />
-      </View>
+      </ScreenFooter>
     </View>
   );
 }
@@ -111,15 +112,6 @@ const styles = StyleSheet.create({
   stepText: { flex: 1, paddingTop: 2 },
   stepBody: { marginTop: 2 },
 
-  footer: {
-    paddingHorizontal: Spacing[4],
-    paddingTop: Spacing[4],
-    paddingBottom: Spacing[8],
-    borderTopWidth: Strokes.thin,
-    borderTopColor: Colors.borderSubtle,
-    backgroundColor: Colors.bg,
-    gap: Spacing[4],
-  },
 
   checkRow: {
     flexDirection: 'row',

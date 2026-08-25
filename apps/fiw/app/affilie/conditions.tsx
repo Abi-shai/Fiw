@@ -4,10 +4,11 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
+import ScreenFooter from '@/components/ScreenFooter';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import Checkbox from '@/components/Checkbox';
-import { Colors, Spacing, Strokes } from '@/constants/tokens';
+import { Colors, Spacing } from '@/constants/tokens';
 
 // JS1 — Conditions d'utilisation (contrat d'affiliation).
 // « J'accepte et je commence » → tableau de bord (premier accès).
@@ -43,7 +44,7 @@ export default function Conditions() {
         ))}
       </ScrollView>
 
-      <View style={styles.footer}>
+      <ScreenFooter rule>
         <TouchableOpacity style={styles.checkRow} activeOpacity={0.7} onPress={() => setAccepted((v) => !v)}>
           <Checkbox checked={accepted} />
           <Text variant="bodySmall" style={styles.checkLabel}>
@@ -51,7 +52,7 @@ export default function Conditions() {
           </Text>
         </TouchableOpacity>
         <Button label="J’accepte et je commence" disabled={!accepted} onPress={start} />
-      </View>
+      </ScreenFooter>
     </View>
   );
 }
@@ -64,15 +65,6 @@ const styles = StyleSheet.create({
   clause: { flexDirection: 'row', gap: Spacing[3], alignItems: 'flex-start', marginBottom: Spacing[4] },
   clauseText: { flex: 1, paddingTop: 1 },
 
-  footer: {
-    paddingHorizontal: Spacing[4],
-    paddingTop: Spacing[4],
-    paddingBottom: Spacing[8],
-    borderTopWidth: Strokes.thin,
-    borderTopColor: Colors.borderSubtle,
-    backgroundColor: Colors.bg,
-    gap: Spacing[4],
-  },
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing[3] },
   checkLabel: { flex: 1 },
 });

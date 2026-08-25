@@ -3,6 +3,7 @@ import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
+import ScreenFooter from '@/components/ScreenFooter';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import { Colors, Radii, Spacing, Shadows, Strokes } from '@/constants/tokens';
@@ -60,12 +61,9 @@ export default function RetraitRecap() {
         </View>
       </View>
 
-      <View style={styles.footer}>
+      <ScreenFooter>
         <Button label="Confirmer le retrait" onPress={() => router.replace('/affilie/retrait-traitement')} />
-        <TouchableOpacity style={styles.cancel} activeOpacity={0.7} onPress={() => router.back()}>
-          <Text variant="label" color={Colors.textSecondary}>Annuler</Text>
-        </TouchableOpacity>
-      </View>
+      </ScreenFooter>
     </View>
   );
 }
@@ -100,6 +98,4 @@ const styles = StyleSheet.create({
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing[4] },
   detailBorder: { borderTopWidth: Strokes.thin, borderTopColor: Colors.borderSubtle },
 
-  footer: { paddingHorizontal: Spacing[4], paddingTop: Spacing[3], paddingBottom: Spacing[8], gap: Spacing[2] },
-  cancel: { alignItems: 'center', paddingVertical: Spacing[3] },
 });

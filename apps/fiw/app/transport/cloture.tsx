@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Colors, Radii, Shadows, Typography, Strokes } from '@/constants/tokens';
+import { Colors, Radii, Shadows, Typography } from '@/constants/tokens';
 import { PRESTATAIRE, PRESTATAIRE_MOTO, PAYMENT_METHODS, FRAIS_RAPPROCHEMENT } from '@/constants/data';
 import Button from '@/components/Button';
+import IconButton from '@/components/IconButton';
+import ScreenFooter from '@/components/ScreenFooter';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import Avatar from '@/components/Avatar';
+import ResultState from '@/components/ResultState';
 import ReceiptCard from '@/components/ReceiptCard';
 
 const QUICK_TAGS = [
@@ -54,19 +57,25 @@ export default function ClotureScreen() {
   if (submitted) {
     return (
       <View style={styles.thankYou}>
-        <View style={styles.thankYouBadge}>
-          <Icon name="thanks" size={40} color={Colors.primary} weight="fill" />
-        </View>
-        <Text variant="display" style={styles.thankYouTitle}>Merci pour votre avis !</Text>
-        <Text variant="body" color={Colors.textSecondary} align="center">
-          Votre retour aide toute la communauté Fiw.
-        </Text>
+        <ResultState
+          ton="accent"
+          titre="Merci pour votre avis !"
+          corps="Votre retour aide toute la communauté Fiw."
+        />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      {/* L'échappatoire d'un écran d'avis est le ✕ de l'en-tête, pas un lien
+          gris sous le CTA — c'est ce que font Shopee, Grab, Grubhub, Gojek,
+          Tesla et Walmart. Un lien gris jumeau du CTA lui dispute l'attention
+          sans jamais gagner. */}
+      <View style={[styles.dismiss, { top: insets.top + 8 }]}>
+        <IconButton name="close" variant="flat" onPress={() => router.replace('/home')} />
+      </View>
+
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 16 }]}
         keyboardShouldPersistTaps="handled"
@@ -164,18 +173,16 @@ export default function ClotureScreen() {
         </View>
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+      <ScreenFooter rule>
         <Button label="Envoyer mon avis" onPress={handleSubmit} />
-        <TouchableOpacity style={styles.passerBtn} onPress={() => router.replace('/home')} activeOpacity={0.7}>
-          <Text variant="body" color={Colors.textSecondary}>Passer</Text>
-        </TouchableOpacity>
-      </View>
+      </ScreenFooter>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
+  dismiss: { position: 'absolute', right: 16, zIndex: 2 },
   scroll: { paddingHorizontal: 20, paddingBottom: 16, gap: 14 },
 
   // En-tête succès.
@@ -218,25 +225,10 @@ const styles = StyleSheet.create({
   },
 
   // Bas de page.
-  footer: {
-    paddingHorizontal: 20, paddingTop: 12,
-    gap: 2,
-    borderTopWidth: Strokes.hairline,
-    borderTopColor: Colors.border,
-    backgroundColor: Colors.surface,
-  },
-  passerBtn: { alignItems: 'center', paddingVertical: 12 },
 
   // Écran de remerciement.
   thankYou: {
     flex: 1, backgroundColor: Colors.surface,
     justifyContent: 'center', alignItems: 'center', padding: 40, gap: 10,
   },
-  thankYouBadge: {
-    width: 88, height: 88, borderRadius: 44,
-    backgroundColor: Colors.primarySubtle,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 10,
-  },
-  thankYouTitle: { marginBottom: 2 },
 });
