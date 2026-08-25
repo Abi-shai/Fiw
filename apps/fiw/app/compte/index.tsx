@@ -4,9 +4,9 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
-import SettingsGroup from '@/components/SettingsGroup';
-import SettingsRow from '@/components/SettingsRow';
-import Avatar from '@/components/Avatar';
+import List from '@/components/List';
+import ListRow from '@/components/ListRow';
+import Avatar, { AVATAR_CARD } from '@/components/Avatar';
 import Icon from '@/components/Icon';
 import Text from '@/components/Text';
 import { CLIENT } from '@/constants/data';
@@ -22,7 +22,7 @@ export default function CompteScreen() {
   // Les résumés de rangée sont lus depuis la source réelle, jamais écrits en
   // dur : un lieu ajouté, un compte retiré, un contact supprimé se voient ici
   // aussitôt. Si la ligne déborde, le sous-titre se tronque (`numberOfLines`
-  // dans `SettingsRow`) — on perd la fin d'une énumération, pas le nom de la
+  // dans `ListRow`) — on perd la fin d'une énumération, pas le nom de la
   // rangée.
   const paymentSummary = configuredMethods(usePayment().numbers)
     .map((m) => m.label)
@@ -65,7 +65,7 @@ export default function CompteScreen() {
         {/* Bloc identité — tap → édition du profil. Affiche la Note du Client
             (moyenne ; le détail par course reste privé — décision D1). */}
         <TouchableOpacity style={styles.identity} activeOpacity={0.7} onPress={() => router.push('/compte/profil')}>
-          <Avatar name={CLIENT.name} size={60} />
+          <Avatar name={CLIENT.name} size={AVATAR_CARD} />
           <View style={styles.identityText}>
             <Text variant="heading2" numberOfLines={1}>{CLIENT.name}</Text>
             <Text variant="bodySmall" color={Colors.textSecondary}>{CLIENT.phone}</Text>
@@ -85,24 +85,20 @@ export default function CompteScreen() {
             inégales. Sous le label, le résumé a toute la largeur.
             « Sécurité » et non « Contacts de confiance » : l'écran couvre aussi
             le partage de trajet — la rangée portait le nom d'une seule de ses
-            sections. Le nom est gardé même si l'écran est court : un contenant
-            se nomme d'après ce qu'il est fait pour tenir, et celui-ci recevra
-            d'autres paramètres (réunion du 16 août 2026). */}
+            sections (réunion du 16 août 2026). */}
         {/* Une seule liste, sans titres de section : quatre portes ne demandent
-            pas de taxonomie, et les titres répétaient le nom de leurs rangées.
-            Aucune note ici non plus — ce qu'il y a à expliquer sur les Contacts
-            de confiance se lit sur l'écran Sécurité, au moment où on les gère. */}
-        <SettingsGroup>
-          <SettingsRow icon="card" label="Moyens de paiement" subtitle={paymentSummary} onPress={() => router.push('/compte/paiement')} />
-          <SettingsRow icon="location" label="Lieux enregistrés" subtitle={placesSummary} onPress={() => router.push('/compte/lieux')} />
-          <SettingsRow icon="shield" label="Sécurité" subtitle={securiteSummary} onPress={() => router.push('/compte/securite')} />
-          <SettingsRow icon="bell" label="Préférences" subtitle="Notifications" onPress={() => router.push('/compte/preferences')} />
-        </SettingsGroup>
+            pas de taxonomie, et les titres répétaient le nom de leurs rangées. */}
+        <List style_="plat" bleed={20}>
+          <ListRow icon="card" title="Moyens de paiement" subtitle={paymentSummary} onPress={() => router.push('/compte/paiement')} style={styles.row} />
+          <ListRow icon="location" title="Lieux enregistrés" subtitle={placesSummary} onPress={() => router.push('/compte/lieux')} style={styles.row} />
+          <ListRow icon="shield" title="Sécurité" subtitle={securiteSummary} onPress={() => router.push('/compte/securite')} style={styles.row} />
+          <ListRow icon="bell" title="Préférences" subtitle="Notifications" onPress={() => router.push('/compte/preferences')} style={styles.row} />
+        </List>
 
-        <SettingsGroup>
-          <SettingsRow icon="signOut" label="Se déconnecter" destructive chevron={false} onPress={logout} />
-          <SettingsRow icon="trash" label="Supprimer mon compte" destructive chevron={false} onPress={deleteAccount} />
-        </SettingsGroup>
+        <List style_="plat" bleed={20}>
+          <ListRow icon="signOut" title="Se déconnecter" ton="destructif" trailing={null} onPress={logout} style={styles.row} />
+          <ListRow icon="trash" title="Supprimer mon compte" ton="destructif" trailing={null} onPress={deleteAccount} style={styles.row} />
+        </List>
 
         <Text variant="caption" color={Colors.textTertiary} align="center" style={styles.legal}>
           Conditions générales · Politique de confidentialité
@@ -129,10 +125,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 14,
     paddingVertical: 12,
-    // Même respiration que celle qui sépare deux SettingsGroup, pour que le bloc
+    // Même respiration que celle qui sépare deux listes, pour que le bloc
     // identité entre dans le rythme de la page au lieu d'avoir son propre écart.
     marginBottom: 28,
   },
+  // La gouttière de page, reprise par chaque rangée : le débord de la liste
+  // fait filer les filets aux bords, le texte reste aligné sous le titre.
+  row: { paddingHorizontal: 20 },
   identityText: { flex: 1, gap: 2 },
   noteRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 },
 

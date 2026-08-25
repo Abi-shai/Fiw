@@ -22,7 +22,7 @@ export default function ScreenHeader({ title, onBack, right }: Props) {
     <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
       <IconButton name="back" variant="flat" color={Colors.textPrimary} onPress={onBack ?? (() => router.back())} />
       {title ? (
-        <Text variant="heading2" style={styles.title} numberOfLines={1}>{title}</Text>
+        <Text variant="heading1" style={styles.title} numberOfLines={1}>{title}</Text>
       ) : (
         <View style={styles.title} />
       )}
@@ -35,9 +35,10 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing[3],
     paddingHorizontal: Spacing[4],
     paddingBottom: Spacing[3],
   },
-  title: { flex: 1, marginLeft: Spacing[2] },
+  title: { flex: 1 },
   spacer: { width: 40 },
 });

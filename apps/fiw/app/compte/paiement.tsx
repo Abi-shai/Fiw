@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, ScrollView, Alert, Image, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import { Colors, Radii, Strokes } from '@/constants/tokens';
 import { PAY_ILLUSTRATIONS } from '@/constants/illustrations';
 import ScreenHeader from '@/components/ScreenHeader';
 import Callout from '@/components/Callout';
@@ -87,10 +87,10 @@ export default function PaiementScreen() {
                       serré, il tronque en « … » au lieu de passer à la ligne et
                       de faire grandir la carte. */}
                   <View style={styles.titleRow}>
-                    <Text variant="body" style={styles.label} numberOfLines={1}>{label}</Text>
+                    <Text variant="bodyMedium" style={styles.label} numberOfLines={1}>{label}</Text>
                     {isDefault ? (
                       <View style={styles.tag}>
-                        <Text variant="caption" color={Colors.textOnPrimary} style={styles.tagLabel}>
+                        <Text variant="captionSemibold" color={Colors.textOnPrimary}>
                           Paiement par défaut
                         </Text>
                       </View>
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.bg,
     borderRadius: Radii.lg,
-    borderWidth: 1.5,
+    borderWidth: Strokes.medium,
     borderColor: Colors.borderSubtle,
     marginBottom: 10,
     overflow: 'hidden',
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   // `flexShrink` : c'est le label qui cède la place, jamais le chip — un chip
   // tronqué ne veut plus rien dire.
-  label: { fontFamily: Outfit.medium, flexShrink: 1 },
+  label: { flexShrink: 1 },
   metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   meta: { flexShrink: 1 },
 
@@ -155,5 +155,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  tagLabel: { fontFamily: Outfit.semibold },
 });

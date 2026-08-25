@@ -40,7 +40,7 @@ function CallControl({ icon, label, active, danger, onPress }: {
 export default function CallScreen() {
   const insets = useSafeAreaInsets();
   const { name } = useLocalSearchParams<{ name: string }>();
-  const driverName = name || 'Prestataire';
+  const prestataireName = name || 'Prestataire';
 
   const [connecting, setConnecting] = useState(true);
   const [secs, setSecs] = useState(0);
@@ -67,8 +67,8 @@ export default function CallScreen() {
       </View>
 
       <View style={styles.center}>
-        <Avatar name={driverName} size={112} bordered />
-        <Text variant="heading1" color={WHITE} style={styles.name}>{driverName}</Text>
+        <Avatar name={prestataireName} size={112} bordered />
+        <Text variant="heading1" color={WHITE} style={styles.name}>{prestataireName}</Text>
         <View style={styles.statusRow}>
           <Icon name="phone" size={15} weight="fill" color={WHITE_70} />
           <Text variant="label" color={WHITE_70}>

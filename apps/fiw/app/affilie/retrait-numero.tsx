@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
-import { Colors, Radii, Spacing, Outfit } from '@/constants/tokens';
+import { Colors, Radii, Spacing, Outfit, Strokes } from '@/constants/tokens';
 import { AMBASSADEUR, detectOperator } from '@/constants/affilie';
 
 // JS3 — Saisie du numéro Mobile Money. « Valider » → récapitulatif de retrait.
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     fontFamily: Outfit.semibold,
     fontSize: 24,
     color: Colors.textPrimary,
-    borderBottomWidth: 2,
+    borderBottomWidth: Strokes.thick,
     borderBottomColor: Colors.primary,
     paddingVertical: Spacing[3],
     letterSpacing: 1,

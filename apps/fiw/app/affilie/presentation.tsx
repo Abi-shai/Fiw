@@ -5,7 +5,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
-import { Colors, Radii, Spacing } from '@/constants/tokens';
+import { Colors, Radii, Spacing, Strokes } from '@/constants/tokens';
 
 type Step = { icon: IconName; title: string; body: string };
 
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing[4],
     paddingTop: Spacing[4],
     paddingBottom: Spacing[8],
-    borderTopWidth: 1,
+    borderTopWidth: Strokes.thin,
     borderTopColor: Colors.borderSubtle,
     backgroundColor: Colors.bg,
     gap: Spacing[4],
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 22, height: 22,
     borderRadius: 6,
-    borderWidth: 1.5,
+    borderWidth: Strokes.medium,
     borderColor: Colors.border,
     backgroundColor: Colors.surface,
     alignItems: 'center',

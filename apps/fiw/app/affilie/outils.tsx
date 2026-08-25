@@ -7,7 +7,7 @@ import Button from '@/components/Button';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import FauxQR from '@/components/FauxQR';
-import { Colors, Radii, Spacing, Shadows, Outfit } from '@/constants/tokens';
+import { Colors, Radii, Spacing, Shadows, Outfit, Strokes } from '@/constants/tokens';
 import { AMBASSADEUR } from '@/constants/affilie';
 
 // JS2 — Mes Outils : QR code, code perso (copie + partage natif).
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   qrCard: {
     backgroundColor: Colors.surface,
     borderRadius: Radii.lg,
-    borderWidth: 1,
+    borderWidth: Strokes.thin,
     borderColor: Colors.borderSubtle,
     alignItems: 'center',
     paddingVertical: Spacing[8],
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   codeCard: {
     backgroundColor: Colors.surface,
     borderRadius: Radii.lg,
-    borderWidth: 1,
+    borderWidth: Strokes.thin,
     borderColor: Colors.borderSubtle,
     padding: Spacing[6],
     ...Shadows.sm,

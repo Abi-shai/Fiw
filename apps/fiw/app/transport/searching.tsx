@@ -11,12 +11,13 @@ import Text from '@/components/Text';
 import Button from '@/components/Button';
 import Icon from '@/components/Icon';
 import IconButton from '@/components/IconButton';
-import {
-  GroupedSheet, SheetCard, ProgressBar, AvatarStack, AltSuggestCard,
-  VehicleGroup, TotalBar,
-} from '@/components/RideSheet';
-import { Colors, Outfit, Radii, Shadows } from '@/constants/tokens';
-import { DAKAR_CENTER, FRAIS_RAPPROCHEMENT, DRIVER, MOTO_DRIVER, complementaryGamme } from '@/constants/data';
+import { GroupedSheet, SheetCard } from '@/components/Sheet';
+import AltSuggestCard from '@/components/AltSuggestCard';
+import AvatarStack from '@/components/AvatarStack';
+import ProgressBar from '@/components/ProgressBar';
+import VehicleGroup from '@/components/VehicleGroup';
+import { Colors, Outfit, Radii, Shadows, Strokes } from '@/constants/tokens';
+import { DAKAR_CENTER, FRAIS_RAPPROCHEMENT, PRESTATAIRE, PRESTATAIRE_MOTO, complementaryGamme } from '@/constants/data';
 import { gammeIllustration, topviewSprite, type IlluKey } from '@/constants/illustrations';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -47,9 +48,9 @@ const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/[\s  ]/g, '.');
 
 // Pile d'avatars (preuve sociale) — initiales tintées, façon maquette 118-328.
 const NEARBY = [
-  { label: 'A', bg: '#e7ecff', fg: Colors.primaryPressed },
-  { label: 'C', bg: Colors.warningSubtle, fg: '#b45309' },
-  { label: 'F', bg: Colors.successSubtle, fg: '#047857' },
+  { label: 'A', bg: Colors.primarySubtle, fg: Colors.primaryPressed },
+  { label: 'C', bg: Colors.warningSubtle, fg: Colors.warningInk },
+  { label: 'F', bg: Colors.successSubtle, fg: Colors.successInk },
 ];
 
 // Radar : anneaux concentriques qui s'étendent en boucle depuis le départ.
@@ -111,7 +112,7 @@ export default function SearchingScreen() {
   const finalPrice = isFar ? base + frais : base;
 
   const illu = (params.gammeIllu || 'auto') as IlluKey;
-  const driver = params.gammeId === 'moto' ? MOTO_DRIVER : DRIVER;
+  const prestataire = params.gammeId === 'moto' ? PRESTATAIRE_MOTO : PRESTATAIRE;
   // Gamme complémentaire suggérée à l'état « Aucun prestataire ».
   const alt = complementaryGamme(params.gammeId || 'simple');
 
@@ -301,13 +302,13 @@ export default function SearchingScreen() {
                   <View style={styles.flex1}>
                     <Text variant="heading2" color={Colors.primaryPressed}>Total à payer</Text>
                     <Text variant="bodySmall" color={Colors.textSecondary} style={styles.breakdown}>
-                      <Text variant="bodySmall" style={styles.breakdownStrong}>{fmt(base)} F</Text>
+                      <Text variant="bodySmallSemibold">{fmt(base)} F</Text>
                       {' de course + '}
-                      <Text variant="bodySmall" style={styles.breakdownStrong}>{fmt(frais)} F</Text>
+                      <Text variant="bodySmallSemibold">{fmt(frais)} F</Text>
                       {' de frais de rapprochement.'}
                     </Text>
                   </View>
-                  <Text style={styles.totalCardAmount}>{fmt(finalPrice)} F</Text>
+                  <Text variant="amount" color={Colors.primary}>{fmt(finalPrice)} F</Text>
                 </View>
               </SheetCard>
 
@@ -344,9 +345,8 @@ export default function SearchingScreen() {
             <>
               <SheetCard>
                 <Text variant="heading2">Votre chauffeur arrive dans environ {revealEta}</Text>
-                <VehicleGroup driver={driver} illu={illu} />
+                <VehicleGroup prestataire={prestataire} illu={illu} />
               </SheetCard>
-              <TotalBar amount={finalPrice} />
             </>
           ) : (
             /* Recherche en cours (maquette 118-328). */
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
   ring: {
     position: 'absolute',
     width: 80, height: 80, borderRadius: 40,
-    borderWidth: 2, borderColor: Colors.primary,
+    borderWidth: Strokes.thick, borderColor: Colors.primary,
     backgroundColor: 'rgba(0, 102, 255, 0.06)',
   },
 
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
   bannerImg: { width: 44, height: 44 },
-  bannerText: { flex: 1, fontSize: 15, lineHeight: 20 },
+  bannerText: { flex: 1 },
 
   controls: { position: 'absolute', left: 16 },
 
@@ -420,8 +420,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 12,
   },
   breakdown: { marginTop: 4, lineHeight: 21 },
-  breakdownStrong: { fontFamily: Outfit.semibold, color: Colors.textPrimary },
-  totalCardAmount: { fontFamily: Outfit.bold, fontSize: 22, lineHeight: 29, color: Colors.primary },
 
   demoControls: { position: 'absolute', right: 16 },
   demoChip: {
@@ -429,7 +427,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: Radii.pill,
     paddingVertical: 8, paddingHorizontal: 12,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: Colors.hairline,
+    borderWidth: Strokes.hairline, borderColor: Colors.hairline,
     ...Shadows.float,
   },
 });

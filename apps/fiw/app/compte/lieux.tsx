@@ -4,8 +4,9 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
-import SettingsGroup from '@/components/SettingsGroup';
-import PlaceRow from '@/components/PlaceRow';
+import List from '@/components/List';
+import ListRow from '@/components/ListRow';
+import Medallion from '@/components/Medallion';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import { usePlaces, type Place } from '@/stores/places';
@@ -39,24 +40,22 @@ export default function LieuxScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
-        <SettingsGroup>
+        <List style_="plat" bleed={20} inset={56}>
           {places.map((p) => (
-            <PlaceRow
+            <ListRow
               key={p.id}
-              icon={iconFor(p.kind)}
-              accent
+              leading={<Medallion icon={iconFor(p.kind)} ton="accent" />}
               title={p.label}
               // Maison et Travail restent dans la liste même vidés de leur
               // adresse : la seconde ligne devient alors l'invitation à la
               // remplir (cf. Bolt, Uber, Freenow).
               subtitle={rowSubtitle(p)}
               subtitleAccent={rowIsInvite(p)}
-              trailing="chevronRight"
               onPress={() => router.push(`/compte/lieu?id=${p.id}`)}
               style={styles.row}
             />
           ))}
-        </SettingsGroup>
+        </List>
 
         <Text variant="caption" color={Colors.textTertiary} style={styles.hint}>
           Maison et Travail sont toujours présents ; ajoutez autant de lieux libres que vous voulez.
@@ -80,8 +79,8 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8 },
   // Les lieux sont des portes — mêmes rangées à plat, mêmes filets de bord à
   // bord que le hub Compte, et non une carte englobant la liste. Le padding de
-  // 20 est celui que `SettingsGroup` attend pour aligner le contenu sous son
-  // titre (il tire les rangées de -20 pour que les filets filent aux bords).
+  // 20 est celui que la liste annule par son débord, pour que les filets filent
+  // aux bords sans désaligner le texte.
   row: { paddingHorizontal: 20 },
   hint: { marginTop: 8, marginLeft: 4, lineHeight: 16 },
   add: { marginTop: 16 },

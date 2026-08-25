@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import { Colors, Radii, Strokes } from '@/constants/tokens';
 import { gammeIllustration, illoSize, type IlluKey } from '@/constants/illustrations';
 
 const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/[\s  ]/g, '.');
@@ -81,16 +81,16 @@ export default function GammeCard({
           <Image source={gammeIllustration(illu)} style={illoSize(illu)} resizeMode="contain" />
           <View style={[styles.eta, selected && styles.etaSel]}>
             <Icon name="timer" size={12} weight="bold" color={Colors.textPrimary} />
-            <Text variant="caption" style={styles.etaText}>{eta}</Text>
+            <Text variant="captionMedium">{eta}</Text>
           </View>
         </Animated.View>
 
         <View style={styles.info}>
           <View style={styles.labelRow}>
-            <Text variant="label" numberOfLines={1} style={styles.label}>{label}</Text>
+            <Text variant="bodyMedium" numberOfLines={1}>{label}</Text>
             {badge && (
               <View style={styles.tag}>
-                <Text variant="caption" style={styles.tagText}>{badge}</Text>
+                <Text variant="captionMedium">{badge}</Text>
               </View>
             )}
           </View>
@@ -105,12 +105,12 @@ export default function GammeCard({
               changement sec de couleur (le texte n'est pas animable). */}
           <View style={styles.price}>
             <Animated.View style={{ opacity: idleOpacity }}>
-              <Text variant="heading2" align="center" style={styles.priceText} color={Colors.textPrimary}>
+              <Text variant="heading2Bold" align="center" style={styles.priceWidth} color={Colors.textPrimary}>
                 {fmt(price)} FCFA
               </Text>
             </Animated.View>
             <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: progress }]}>
-              <Text variant="heading2" align="center" style={styles.priceText} color={Colors.primaryInk}>
+              <Text variant="heading2Bold" align="center" style={styles.priceWidth} color={Colors.primaryInk}>
                 {fmt(price)} FCFA
               </Text>
             </Animated.View>
@@ -136,28 +136,22 @@ const styles = StyleSheet.create({
   },
   info: { gap: 4 },
   labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
-  // 16/20 (maquette 40:197). L'interligne doit être surchargé avec la taille :
-  // `variant="label"` impose 18, trop serré pour du 16 — et c'est ce 20 qui fait
-  // tomber la géométrie juste (bloc info 47 → plateforme 52, exactement Figma).
-  label: { fontSize: 16, lineHeight: 20 },
   price: { width: '100%' },
-  priceText: { fontFamily: Outfit.bold, width: '100%' },
+  priceWidth: { width: '100%' },
   tag: {
     backgroundColor: Colors.brandYellow,
     borderRadius: Radii.pill,
-    borderWidth: 1, borderColor: Colors.primarySubtle,
+    borderWidth: Strokes.thin, borderColor: Colors.primarySubtle,
     paddingHorizontal: 6, paddingVertical: 2,
   },
-  tagText: { fontFamily: Outfit.medium, color: Colors.textPrimary },
   eta: {
     position: 'absolute',
     bottom: -8, left: 0,
     flexDirection: 'row', alignItems: 'center', gap: 3,
     backgroundColor: Colors.surface,
     borderRadius: Radii.pill,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderWidth: Strokes.thin, borderColor: Colors.borderSubtle,
     paddingHorizontal: 8, paddingVertical: 3,
   },
   etaSel: { borderColor: Colors.primarySubtle },
-  etaText: { fontFamily: Outfit.medium, color: Colors.textPrimary },
 });

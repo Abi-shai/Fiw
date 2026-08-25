@@ -3,6 +3,7 @@ export const Radii = {
   sm: 8,    // tags, badges
   md: 12,   // boutons, champs/SearchBar, cards
   lg: 16,   // grandes cards
+  card: 20, // cartes de feuille (GroupedSheet, VehicleGroup, InfoBanner)
   xl: 28,   // bottom sheets, modals
   pill: 999, // éléments totalement arrondis (chips, segmented)
 } as const;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Image, StyleSheet } from 'react-native';
-import { Colors, Outfit } from '@/constants/tokens';
+import { Colors, Outfit, Strokes } from '@/constants/tokens';
 import Text from '@/components/Text';
 import { FLAG_IMAGES } from '@/constants/flags';
 
@@ -23,7 +23,7 @@ export default function FlagChip({ code, width = 26 }: { code: string; width?: n
 const styles = StyleSheet.create({
   base: {
     borderRadius: 3,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: Strokes.thin,
     borderColor: Colors.border,
     backgroundColor: Colors.track,
     overflow: 'hidden',

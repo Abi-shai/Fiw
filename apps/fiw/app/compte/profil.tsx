@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import { Colors, Radii, Strokes } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
+import Field from '@/components/Field';
 import Avatar from '@/components/Avatar';
 import Button from '@/components/Button';
 import Icon from '@/components/Icon';
@@ -65,16 +66,13 @@ export default function ProfilScreen() {
         </View>
 
         {/* Nom — éditable inline */}
-        <View style={styles.field}>
-          <Text variant="caption" color={Colors.textTertiary}>Nom complet</Text>
-          <TextInput style={styles.input} value={name} onChangeText={setName} />
-        </View>
+        <Field label="Nom complet" value={name} onChangeText={setName} style={styles.field} />
 
         {/* Téléphone — champ protégé : la modification passe par une vérification SMS */}
         <View style={styles.phoneRow}>
           <View style={styles.flex1}>
             <Text variant="caption" color={Colors.textTertiary}>Téléphone</Text>
-            <Text variant="body" style={styles.phoneValue} numberOfLines={1}>{phone}</Text>
+            <Text variant="bodyMedium" style={styles.phoneValue} numberOfLines={1}>{phone}</Text>
           </View>
           <Button
             variant="link"
@@ -111,7 +109,7 @@ const styles = StyleSheet.create({
   noteCard: {
     backgroundColor: Colors.bg,
     borderRadius: Radii.lg,
-    borderWidth: 1,
+    borderWidth: Strokes.thin,
     borderColor: Colors.borderSubtle,
     padding: 16,
     gap: 10,
@@ -120,16 +118,7 @@ const styles = StyleSheet.create({
   noteLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   noteHint: { lineHeight: 16 },
 
-  field: {
-    backgroundColor: Colors.bg,
-    borderRadius: Radii.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginBottom: 12,
-  },
-  input: { fontSize: 15, color: Colors.textPrimary, fontFamily: Outfit.medium, marginTop: 2, padding: 0 },
+  field: { marginBottom: 12 },
 
   phoneRow: {
     flexDirection: 'row',
@@ -137,14 +126,14 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: Colors.bg,
     borderRadius: Radii.md,
-    borderWidth: 1,
+    borderWidth: Strokes.thin,
     borderColor: Colors.border,
     paddingLeft: 16,
     paddingRight: 14,
     paddingVertical: 12,
     marginBottom: 8,
   },
-  phoneValue: { marginTop: 2, fontFamily: Outfit.medium },
+  phoneValue: { marginTop: 2 },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4, paddingHorizontal: 4 },
 
   save: { marginTop: 20 },

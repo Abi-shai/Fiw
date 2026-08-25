@@ -2,7 +2,8 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import Radio from '@/components/Radio';
+import { Colors, Radii, Strokes } from '@/constants/tokens';
 
 export type OptId = 'A' | 'B';
 
@@ -69,11 +70,11 @@ export default function RapprochementChoice({ base, frais, value, onChange }: Pr
             </View>
 
             <View style={styles.mid}>
-              <Text variant="body" style={styles.title} numberOfLines={2}>{o.title}</Text>
+              <Text variant="cardTitle" numberOfLines={2}>{o.title}</Text>
               {/* Bénéfice distinctif — le point saillant de l'arbitrage. */}
               <View style={[styles.benefit, { backgroundColor: active ? Colors.surface : Colors.bg }]}>
                 <Icon name={o.benefitIcon} size={12} weight="bold" color={o.benefitColor} />
-                <Text variant="caption" color={o.benefitColor} style={styles.benefitTxt}>{o.benefit}</Text>
+                <Text variant="captionSemibold" color={o.benefitColor}>{o.benefit}</Text>
               </View>
               <Text variant="caption" color={Colors.textSecondary}>
                 Option {o.id} · ~{o.wait} min · {feeLabel}
@@ -82,9 +83,7 @@ export default function RapprochementChoice({ base, frais, value, onChange }: Pr
 
             <View style={styles.right}>
               <Text variant="heading2" color={active ? Colors.primary : Colors.textPrimary}>{fmt(price)} F</Text>
-              <View style={[styles.radio, active && styles.radioOn]}>
-                {active && <Icon name="tick" size={13} weight="bold" color={Colors.surface} />}
-              </View>
+              <Radio selected={active} />
             </View>
           </TouchableOpacity>
         );
@@ -111,7 +110,7 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 12,
     borderRadius: Radii.lg,
-    borderWidth: 1.5,
+    borderWidth: Strokes.medium,
     borderColor: Colors.border,
     backgroundColor: Colors.surface,
   },
@@ -123,21 +122,13 @@ const styles = StyleSheet.create({
   },
   iconWrapActive: { backgroundColor: Colors.surface },
   mid: { flex: 1, gap: 4 },
-  title: { fontFamily: Outfit.semibold },
   benefit: {
     alignSelf: 'flex-start',
     flexDirection: 'row', alignItems: 'center', gap: 4,
     borderRadius: Radii.pill,
     paddingVertical: 3, paddingHorizontal: 8,
   },
-  benefitTxt: { fontFamily: Outfit.semibold },
   right: { alignItems: 'flex-end', gap: 6 },
-  radio: {
-    width: 22, height: 22, borderRadius: 11,
-    borderWidth: 2, borderColor: Colors.textDisabled,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  radioOn: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   note: {
     flexDirection: 'row', gap: 10, alignItems: 'flex-start',
     padding: 12, borderRadius: Radii.md,

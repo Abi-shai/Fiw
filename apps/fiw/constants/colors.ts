@@ -87,4 +87,11 @@ export const Colors = {
   warningSubtle:  '#FEF3C7',
   success:        '#10B981',
   successSubtle:  '#D1FAE5',
+  // Encres foncées des paliers fonctionnels — le pendant texte de `*Subtle`.
+  // `warning` et `success` sont des pleins : posés en TEXTE sur leur propre
+  // subtil ils tombent sous 3:1 (2.0:1 pour l'ambre, 2.4:1 pour le vert). Ces
+  // deux paliers-là sont faits pour écrire dessus, et pour rien d'autre.
+  // C'est exactement le manque annoncé plus haut à propos du jaune de marque.
+  warningInk:     '#B45309',
+  successInk:     '#047857',
 };

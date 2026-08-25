@@ -40,7 +40,7 @@ export default function RetraitEchec() {
           icon="lifebuoy"
           onPress={() => Haptics.selectionAsync()}
         />
-        <Button label="Retour au tableau de bord" variant="ghost" onPress={() => router.replace('/affilie/dashboard')} />
+        <Button label="Retour au tableau de bord" variant="link" onPress={() => router.replace('/affilie/dashboard')} />
       </View>
     </View>
   );

@@ -3,8 +3,8 @@ import { View, StyleSheet, ScrollView, Switch } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
-import SettingsGroup from '@/components/SettingsGroup';
-import SettingsRow from '@/components/SettingsRow';
+import List from '@/components/List';
+import ListRow from '@/components/ListRow';
 
 // v1 : Préférences = notifications seules. Langue / thème / unités différés
 // (app en français, F CFA, km — décision D5, Wolof = déclencheur futur).
@@ -38,15 +38,15 @@ export default function PreferencesScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
-        <SettingsGroup title="Notifications push">
-          <SettingsRow icon="bell" label="Suivi de mes courses" right={sw('pushCourses')} />
-          <SettingsRow icon="gift" label="Promotions & actualités" right={sw('pushPromos')} />
-        </SettingsGroup>
+        <List title="Notifications push">
+          <ListRow icon="bell" title="Suivi de mes courses" trailing={sw('pushCourses')} />
+          <ListRow icon="gift" title="Promotions & actualités" trailing={sw('pushPromos')} />
+        </List>
 
-        <SettingsGroup title="SMS">
-          <SettingsRow icon="chat" label="Suivi de mes courses" right={sw('smsCourses')} />
-          <SettingsRow icon="gift" label="Promotions & actualités" right={sw('smsPromos')} />
-        </SettingsGroup>
+        <List title="SMS">
+          <ListRow icon="chat" title="Suivi de mes courses" trailing={sw('smsCourses')} />
+          <ListRow icon="gift" title="Promotions & actualités" trailing={sw('smsPromos')} />
+        </List>
       </ScrollView>
     </View>
   );

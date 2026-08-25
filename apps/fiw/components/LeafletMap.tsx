@@ -21,7 +21,7 @@ const MAPBOX_TOKEN = 'pk.eyJ1IjoiYWJpc2hhaXlwIiwiYSI6ImNtcXMzem50NTA0MncycnNhbmd
 interface Marker {
   lat: number;
   lng: number;
-  type: 'origin' | 'destination' | 'driver' | 'user';
+  type: 'origin' | 'destination' | 'prestataire' | 'user';
   heading?: number; // degrés, 0 = nord — utilisé par 'user'
 }
 
@@ -53,7 +53,7 @@ interface Props {
   providers?: { lat: number; lng: number }[];
   /** Sprite (vue de dessus) des marqueurs prestataires. */
   providerSprite?: Sprite;
-  /** Sprite (vue de dessus) du véhicule suivi — marqueur `driver`. */
+  /** Sprite (vue de dessus) du véhicule suivi — marqueur `prestataire`. */
   vehicleSprite?: Sprite;
   /** La caméra suit le véhicule : cadrage d'ensemble du trajet à l'ouverture,
    *  puis rapprochement et recentrages doux quand le véhicule sort du cadre. */
@@ -418,7 +418,7 @@ const getMapHTML = (
         staticMarkers.forEach(function(m) { m.remove(); });
         staticMarkers = [];
         (data || []).forEach(function(m) {
-          if (m.type === 'driver') {
+          if (m.type === 'prestataire') {
             var h = ensureHero([m.lng, m.lat]);
             h.marker.setLngLat([m.lng, m.lat]);
             return;

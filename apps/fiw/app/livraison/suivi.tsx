@@ -6,16 +6,21 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import LeafletMap, { LeafletMapHandle } from '@/components/LeafletMap';
-import { Handle, SHEET_RADIUS } from '@/components/Sheet';
+import { CARD_GAP, Handle, SHEET_RADIUS, SheetCard, groupedSheetSurface } from '@/components/Sheet';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 import Button from '@/components/Button';
 import BottomSheet from '@/components/BottomSheet';
 import StepProgress, { type Step } from '@/components/StepProgress';
-import CodePill from '@/components/CodePill';
-import {
-  groupedSheetSurface, SheetCard, VehicleGroup, RouteCard, InfoBanner, ActionPill, CARD_GAP,
-} from '@/components/RideSheet';
+import CodeField from '@/components/CodeField';
+import ActionPill from '@/components/ActionPill';
+import ActionTile, { ActionTileRow } from '@/components/ActionTile';
+import AlertBadge from '@/components/AlertBadge';
+import Divider from '@/components/Divider';
+import InfoBanner from '@/components/InfoBanner';
+import InfoRow from '@/components/InfoRow';
+import RouteCard from '@/components/RouteCard';
+import VehicleGroup from '@/components/VehicleGroup';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
 import { Colors, Radii, Outfit } from '@/constants/tokens';
 import { VELO_LIVREUR, MOTO_LIVREUR, DAKAR_CENTER, livraisonGamme } from '@/constants/data';
@@ -78,7 +83,7 @@ const SEG_PLAN: Record<StepKey, { from: number; to: number } | null> = {
   finished: null,
 };
 
-const DRIVER_START = { lat: 14.7100, lng: -17.4500 };
+const PRESTATAIRE_START = { lat: 14.7100, lng: -17.4500 };
 const SCREEN_H = Dimensions.get('window').height;
 // Hauteur que la feuille occupe à son cran milieu — marge basse du cadrage
 // carte (le trajet doit tenir dans la zone visible, au-dessus de la feuille).
@@ -91,18 +96,18 @@ function getMapConfig(stepKey: StepKey, destLat: number, destLng: number) {
   switch (stepKey) {
     case 'vers_collecte':
       return {
-        center: { lat: (DRIVER_START.lat + DAKAR_CENTER.lat) / 2, lng: (DRIVER_START.lng + DAKAR_CENTER.lng) / 2 },
+        center: { lat: (PRESTATAIRE_START.lat + DAKAR_CENTER.lat) / 2, lng: (PRESTATAIRE_START.lng + DAKAR_CENTER.lng) / 2 },
         zoom: 13,
         markers: [
           { lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'origin' as const },
-          { lat: DRIVER_START.lat, lng: DRIVER_START.lng, type: 'driver' as const },
+          { lat: PRESTATAIRE_START.lat, lng: PRESTATAIRE_START.lng, type: 'prestataire' as const },
         ],
-        route: { from: DRIVER_START, to: DAKAR_CENTER, animateDuration: 44000 },
+        route: { from: PRESTATAIRE_START, to: DAKAR_CENTER, animateDuration: 44000 },
       };
     case 'collecte':
       return {
         center: DAKAR_CENTER, zoom: 16,
-        markers: [{ lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'driver' as const }],
+        markers: [{ lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'prestataire' as const }],
         route: undefined,
       };
     case 'vers_livraison':
@@ -110,7 +115,7 @@ function getMapConfig(stepKey: StepKey, destLat: number, destLng: number) {
         center: { lat: (DAKAR_CENTER.lat + destLat) / 2, lng: (DAKAR_CENTER.lng + destLng) / 2 },
         zoom: 13,
         markers: [
-          { lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'driver' as const },
+          { lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'prestataire' as const },
           { lat: destLat, lng: destLng, type: 'destination' as const },
         ],
         route: { from: DAKAR_CENTER, to: { lat: destLat, lng: destLng }, animateDuration: 54000 },
@@ -118,7 +123,7 @@ function getMapConfig(stepKey: StepKey, destLat: number, destLng: number) {
     case 'remise':
       return {
         center: { lat: destLat, lng: destLng }, zoom: 16,
-        markers: [{ lat: destLat, lng: destLng, type: 'driver' as const }],
+        markers: [{ lat: destLat, lng: destLng, type: 'prestataire' as const }],
         route: undefined,
       };
     default:
@@ -141,7 +146,7 @@ export default function LivraisonSuiviScreen() {
     selectedOption: string; mode: string; tracking: string; codeRemise: string;
   }>();
 
-  const driver = params.gammeId === 'velo' ? VELO_LIVREUR : MOTO_LIVREUR;
+  const prestataire = params.gammeId === 'velo' ? VELO_LIVREUR : MOTO_LIVREUR;
   const gamme = livraisonGamme(params.gammeId);
   // Le véhicule suivi porte la gamme choisie, vu du dessus : c'est lui qu'on
   // regarde rouler, pivoter aux carrefours et remonter la rue.
@@ -158,8 +163,8 @@ export default function LivraisonSuiviScreen() {
 
   const mapRef = useRef<LeafletMapHandle>(null);
 
-  const onCall = () => router.push({ pathname: '/transport/call', params: { name: driver.name } });
-  const onChat = () => router.push({ pathname: '/transport/chat', params: { name: driver.name } });
+  const onCall = () => router.push({ pathname: '/transport/call', params: { name: prestataire.name } });
+  const onChat = () => router.push({ pathname: '/transport/chat', params: { name: prestataire.name } });
   const onShare = () => {
     Share.share({ message: `Suivez mon colis Fiw en direct : https://fiw.sn/colis/${params.tracking}` });
   };
@@ -327,7 +332,7 @@ export default function LivraisonSuiviScreen() {
                 Remettez le colis au prestataire — il enregistre le n° de suivi.
               </InfoBanner>
             )}
-            <VehicleGroup driver={driver} illu={gamme.illu} onPress={expand} />
+            <VehicleGroup prestataire={prestataire} illu={gamme.illu} onPress={expand} />
           </SheetCard>
 
           {/* Colis — description libre (seule info saisie), n° de suivi, code
@@ -339,14 +344,15 @@ export default function LivraisonSuiviScreen() {
                 Livraison groupée — votre colis voyage avec un colis voisin.
               </InfoBanner>
             )}
-            <View style={styles.trackingRow}>
-              <Icon name="barcode" size={18} color={Colors.textSecondary} />
-              <Text variant="caption" color={Colors.textSecondary}>N° de suivi</Text>
-              <Text style={styles.trackingNum}>{params.tracking}</Text>
-            </View>
+            <Divider />
+            <InfoRow
+              label="N° de suivi"
+              value={params.tracking}
+              leading={<Icon name="barcode" size={24} color={Colors.textSecondary} />}
+            />
             {showCode && (
               <View style={styles.codeWrap}>
-                <CodePill code={params.codeRemise || '0000'} />
+                <CodeField code={params.codeRemise || '0000'} mode="lecture" />
                 <Text variant="body" color={Colors.textSecondary} align="center">
                   Communiquez ce code à {params.destinataireName || 'votre destinataire'} — le prestataire le demandera à la remise.
                 </Text>
@@ -360,31 +366,32 @@ export default function LivraisonSuiviScreen() {
           <SheetCard>
             <Text variant="heading2">Détails de la livraison</Text>
             <RouteCard
-              plain
               departure={params.departureName || 'Ma position actuelle'}
               destination={`${params.destName} · ${params.destinataireName}`}
             />
-            <View style={styles.paymentRow}>
-              <View style={styles.paymentLeft}>
+            <Divider />
+            <InfoRow
+              label="Paiement"
+              value={`${fmt(price)} F`}
+              emphase="montant"
+              leading={
                 <Image
                   source={payIllustration(params.paymentId)}
-                  style={styles.paymentIllu}
+                  style={styles.payIllu}
                   resizeMode="contain"
                 />
-                <Text variant="body">Paiement</Text>
-              </View>
-              <Text style={styles.paymentAmount}>{fmt(price)} F</Text>
-            </View>
+              }
+            />
           </SheetCard>
 
           {/* Actions — contacts, urgence, annulation (avant collecte uniquement). */}
           <SheetCard style={[styles.lastCard, { paddingBottom: 20 + insets.bottom }]}>
-            <View style={styles.tilesRow}>
+            <ActionTileRow>
               <ActionTile icon="phone" label="Appeler" onPress={onCall} />
               <ActionTile icon="chat" label="Chat" onPress={onChat} />
               <ActionTile icon="share" label="Partager" onPress={onShare} />
               <ActionTile icon="sos" label="Urgence" danger onPress={onSos} />
-            </View>
+            </ActionTileRow>
             {canCancel && (
               <Button
                 label="Annuler la livraison"
@@ -398,13 +405,10 @@ export default function LivraisonSuiviScreen() {
 
       {/* Confirmation d'annulation — gratuite avant la collecte. */}
       {cancelOpen && (
-        <BottomSheet onClose={() => setCancelOpen(false)}>
+        <BottomSheet title="Annuler la livraison ?" onClose={() => setCancelOpen(false)}>
           {(close) => (
             <View style={styles.cancelSheet}>
-              <View style={styles.cancelBadge}>
-                <Icon name="package" size={28} weight="bold" color={Colors.error} />
-              </View>
-              <Text variant="heading1" align="center">Annuler la livraison ?</Text>
+              <AlertBadge icon="package" />
               <Text variant="body" color={Colors.textSecondary} align="center" style={styles.cancelText}>
                 Votre prestataire est en route vers le point de collecte. L'annulation est gratuite tant que le colis n'a pas été collecté.
               </Text>
@@ -425,9 +429,7 @@ export default function LivraisonSuiviScreen() {
         <BottomSheet title="Alerte SOS envoyée" onClose={() => setSosOpen(false)}>
           {(close) => (
             <View style={styles.sosSheet}>
-              <View style={styles.sosBadge}>
-                <Icon name="sos" size={28} weight="fill" color={Colors.error} />
-              </View>
+              <AlertBadge icon="sos" weight="fill" />
               <Text variant="body" color={Colors.textSecondary} align="center" style={styles.sosText}>
                 Votre position a été partagée avec vos contacts de confiance et le service de sécurité Fiw. Un agent vous contacte immédiatement.
               </Text>
@@ -440,21 +442,10 @@ export default function LivraisonSuiviScreen() {
   );
 }
 
-/* Tuile d'action (contact / sécurité) — icône + libellé, fond `bg` (maquette). */
-function ActionTile({ icon, label, danger, onPress }: {
-  icon: IconName; label: string; danger?: boolean; onPress?: () => void;
-}) {
-  const color = danger ? Colors.error : Colors.primary;
-  return (
-    <TouchableOpacity style={[styles.tile, danger && styles.tileDanger]} onPress={onPress} activeOpacity={0.85}>
-      <Icon name={icon} size={20} color={color} weight={danger ? 'fill' : 'bold'} />
-      <Text variant="caption" color={danger ? Colors.error : Colors.textPrimary}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  payIllu: { width: 24, height: 16 },
   flex1: { flex: 1 },
 
   snapSheet: {
@@ -478,56 +469,18 @@ const styles = StyleSheet.create({
   // Colis.
   // Le n° de suivi devient une rangée pleine (maquette 311:664) : c'est elle qui
   // porte le fond maintenant que la carte du code n'en a plus.
-  trackingRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: Colors.bg,
-    borderRadius: 20,
-    padding: 12,
-  },
-  trackingNum: {
-    fontFamily: Outfit.semibold, fontSize: 13, color: Colors.textPrimary,
-    letterSpacing: 0.5,
-  },
   // Plus de fond ni de liseré : le code de remise se détache déjà par ses cases.
   codeWrap: { gap: 10, padding: 14 },
 
   // Paiement — identique à la course active Transport : illustration à gauche,
   // carte pleine, montant à droite (maquette 311:664 · InfosCourse).
-  paymentRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: Colors.bg,
-    borderRadius: 20,
-    padding: 12,
-  },
-  paymentLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  paymentAmount: { fontFamily: Outfit.bold, fontSize: 20, lineHeight: 28, color: Colors.primary },
-  paymentIllu: { width: 40, height: 26 },
 
-  tilesRow: { flexDirection: 'row', gap: 8 },
-  tile: {
-    flex: 1, alignItems: 'center', gap: 8,
-    paddingVertical: 12,
-    backgroundColor: Colors.bg,
-    borderRadius: Radii.md,
-  },
-  tileDanger: { backgroundColor: Colors.errorSubtle },
 
   cancelSheet: { alignItems: 'center', gap: 10, paddingTop: 4, paddingBottom: 8 },
-  cancelBadge: {
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: Colors.errorSubtle,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 4,
-  },
   cancelText: { maxWidth: 320, marginBottom: 6 },
   cancelBtn: { alignSelf: 'stretch' },
 
   sosSheet: { alignItems: 'center', gap: 14, paddingTop: 4, paddingBottom: 8 },
-  sosBadge: {
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: Colors.errorSubtle,
-    alignItems: 'center', justifyContent: 'center',
-  },
   sosText: { maxWidth: 300 },
   sosCta: { alignSelf: 'stretch', marginTop: 4 },
 });

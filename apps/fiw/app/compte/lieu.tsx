@@ -1,16 +1,19 @@
 import React, { useRef, useState } from 'react';
 import {
-  View, StyleSheet, TextInput, TouchableOpacity, ScrollView, Keyboard, Alert,
+  View, StyleSheet, TouchableOpacity, ScrollView, Keyboard, Alert,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Radii, Shadows, Outfit } from '@/constants/tokens';
+import { Colors, Radii, Shadows, Strokes } from '@/constants/tokens';
 import LeafletMap, { type LeafletMapHandle } from '@/components/LeafletMap';
 import ScreenHeader from '@/components/ScreenHeader';
+import Field from '@/components/Field';
 import IconButton from '@/components/IconButton';
-import PlaceRow from '@/components/PlaceRow';
+import ListRow from '@/components/ListRow';
+import Medallion from '@/components/Medallion';
 import Button from '@/components/Button';
 import Icon from '@/components/Icon';
+import SearchBar from '@/components/SearchBar';
 import Text from '@/components/Text';
 import { DAKAR_CENTER, SUGGESTIONS } from '@/constants/data';
 import { getPlace, savePlace, removePlace, clearAddress, newPlaceId } from '@/stores/places';
@@ -175,22 +178,14 @@ export default function LieuScreen() {
               name="back"
               onPress={() => (address ? setStep('details') : router.back())}
             />
-            <View style={styles.searchField}>
-              <Icon name="search" size={20} color={Colors.textSecondary} />
-              <TextInput
-                style={styles.searchInput}
-                value={query}
-                onChangeText={setQuery}
-                placeholder="Adresse, quartier ou code (GY 182)"
-                placeholderTextColor={Colors.textTertiary}
-                returnKeyType="search"
-              />
-              {searching ? (
-                <TouchableOpacity onPress={() => setQuery('')} hitSlop={8}>
-                  <Icon name="close" size={18} color={Colors.textTertiary} />
-                </TouchableOpacity>
-              ) : null}
-            </View>
+            <SearchBar
+              variant="floating"
+              value={query}
+              onChangeText={setQuery}
+              onClear={() => setQuery('')}
+              placeholder="Adresse, quartier ou code (GY 182)"
+              style={styles.searchField}
+            />
           </View>
 
           {searching ? (
@@ -198,11 +193,12 @@ export default function LieuScreen() {
               <ScrollView keyboardShouldPersistTaps="handled" style={styles.resultsScroll}>
                 {results.length ? (
                   results.map((s) => (
-                    <PlaceRow
+                    <ListRow
                       key={s.id}
-                      icon="location"
+                      leading={<Medallion icon="location" />}
                       title={s.name}
                       subtitle={s.detail}
+                      trailing={null}
                       onPress={() => goTo({ lat: s.lat, lng: s.lng })}
                       style={styles.resultRow}
                     />
@@ -261,72 +257,49 @@ export default function LieuScreen() {
           <Icon name="location" size={22} color={Colors.primary} />
           <View style={styles.flex1}>
             <Text variant="caption" color={Colors.textTertiary}>Adresse</Text>
-            <Text variant="body" style={styles.addressText}>{address}</Text>
+            <Text variant="bodyMedium" style={styles.addressText}>{address}</Text>
           </View>
           <Button label="Modifier" variant="link" onPress={() => { setQuery(''); setStep('map'); }} />
         </View>
 
         {/* Le nom avant le Repère : requis avant facultatif (style-guide), et le
             champ long et multiligne se retrouve collé au CTA. */}
-        <Text variant="caption" color={Colors.textTertiary} style={styles.label}>
-          Nom du lieu
-        </Text>
-
         {isFixed ? (
-          <View style={styles.field}>
-            <View style={styles.fieldIcon}>
-              <Icon name={existing?.kind === 'home' ? 'home' : 'work'} size={20} color={Colors.textSecondary} />
-            </View>
-            <View style={styles.fieldBody}>
-              <Text variant="body" style={styles.fieldValue}>{label}</Text>
-            </View>
-            {/* Le cadenas suffit à dire que le nom ne se change pas. */}
-            <Icon name="lock" size={18} color={Colors.textTertiary} />
-          </View>
+          // Maison et Travail ne changent pas de nom : c'est l'état `désactivé`
+          // du champ, avec le cadenas pour le dire en clair.
+          <Field
+            label="Nom du lieu"
+            état="désactivé"
+            icon={existing?.kind === 'home' ? 'home' : 'work'}
+            value={label}
+            trailing={<Icon name="lock" size={18} color={Colors.textTertiary} />}
+          />
         ) : (
           // Pas de note sous ce champ : « Nom du lieu » et l'exemple en
           // placeholder se suffisent. Le Repère, lui, garde la sienne — c'est le
           // seul champ dont l'usage n'est pas devinable.
-          <View style={styles.field}>
-            <View style={styles.fieldBody}>
-              <TextInput
-                style={styles.fieldInput}
-                value={label}
-                onChangeText={setLabel}
-                placeholder="Ex. Salle de sport"
-                placeholderTextColor={Colors.textTertiary}
-                maxLength={30}
-              />
-            </View>
-          </View>
+          <Field
+            label="Nom du lieu"
+            value={label}
+            onChangeText={setLabel}
+            placeholder="Ex. Salle de sport"
+            maxLength={30}
+          />
         )}
 
         {/* Le Repère (cf. CONTEXT.md) — le seul champ de cet écran que quelqu'un
             d'autre lira. Une ligne libre, jamais des champs structurés : ni le
             chauffeur ni le livreur ne montent, l'étage n'intéresse personne. */}
-        <Text variant="caption" color={Colors.textTertiary} style={[styles.label, styles.labelSpaced]}>
-          Repère
-        </Text>
-        <View style={styles.repereField}>
-          <TextInput
-            style={styles.repereInput}
-            value={repere}
-            onChangeText={setRepere}
-            placeholder="Ex. Villa 214, portail vert en face de la boutique"
-            placeholderTextColor={Colors.textTertiary}
-            multiline
-            maxLength={120}
-          />
-        </View>
-        {/* Motif `infoRow` (cf. profil.tsx, numero.tsx) : dans ce DS, ce qui
-            distingue une note d'un libellé de champ, c'est l'icône — les deux
-            partagent la même taille et la même couleur. */}
-        <View style={styles.infoRow}>
-          <Icon name="info" size={13} color={Colors.textTertiary} />
-          <Text variant="caption" color={Colors.textTertiary} style={styles.flex1}>
-            Ce que le prestataire lira pour vous trouver.
-          </Text>
-        </View>
+        <Field
+          label="Repère"
+          zone
+          value={repere}
+          onChangeText={setRepere}
+          placeholder="Ex. Villa 214, portail vert en face de la boutique"
+          maxLength={120}
+          aide="Ce que le prestataire lira pour vous trouver."
+          style={styles.repereField}
+        />
 
         <Button
           label={existing ? 'Enregistrer' : 'Enregistrer le lieu'}
@@ -369,26 +342,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  searchField: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    height: 46,
-    paddingHorizontal: 14,
-    borderRadius: Radii.pill,
-    backgroundColor: Colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.hairline,
-    ...Shadows.float,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: Colors.textPrimary,
-    fontFamily: Outfit.medium,
-    padding: 0,
-  },
+  // Géométrie du champ dans `SearchBar` (variante `floating`) — ici seul le flex.
+  searchField: { flex: 1 },
   resultsCard: {
     marginTop: 10,
     marginLeft: 56, // aligné sur le champ, pas sur le bouton retour
@@ -433,9 +388,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: Colors.bg,
-    borderRadius: Radii.md,
-    borderWidth: 1,
+    backgroundColor: Colors.surface,
+    borderRadius: Radii.lg,
+    borderWidth: Strokes.thin,
     // Même liseré que les deux champs : les trois blocs de l'écran partagent
     // une seule grammaire, au lieu de trois bordures différentes.
     borderColor: Colors.border,
@@ -443,54 +398,14 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginBottom: 28,
   },
-  addressText: { fontFamily: Outfit.medium, marginTop: 1 },
-  label: { marginBottom: 8, marginLeft: 4 },
-  labelSpaced: { marginTop: 28 },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 8,
-    paddingHorizontal: 4,
-  },
+  addressText: { marginTop: 1 },
 
   // Le bleu ne sert qu'aux actions sur cet écran (« Modifier », « Enregistrer ») :
   // un champ au repos ne marque aucun état, il n'a rien à faire en bleu.
-  repereField: {
-    backgroundColor: Colors.bg,
-    borderRadius: Radii.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    minHeight: 76,
-  },
-  repereInput: {
-    fontSize: 15,
-    color: Colors.textPrimary,
-    fontFamily: Outfit.medium,
-    padding: 0,
-    lineHeight: 21,
-    textAlignVertical: 'top',
-  },
+  repereField: { marginTop: 28 },
 
   // Un seul traitement de champ sur l'écran — verrouillé ou non, c'est le même
   // bloc ; seul le cadenas distingue le nom figé de Maison / Travail.
-  field: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    borderRadius: Radii.md,
-    paddingHorizontal: 16,
-    minHeight: 60,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.bg,
-  },
-  fieldIcon: { width: 28, alignItems: 'center' },
-  fieldBody: { flex: 1, paddingVertical: 10 },
-  fieldInput: { fontSize: 15, color: Colors.textPrimary, fontFamily: Outfit.medium, padding: 0 },
-  fieldValue: { fontFamily: Outfit.medium },
 
   cta: { marginTop: 32 },
   remove: { marginTop: 20, alignSelf: 'center' },

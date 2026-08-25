@@ -11,16 +11,20 @@ import BottomSheet from '@/components/BottomSheet';
 import IconButton from '@/components/IconButton';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
+import SearchBar from '@/components/SearchBar';
 import Button from '@/components/Button';
-import Avatar from '@/components/Avatar';
+import Avatar, { AVATAR_ROW } from '@/components/Avatar';
+import List from '@/components/List';
+import ListRow from '@/components/ListRow';
 import PaymentSheetContent from '@/components/PaymentSheet';
 import GammeCard from '@/components/GammeCard';
-import { Handle, SHEET_RADIUS } from '@/components/Sheet';
-import { groupedSheetSurface, SheetCard, RouteCard, CARD_GAP } from '@/components/RideSheet';
+import { CARD_GAP, Handle, SHEET_RADIUS, SheetCard, groupedSheetSurface } from '@/components/Sheet';
+import RouteCard from '@/components/RouteCard';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import { Colors, Radii, inputTypo, Typography, Strokes } from '@/constants/tokens';
 import {
   CONTACTS, DAKAR_CENTER, LIVRAISON_GAMMES, livraisonGamme, makeTrackingNumber, makeCodeRemise,
+  PAYMENT_METHODS,
 } from '@/constants/data';
 import { payIllustration } from '@/constants/illustrations';
 
@@ -81,6 +85,7 @@ export default function LivraisonConfigureScreen() {
   const [selectedPayment, setSelectedPayment] = useState('cash');
   const [pendingPayment, setPendingPayment] = useState('cash');
   const [payOpen, setPayOpen] = useState(false);
+  const payLabel = (PAYMENT_METHODS.find((p) => p.id === selectedPayment) ?? PAYMENT_METHODS[0]).label;
 
   // Les feuilles modales contiennent des champs : on remonte leur contenu au
   // clavier (même pattern que la recherche de l'accueil).
@@ -232,7 +237,6 @@ export default function LivraisonConfigureScreen() {
             {/* L'itinéraire rejoint l'en-tête : c'est le cadre de tout ce qui
                 suit, et il reste visible quand la feuille est repliée. */}
             <RouteCard
-              plain
               departure={departureName}
               destination={params.destName || ''}
               onEdit={editItinerary}
@@ -306,17 +310,18 @@ export default function LivraisonConfigureScreen() {
 
           {/* Paiement + confirmation — dernière étape avant la mise en relation. */}
           <SheetCard style={[styles.lastCard, { paddingBottom: 20 + insets.bottom }]}>
-            <View style={styles.footerRow}>
-              <TouchableOpacity style={styles.payBtn} onPress={openPay} activeOpacity={0.85}>
-                <Image source={payIllustration(selectedPayment)} style={styles.payImg} />
-              </TouchableOpacity>
-              <Button
-                label="Confirmer la livraison"
-                onPress={confirmer}
-                disabled={!destinataireOk}
-                style={styles.cta}
-              />
-            </View>
+            {/* Rangée pleine largeur au-dessus du CTA — cf. `transport/configure` :
+                le moyen de paiement se nomme, il ne se devine pas à un logo. */}
+            <ListRow
+              leading={<Image source={payIllustration(selectedPayment)} style={styles.payLogo} />}
+              title={payLabel}
+              onPress={openPay}
+            />
+            <Button
+              label="Confirmer la livraison"
+              onPress={confirmer}
+              disabled={!destinataireOk}
+            />
           </SheetCard>
         </ScrollView>
       </Animated.View>
@@ -367,38 +372,30 @@ export default function LivraisonConfigureScreen() {
           {(close) => destMode === 'contacts' ? (
             <View style={{ paddingBottom: kbHeight }}>
               {/* Recherche dans le répertoire (réf. Careem). */}
-              <View style={styles.searchWrap}>
-                <Icon name="search" size={18} color={Colors.textTertiary} />
-                <TextInput
-                  style={styles.searchInput}
-                  value={contactQuery}
-                  onChangeText={setContactQuery}
-                  placeholder="Rechercher un nom ou un numéro…"
-                  placeholderTextColor={Colors.textTertiary}
-                />
-              </View>
-              {contactMatches.map((c, i) => (
-                <View key={c.id}>
-                  <TouchableOpacity
-                    style={styles.contactRow}
-                    activeOpacity={0.85}
+              <SearchBar
+                value={contactQuery}
+                onChangeText={setContactQuery}
+                onClear={() => setContactQuery('')}
+                placeholder="Rechercher un nom ou un numéro…"
+                style={styles.searchWrap}
+              />
+              {/* Retrait du filet = padding 16 + avatar 48 + gouttière 12. */}
+              <List style_="plat" inset={76}>
+                {contactMatches.map((c) => (
+                  <ListRow
+                    key={c.id}
+                    leading={<Avatar name={c.name} size={AVATAR_ROW} />}
+                    title={c.name}
+                    subtitle={c.phone}
                     onPress={() => {
                       Haptics.selectionAsync();
                       setDestinataireName(c.name);
                       setDestinatairePhone(c.phone);
                       close();
                     }}
-                  >
-                    <Avatar name={c.name} size={44} />
-                    <View style={styles.flex1}>
-                      <Text variant="label" numberOfLines={1}>{c.name}</Text>
-                      <Text variant="caption" color={Colors.textSecondary}>{c.phone}</Text>
-                    </View>
-                    <Icon name="chevronRight" size={16} color={Colors.textTertiary} />
-                  </TouchableOpacity>
-                  {i < contactMatches.length - 1 && <View style={styles.contactDivider} />}
-                </View>
-              ))}
+                  />
+                ))}
+              </List>
               {contactMatches.length === 0 && (
                 <Text variant="bodySmall" color={Colors.textSecondary} align="center" style={styles.noContact}>
                   Aucun contact ne correspond.
@@ -524,29 +521,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: Colors.surfaceAlt,
     borderRadius: Radii.lg,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+    borderWidth: Strokes.thin, borderColor: Colors.borderSubtle,
     paddingHorizontal: 14, paddingVertical: 13,
   },
 
   // Feuille destinataire — contacts.
-  searchWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: Colors.bg,
-    borderRadius: Radii.md,
-    paddingHorizontal: 14,
-    minHeight: 48,
-    marginBottom: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: Outfit.regular,
-    color: Colors.textPrimary,
-    paddingVertical: 12,
-  },
+  // Géométrie du champ dans `SearchBar` — ici seule la marge de l'emplacement.
+  searchWrap: { marginBottom: 8 },
   noContact: { paddingVertical: 18 },
-  contactRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10 },
-  contactDivider: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.borderSubtle, marginLeft: 58 },
   manualRow: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     marginTop: 10,
@@ -567,9 +549,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg,
     borderRadius: Radii.md,
     padding: 14,
-    fontSize: 15,
-    lineHeight: 21,
-    fontFamily: Outfit.regular,
+    ...Typography.body,
     color: Colors.textPrimary,
     minHeight: 84,
   },
@@ -584,16 +564,12 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 15,
-    fontFamily: Outfit.medium,
+    ...inputTypo('bodyMedium'),
     color: Colors.textPrimary,
     paddingVertical: 16,
   },
   sheetCta: { marginTop: 4 },
 
   // Pied : moyen de paiement + confirmation (même gabarit que Transport).
-  footerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  payBtn: { padding: 4 },
-  payImg: { width: 40, height: 40, borderRadius: 11 },
-  cta: { flex: 1 },
+  payLogo: { width: 40, height: 40, borderRadius: 11 },
 });

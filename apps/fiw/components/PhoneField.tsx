@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity, Keyboard } from 'react-native';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import { Colors, Radii, inputTypo, Strokes } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import FlagChip from '@/components/FlagChip';
@@ -33,7 +33,7 @@ export default function PhoneField({ country, digits, onChangeDigits, onPressDia
         onPress={() => { Keyboard.dismiss(); onPressDial(); }}
       >
         <FlagChip code={country.code} />
-        <Text variant="body" style={styles.dialText}>{country.dial}</Text>
+        <Text variant="fieldPrefix">{country.dial}</Text>
         <Icon name="chevronDown" size={14} color={Colors.textSecondary} />
       </TouchableOpacity>
 
@@ -53,12 +53,15 @@ export default function PhoneField({ country, digits, onChangeDigits, onPressDia
 }
 
 const styles = StyleSheet.create({
+  // Miroir de `Field / Type=téléphone` : hauteur 56, rayon `lg`, chip indicatif
+  // à padding 16, filet de 1×24, saisie en retrait de 12.
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.bg,
-    borderRadius: Radii.md,
-    borderWidth: 1,
+    height: 56,
+    backgroundColor: Colors.surface,
+    borderRadius: Radii.lg,
+    borderWidth: Strokes.thin,
     borderColor: Colors.border,
     paddingRight: 16,
     overflow: 'hidden',
@@ -66,18 +69,16 @@ const styles = StyleSheet.create({
   dial: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'stretch',
     gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
-  dialText: { fontFamily: Outfit.medium },
   sep: { width: 1, height: 24, backgroundColor: Colors.border },
   input: {
     flex: 1,
-    fontSize: 15,
+    alignSelf: 'stretch',
+    ...inputTypo('body'),
     color: Colors.textPrimary,
-    fontFamily: Outfit.medium,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
+    paddingLeft: 12,
   },
 });

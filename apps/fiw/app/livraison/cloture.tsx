@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Colors, Radii, Outfit, Shadows } from '@/constants/tokens';
+import { Colors, Radii, Shadows, Typography, Strokes } from '@/constants/tokens';
 import {
   VELO_LIVREUR, MOTO_LIVREUR, PAYMENT_METHODS, FRAIS_RAPPROCHEMENT, GROUPEE_ECONOMIE,
 } from '@/constants/data';
@@ -30,7 +30,7 @@ export default function LivraisonClotureScreen() {
     colisDesc: string; destinataireName: string; tracking: string;
   }>();
 
-  const driver = params.gammeId === 'velo' ? VELO_LIVREUR : MOTO_LIVREUR;
+  const prestataire = params.gammeId === 'velo' ? VELO_LIVREUR : MOTO_LIVREUR;
   const finalPrice = parseInt(params.finalPrice || '700', 10);
   const fraisRapprochement = params.selectedOption === 'B' ? FRAIS_RAPPROCHEMENT : 0;
   const groupee = params.mode === 'groupee';
@@ -111,10 +111,10 @@ export default function LivraisonClotureScreen() {
 
         {/* Notation (héros). */}
         <View style={styles.ratingCard}>
-          <Avatar name={driver.name} size={72} bordered />
+          <Avatar name={prestataire.name} size={72} bordered />
           <Text variant="heading1" align="center" style={styles.ratingTitle}>Comment était votre livraison ?</Text>
           <Text variant="bodySmall" color={Colors.textSecondary} align="center">
-            {driver.name} · {driver.vehicle}
+            {prestataire.name} · {prestataire.vehicle}
           </Text>
 
           <View style={styles.starsRow}>
@@ -144,9 +144,9 @@ export default function LivraisonClotureScreen() {
                   activeOpacity={0.8}
                 >
                   <Text
-                    variant="bodySmall"
+                    variant={on ? 'bodySmallSemibold' : 'bodySmall'}
                     color={on ? Colors.primaryPressed : Colors.textPrimary}
-                    style={on ? styles.tagTextActive : undefined}
+
                   >
                     {tag}
                   </Text>
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   },
   ratingTitle: { marginTop: 14 },
   starsRow: { flexDirection: 'row', gap: 8, marginTop: 16, marginBottom: 6 },
-  ratingLabel: { fontFamily: Outfit.medium, marginBottom: 16 },
+  ratingLabel: { marginBottom: 16 },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 14 },
   tag: {
     paddingHorizontal: 14, paddingVertical: 8,
@@ -215,16 +215,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.track,
   },
   tagActive: { backgroundColor: Colors.primarySubtle },
-  tagTextActive: { fontFamily: Outfit.semibold },
   addComment: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6 },
   commentInput: {
     alignSelf: 'stretch',
     backgroundColor: Colors.bg,
     borderRadius: Radii.md,
     padding: 14,
-    fontSize: 15,
-    lineHeight: 21,
-    fontFamily: Outfit.regular,
+    ...Typography.body,
     color: Colors.textPrimary,
     minHeight: 84,
   },
@@ -232,7 +229,7 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: 20, paddingTop: 12,
     gap: 2,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: Strokes.hairline,
     borderTopColor: Colors.border,
     backgroundColor: Colors.surface,
   },
