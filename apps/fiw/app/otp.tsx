@@ -66,9 +66,7 @@ export default function OTPScreen() {
           style={styles.btn}
         />
 
-        <TouchableOpacity style={styles.resend}>
-          <Text variant="label" color={Colors.primary}>Renvoyer le code</Text>
-        </TouchableOpacity>
+        <Button label="Renvoyer le code" variant="link" size="sm" onPress={() => {}} style={styles.resend} />
       </View>
     </View>
   );
@@ -88,5 +86,5 @@ const styles = StyleSheet.create({
     opacity: 0,
   },
   btn: {},
-  resend: { marginTop: 20, alignItems: 'center' },
+  resend: { alignSelf: 'center', marginTop: 20 },
 });

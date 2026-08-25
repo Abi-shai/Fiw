@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, Switch, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
 import List from '@/components/List';
+import Toggle from '@/components/Toggle';
 import ListRow from '@/components/ListRow';
 import Medallion from '@/components/Medallion';
 import Button from '@/components/Button';
@@ -15,7 +16,6 @@ export default function SecuriteScreen() {
   // doit voir la même chose que cet écran (todo P11, question 4).
   const { shareOnStart, contacts } = useSafety();
 
-  const track = { true: Colors.primary, false: Colors.border };
 
   const confirmRemove = (id: string) =>
     Alert.alert('Retirer ce contact', 'Il ne recevra plus vos trajets.', [
@@ -47,13 +47,7 @@ export default function SecuriteScreen() {
             icon="share"
             title="Partager mon trajet au départ"
             trailing={
-              <Switch
-                value={shareOnStart}
-                onValueChange={setShareOnStart}
-                trackColor={track}
-                thumbColor={Colors.surface}
-                ios_backgroundColor={Colors.border}
-              />
+              <Toggle value={shareOnStart} onValueChange={setShareOnStart} />
             }
           />
         </List>

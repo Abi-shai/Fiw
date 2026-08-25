@@ -1,34 +1,24 @@
-import React, { useRef, useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Share, Animated } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Share } from 'react-native';
 import { router } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import FauxQR from '@/components/FauxQR';
+import Toast, { useToast } from '@/components/Toast';
+import Hint from '@/components/Hint';
 import { Colors, Radii, Spacing, Shadows, Outfit, Strokes } from '@/constants/tokens';
 import { AMBASSADEUR } from '@/constants/affilie';
 
 // JS2 — Mes Outils : QR code, code perso (copie + partage natif).
 
 export default function Outils() {
-  const [toast, setToast] = useState<string | null>(null);
-  const toastOpacity = useRef(new Animated.Value(0)).current;
-
-  const flashToast = (msg: string) => {
-    setToast(msg);
-    Haptics.selectionAsync();
-    Animated.sequence([
-      Animated.timing(toastOpacity, { toValue: 1, duration: 180, useNativeDriver: true }),
-      Animated.delay(1300),
-      Animated.timing(toastOpacity, { toValue: 0, duration: 280, useNativeDriver: true }),
-    ]).start(() => setToast(null));
-  };
+  const toast = useToast();
 
   const copyCode = () => {
     // Proto : la copie réelle (expo-clipboard) sera câblée plus tard.
-    flashToast('Code copié');
+    toast.flash('Code copié');
   };
 
   const shareCode = async () => {
@@ -68,20 +58,12 @@ export default function Outils() {
           </View>
         </View>
 
-        <View style={styles.help}>
-          <Icon name="info" size={18} color={Colors.textSecondary} />
-          <Text variant="bodySmall" color={Colors.textSecondary} style={styles.helpText}>
-            Quand quelqu’un s’inscrit avec ce code, chaque course qu’il fait vous rapporte 2 %.
-          </Text>
-        </View>
+        <Hint icon="info" style={styles.help}>
+          Quand quelqu’un s’inscrit avec ce code, chaque course qu’il fait vous rapporte 2 %.
+        </Hint>
       </ScrollView>
 
-      {toast && (
-        <Animated.View style={[styles.toast, { opacity: toastOpacity }]} pointerEvents="none">
-          <Icon name="tick" size={16} color={Colors.textOnPrimary} weight="bold" />
-          <Text variant="label" color={Colors.textOnPrimary}>{toast}</Text>
-        </Animated.View>
-      )}
+      <Toast message={toast.message} opacity={toast.opacity} />
     </View>
   );
 }
@@ -115,19 +97,6 @@ const styles = StyleSheet.create({
   code: { letterSpacing: 2, marginTop: Spacing[1], marginBottom: Spacing[4] },
   codeActions: { flexDirection: 'row', gap: Spacing[3] },
 
-  help: { flexDirection: 'row', gap: Spacing[2], alignItems: 'flex-start', paddingHorizontal: Spacing[1] },
-  helpText: { flex: 1 },
+  help: { paddingHorizontal: Spacing[1] },
 
-  toast: {
-    position: 'absolute',
-    bottom: 48,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: Colors.textPrimary,
-    paddingHorizontal: Spacing[4],
-    paddingVertical: Spacing[3],
-    borderRadius: Radii.pill,
-  },
 });

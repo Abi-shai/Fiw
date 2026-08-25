@@ -3,6 +3,7 @@ import { View, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, Pl
 import { router } from 'expo-router';
 import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
+import ScreenFooter from '@/components/ScreenFooter';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import { Colors, Radii, Spacing, Outfit, Shadows, Strokes } from '@/constants/tokens';
@@ -101,9 +102,9 @@ export default function RetraitMethode() {
         </View>
       </View>
 
-      <View style={styles.footer}>
+      <ScreenFooter>
         <Button label="Continuer" disabled={!valid} onPress={onContinue} />
-      </View>
+      </ScreenFooter>
     </KeyboardAvoidingView>
   );
 }
@@ -162,9 +163,4 @@ const styles = StyleSheet.create({
   detailRowSelected: { backgroundColor: Colors.primarySubtle },
   methodDot: { width: 12, height: 12, borderRadius: 6 },
 
-  footer: {
-    paddingHorizontal: Spacing[4],
-    paddingTop: Spacing[3],
-    paddingBottom: Spacing[8],
-  },
 });

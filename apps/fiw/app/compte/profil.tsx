@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Radii, Strokes } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
 import Field from '@/components/Field';
+import Hint from '@/components/Hint';
 import Avatar from '@/components/Avatar';
 import Button from '@/components/Button';
 import Icon from '@/components/Icon';
@@ -43,12 +44,12 @@ export default function ProfilScreen() {
         {/* Photo */}
         <View style={styles.photoWrap}>
           <Avatar name={name} size={88} bordered />
-          <TouchableOpacity
-            activeOpacity={0.7}
+          <Button
+            label="Modifier la photo"
+            variant="link"
+            size="sm"
             onPress={() => Alert.alert('Photo', 'Choix de la photo à venir dans le proto.')}
-          >
-            <Text variant="label" color={Colors.primary} style={styles.photoBtn}>Modifier la photo</Text>
-          </TouchableOpacity>
+          />
         </View>
 
         {/* Note du Client — moyenne affichée, lecture seule (décision D1) */}
@@ -60,9 +61,7 @@ export default function ProfilScreen() {
               <Text variant="caption" color={Colors.textTertiary}>Note du Client</Text>
             </View>
           </View>
-          <Text variant="caption" color={Colors.textSecondary} style={styles.noteHint}>
-            Moyenne des évaluations reçues de vos prestataires. Le détail par course reste privé.
-          </Text>
+          <Hint>Moyenne des évaluations reçues de vos prestataires. Le détail par course reste privé.</Hint>
         </View>
 
         {/* Nom — éditable inline */}
@@ -82,12 +81,9 @@ export default function ProfilScreen() {
             onPress={() => router.push('/compte/numero')}
           />
         </View>
-        <View style={styles.infoRow}>
-          <Icon name="shield" size={13} color={Colors.textTertiary} />
-          <Text variant="caption" color={Colors.textTertiary}>
-            Un code de vérification est envoyé par SMS avant tout changement.
-          </Text>
-        </View>
+        <Hint icon="shield" style={styles.note}>
+          Un code de vérification est envoyé par SMS avant tout changement.
+        </Hint>
 
         <Button label="Enregistrer" onPress={save} disabled={!dirty} style={styles.save} />
       </ScrollView>
@@ -104,7 +100,6 @@ const styles = StyleSheet.create({
   flex1: { flex: 1 },
 
   photoWrap: { alignItems: 'center', gap: 10, marginBottom: 24 },
-  photoBtn: { paddingVertical: 4 },
 
   noteCard: {
     backgroundColor: Colors.bg,
@@ -116,7 +111,6 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   noteLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  noteHint: { lineHeight: 16 },
 
   field: { marginBottom: 12 },
 
@@ -134,7 +128,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   phoneValue: { marginTop: 2 },
-  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4, paddingHorizontal: 4 },
+  note: { marginBottom: 4, paddingHorizontal: 4 },
 
   save: { marginTop: 20 },
 });

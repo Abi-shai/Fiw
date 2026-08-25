@@ -7,6 +7,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import List from '@/components/List';
 import ListRow from '@/components/ListRow';
 import Medallion from '@/components/Medallion';
+import Hint from '@/components/Hint';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import { usePlaces, type Place } from '@/stores/places';
@@ -57,9 +58,9 @@ export default function LieuxScreen() {
           ))}
         </List>
 
-        <Text variant="caption" color={Colors.textTertiary} style={styles.hint}>
+        <Hint style={styles.hint}>
           Maison et Travail sont toujours présents ; ajoutez autant de lieux libres que vous voulez.
-        </Text>
+        </Hint>
 
         {/* Seule action de l'écran, donc `primary` sous la liste — pas une
             rangée d'ajout dans la liste (cf. style-guide, 20 août 2026). */}

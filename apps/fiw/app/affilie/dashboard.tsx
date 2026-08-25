@@ -91,10 +91,14 @@ export default function AffilieDashboard() {
 
         {/* Appels à l'action */}
         <Button label="Partager mon code" icon="share" onPress={share} style={styles.cta} />
-        <TouchableOpacity style={styles.linkRow} activeOpacity={0.7} onPress={() => router.push('/affilie/reseau')}>
-          <Text variant="label" color={Colors.primary}>Voir mon réseau</Text>
-          <Icon name="chevronRight" size={16} color={Colors.primary} />
-        </TouchableOpacity>
+        <Button
+          label="Voir mon réseau"
+          variant="link"
+          size="sm"
+          trailingIcon="chevronRight"
+          onPress={() => router.push('/affilie/reseau')}
+          style={styles.linkRow}
+        />
 
         {/* Commissions récentes */}
         <Text variant="caption" color={Colors.textTertiary} style={styles.sectionLabel}>COMMISSIONS RÉCENTES</Text>
@@ -197,13 +201,7 @@ const styles = StyleSheet.create({
   statValue: { letterSpacing: -0.4 },
 
   cta: { marginTop: Spacing[6] },
-  linkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    marginTop: Spacing[4],
-  },
+  linkRow: { alignSelf: 'center', marginTop: Spacing[4] },
 
   sectionLabel: {
     textTransform: 'uppercase',

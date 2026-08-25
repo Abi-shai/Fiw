@@ -9,6 +9,7 @@ import Icon from '@/components/Icon';
 import Text from '@/components/Text';
 import PhoneField from '@/components/PhoneField';
 import CodeField from '@/components/CodeField';
+import Hint from '@/components/Hint';
 import CountryPicker from '@/components/CountryPicker';
 import { COUNTRIES, fullNumber, isComplete, type Country } from '@/constants/countries';
 import { CLIENT } from '@/constants/data';
@@ -73,12 +74,9 @@ export default function NumeroScreen() {
             autoFocus
           />
 
-          <View style={styles.infoRow}>
-            <Icon name="phone" size={14} color={Colors.textTertiary} />
-            <Text variant="caption" color={Colors.textTertiary}>
-              Numéro actuel : <Text variant="captionSemibold" color={Colors.textSecondary}>{CLIENT.phone}</Text>
-            </Text>
-          </View>
+          <Hint icon="phone" style={styles.note}>
+            Numéro actuel : <Text variant="captionSemibold" color={Colors.textSecondary}>{CLIENT.phone}</Text>
+          </Hint>
 
           <Button label="Envoyer le code" onPress={sendCode} disabled={!canSend} style={styles.cta} />
         </ScrollView>
@@ -121,9 +119,7 @@ export default function NumeroScreen() {
         />
 
         <Button label="Vérifier" onPress={() => verify()} loading={loading} disabled={code.length < 4} style={styles.cta} />
-        <TouchableOpacity style={styles.resend} onPress={() => setCode('')}>
-          <Text variant="label" color={Colors.primary}>Renvoyer le code</Text>
-        </TouchableOpacity>
+        <Button label="Renvoyer le code" variant="link" size="sm" onPress={() => setCode('')} style={styles.resend} />
       </ScrollView>
     </View>
   );
@@ -135,10 +131,10 @@ const styles = StyleSheet.create({
   intro: { lineHeight: 22, marginBottom: 28 },
   label: { marginBottom: 8, marginLeft: 4 },
 
-  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, marginBottom: 24, paddingHorizontal: 4 },
+  note: { marginTop: 12, marginBottom: 24, paddingHorizontal: 4 },
   cta: { marginTop: 8 },
 
   codeRow: { marginBottom: 32 },
   hiddenInput: { position: 'absolute', width: 1, height: 1, opacity: 0 },
-  resend: { marginTop: 20, alignItems: 'center' },
+  resend: { alignSelf: 'center', marginTop: 20 },
 });

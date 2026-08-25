@@ -1,8 +1,9 @@
 import React, { useRef } from 'react';
-import { Pressable, Animated, StyleSheet, ActivityIndicator, ViewStyle, View } from 'react-native';
+import { Pressable, Animated, StyleSheet, ViewStyle, View } from 'react-native';
 import { Colors, Radii, Shadows, type TextVariant, Strokes } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
+import Spinner from '@/components/Spinner';
 
 // Système de boutons Fiw :
 // · primary          — plein bleu marque (CTA principal).
@@ -115,7 +116,7 @@ export default function Button({
         ]}
       >
         {loading ? (
-          <ActivityIndicator color={fg} size="small" />
+          <Spinner size="sm" color={fg} />
         ) : (
           <View style={[styles.content, { gap: s.gap }]}>
             {icon && <Icon name={icon} size={s.icon} color={fg} />}

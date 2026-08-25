@@ -2855,3 +2855,161 @@ restent — c'est ce que dit la maquette — mais ils adoptent ses décisions :
 Le hub Compte et Sécurité changent de surface (page blanche, plus de cartes) et
 de rythme. `npx tsc --noEmit` est propre, mais **cette fusion n'a pas été vue
 tourner** — c'est le premier écran à ouvrir.
+
+---
+
+# Partie XXXVII — Les quatre contrôles écrits (25 août 2026)
+
+Les quatre primitives dessinées le 24 août ont enfin leur pendant code. Huit
+points d'appel migrés, quatre motifs faits main supprimés.
+
+| Composant | Remplace | Sites |
+|---|---|---|
+| `Checkbox` | Deux cases divergentes — 22/rayon 6 et 24/`radius/sm` | `affilie/conditions`, `affilie/presentation` |
+| `Toggle` | Le `trackColor`/`thumbColor`/`ios_backgroundColor` répété à chaque rangée | `compte/securite`, `compte/preferences` |
+| `SegmentedControl` | Deux traitements — piste `track` + pastille blanche, et piste blanche + pastille `primarySubtle` | `transport/configure`, `affilie/reseau` |
+| `Spinner` | `ActivityIndicator` posé à la main | `affilie/retrait-traitement`, `Button` (chargement) |
+
+## Deux composants qui ne dessinent rien
+
+`Toggle` et `Spinner` **enveloppent la primitive de plateforme** au lieu de la
+redessiner — le `Switch` et l'`ActivityIndicator` de React Native. C'est
+délibéré, et c'est ce que dit la maquette : elle a repris la géométrie iOS du
+`Switch` (51 × 31, pouce 27) plutôt que d'en inventer une, parce qu'une maquette
+que le code ne peut pas rendre ne sert à personne.
+
+Leur valeur n'est donc pas visuelle, elle est **structurelle** : les couleurs et
+les deux tailles réelles vivent à un seul endroit au lieu d'être recopiées à
+chaque emploi. C'est le même service que rend `inputTypo()` aux champs de saisie.
+
+## Les deux arbitrages appliqués
+
+- **Checkbox 24 / `radius/sm` / liseré `thick`**, et liseré `textTertiary` au
+  repos comme le `Radio` — pas `border`, qui est le liseré des surfaces.
+  `affilie/presentation` perd sa version à 22 et son rayon 6 hors échelle.
+- **Segment : piste `track`, pastille active `surface` + `Shadows.sm`.**
+  `affilie/reseau` perd sa piste blanche à liseré et son libellé actif en bleu —
+  le bleu revient à ce qui *sélectionne une valeur*, pas à ce qui *filtre une vue*.
+
+## État de la migration
+
+**50 des 56 composants de la bibliothèque ont désormais leur pendant code.**
+Restent six : `Hint` (7 sites), `Toast` (2), `ResultState` (5), `ScreenFooter`
+(12), `OptionCard` (encore dédoublé en `RapprochementChoice` et
+`LivraisonModeChoice`), et `MapSurface` — qui n'est qu'un placeholder de
+maquette pour `LeafletMap`, donc hors périmètre.
+
+`npx tsc --noEmit` propre. Non vérifié à l'écran : le contrôle segmenté change
+d'aspect sur `affilie/reseau`, et les cases à cocher d'`affilie/presentation`
+grandissent de 2 px.
+
+---
+
+# Partie XXXVIII — La migration achevée (25 août 2026)
+
+Cinq composants écrits, **23 points d'appel** migrés. Il ne reste plus rien de la
+liste ouverte par la Partie XXX.
+
+| Composant | Sites | Ce qui disparaît |
+|---|---|---|
+| `Hint` | 7 | Quatre noms pour une même note — `infoRow`, `help`, `hint`, `noteHint` — et deux traitements |
+| `Toast` | 2 | Le cycle d'animation recopié à l'identique (180 / 1300 / 280 ms) |
+| `ScreenFooter` | 8 | **Quatre géométries** de pied : filet `thin`, `hairline` ou absent ; fond `bg` ou `surface` ; 16 ou 32 en bas |
+| `ResultState` | 4 | Les médaillons 88 et 112 faits main, et leurs blocs titre/corps |
+| `OptionCard` | 2 | La carte de choix, dupliquée entre `RapprochementChoice` et `LivraisonModeChoice` |
+
+## Trois décisions de conception
+
+- **`Toast` sort avec son hook.** `useToast()` porte l'état, l'opacité animée et
+  le geste ; le composant ne fait que rendre la pilule. C'est le cycle qui était
+  dupliqué, pas seulement l'apparence — le sortir sans lui n'aurait rien réglé.
+- **`ScreenFooter` calcule son bas.** `max(32, zone sûre + 16)` : la maquette
+  pose 32 comme repos visuel, l'appareil impose sa zone sûre, le plus grand des
+  deux gagne. Sinon la barre colle à la barre d'accueil sur un téléphone à
+  encoche, ou flotte trop haut sur un téléphone plat.
+- **`ResultState` ne porte pas ses actions**, mais accepte des enfants — le
+  montant du retrait, la pastille « En cours d'arrivée », l'encart qui rassure.
+  Les actions restent dans le `ScreenFooter` posé dessous.
+
+## Ce qui n'a délibérément pas été migré
+
+- **Le pied de `app/index.tsx`** n'est pas une barre d'action mais un pied de
+  mentions légales : il porte du texte centré, pas des boutons.
+- **`affilie/celebration`** attend le ton `marque` de `ResultState` — plein
+  `primary`, médaillon blanc translucide — qui attend lui-même **un jeton
+  d'opacité sur fond primaire**. C'est une décision de fondation.
+- **Les pastilles de 64 des deux écrans de clôture** (`successBadge`) restent
+  faites main : 64 n'est pas dans l'échelle de `Medallion` (42 / 56), et
+  trancher cette échelle est l'autre décision de fondation ouverte.
+
+## État
+
+**54 des 56 composants de la bibliothèque ont leur pendant code.** Les deux
+restants sont `MapSurface` — un placeholder de maquette pour `LeafletMap`, hors
+périmètre — et le ton `marque`, qui n'est pas un composant mais une variante en
+attente de jetons.
+
+Un manque relevé en chemin, à porter dans la maquette : **`Button` n'a pas de
+variante de lien NEUTRE.** « Passer » (clôture) et « Annuler » (récapitulatif de
+retrait) sont des actions de texte en gris ; `link` est bleu et `linkDestructive`
+rouge. Les deux restent donc des `TouchableOpacity` à la main.
+
+`npx tsc --noEmit` propre. **Rien vérifié à l'écran** : le lot touche 23 endroits,
+dont les deux écrans de clôture et les quatre écrans de retrait.
+
+---
+
+# Partie XXXIX — La variante manquante n'était pas une variante (25 août 2026)
+
+J'avais conclu la Partie XXXVIII sur un manque : « `Button` n'a pas de variante
+de lien **neutre** ». Relevé Mobbin fait sur les deux écrans concernés — la
+conclusion était fausse, et le manque n'existe pas.
+
+## Ce que dit le relevé
+
+**Écran d'avis** (Shopee, Walmart, Grab, Grubhub, Gojek, Tesla Robotaxi) : un
+seul CTA, et l'échappatoire est le **✕ de l'en-tête**. Freenow met son « Skip »
+en lien accent **en haut à droite**, Waymo un bouton secondaire au-dessus du
+contenu. **Aucun des huit ne pose de lien gris sous le CTA.**
+
+**Récapitulatif d'un transfert d'argent** (Fidelity, Revolut, Careem, Wise,
+Monzo, Betterment, Mercury) : **un seul CTA**, jamais de « Annuler ». Le retour
+se fait par la flèche ou la croix de l'en-tête.
+
+Un lien gris jumeau du CTA lui dispute l'attention sans jamais la gagner : il
+occupe la zone la plus lue de l'écran pour dire « ne faites rien ».
+
+## Ce qui a été fait
+
+| Écran | Avant | Après |
+|---|---|---|
+| `affilie/retrait-recap` | « Annuler » sous le CTA — qui appelait `router.back()`, **exactement ce que fait déjà la flèche de son `ScreenHeader`** | Le lien disparaît. La même action figurait deux fois sur l'écran |
+| `transport/cloture` · `livraison/cloture` | « Passer » en gris sous le CTA | Un **`IconButton`** ✕ en haut à droite, comme le fait la maquette pour ses feuilles (`SheetHeader`) |
+| `otp` · `compte/numero` | « Renvoyer le code » à la main | **`Button variant="link" size="sm"`** |
+| `affilie/dashboard` | « Voir mon réseau » + chevron à la main | **`Button variant="link"`** avec `trailingIcon` |
+| `compte/profil` | « Modifier la photo » à la main | **`Button variant="link"`** |
+
+**Aucune variante ajoutée au système.** Quatre liens qui existaient déjà y
+entrent enfin, et deux motifs disparaissent parce qu'ils n'auraient pas dû
+exister.
+
+## Les trois qui restent, et pourquoi
+
+- **« Créer un compte »** (`app/index.tsx`) — un fragment cliquable **dans une
+  phrase** (« Pas encore de compte ? »). Ce n'est pas un bouton, c'est du texte
+  enrichi ; l'entourer d'un composant casserait la phrase.
+- **« Tout retirer »** (`affilie/retrait-methode`) — un lien en `caption` (12)
+  aligné sur la ligne « Disponible : … ». L'échelle de `Button` s'arrête à 14
+  (`sm`), et le passer à 14 le ferait dominer la ligne qu'il accompagne. Seul
+  vrai candidat à une taille de lien plus petite, **si le cas se reproduit** ;
+  un seul emploi ne fait pas une variante.
+- **« Fermer »** (`affilie/celebration`) — blanc sur fond `primary`. `link` y
+  serait bleu sur bleu. Il attend les **rôles « sur fond sombre »**, la même
+  fondation ouverte que l'écran d'appel et le ton `marque` de `ResultState`.
+
+## La leçon
+
+Un motif du produit qui n'a pas de composant pose **deux** questions, pas une :
+« quel composant lui manque ? » et « ce motif devrait-il exister ? ». J'avais
+sauté la seconde. Le relevé y répond mieux que l'intuition — ici il a supprimé le
+besoin au lieu de le satisfaire.

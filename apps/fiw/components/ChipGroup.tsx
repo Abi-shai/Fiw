@@ -3,6 +3,7 @@ import { View, ScrollView, StyleSheet, TouchableOpacity, type StyleProp, type Vi
 import * as Haptics from 'expo-haptics';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
+import Hint from '@/components/Hint';
 import { Colors, Radii, Strokes } from '@/constants/tokens';
 
 export type ChipItem = { id: string; label: string; icon?: IconName; hint?: string };
@@ -72,11 +73,7 @@ export default function ChipGroup({ items, value, onChange, showHint, scrollable
       ) : (
         <View style={styles.row}>{chips}</View>
       )}
-      {showHint && selected?.hint ? (
-        <Text variant="caption" color={Colors.textSecondary} style={styles.hint}>
-          {selected.hint}
-        </Text>
-      ) : null}
+      {showHint && selected?.hint ? <Hint style={styles.hint}>{selected.hint}</Hint> : null}
     </View>
   );
 }

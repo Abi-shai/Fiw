@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Switch } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
 import List from '@/components/List';
 import ListRow from '@/components/ListRow';
+import Toggle from '@/components/Toggle';
 
 // v1 : Préférences = notifications seules. Langue / thème / unités différés
 // (app en français, F CFA, km — décision D5, Wolof = déclencheur futur).
@@ -17,17 +18,10 @@ export default function PreferencesScreen() {
     smsPromos: false,
   });
 
-  const track = { true: Colors.primary, false: Colors.border };
   const toggle = (key: keyof typeof prefs) => (v: boolean) => setPrefs((p) => ({ ...p, [key]: v }));
 
   const sw = (key: keyof typeof prefs) => (
-    <Switch
-      value={prefs[key]}
-      onValueChange={toggle(key)}
-      trackColor={track}
-      thumbColor={Colors.surface}
-      ios_backgroundColor={Colors.border}
-    />
+    <Toggle value={prefs[key]} onValueChange={toggle(key)} />
   );
 
   return (

@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
-import Radio from '@/components/Radio';
-import { Colors, Radii, Strokes } from '@/constants/tokens';
+import OptionCard, { type OptionTon } from '@/components/OptionCard';
+import { Colors, Radii } from '@/constants/tokens';
 import { GROUPEE_ECONOMIE, GROUPAGE_DELAI_MAX_MIN } from '@/constants/data';
 
 export type LivraisonMode = 'express' | 'groupee';
@@ -19,7 +19,9 @@ type Props = {
 
 type OptionMeta = {
   id: LivraisonMode; icon: IconName; title: string;
-  detail: string; benefit: string; benefitIcon: IconName; benefitColor: string;
+  // Le ton porte le bénéfice : `accent` pour le temps gagné, `succès` pour
+  // l'argent économisé.
+  detail: string; benefit: string; ton: OptionTon;
 };
 
 /**
@@ -38,12 +40,12 @@ export default function LivraisonModeChoice({ base, value, onChange }: Props) {
     {
       id: 'express', icon: 'send', title: 'Directe',
       detail: 'Part seul, sans détour',
-      benefit: 'Part tout de suite', benefitIcon: 'lightning', benefitColor: Colors.primary,
+      benefit: 'Part tout de suite', ton: 'accent',
     },
     {
       id: 'groupee', icon: 'group', title: 'Groupée',
       detail: `Part avec un colis voisin (${GROUPAGE_DELAI_MAX_MIN} min max)`,
-      benefit: `Économisez ${fmt(GROUPEE_ECONOMIE)} F`, benefitIcon: 'coins', benefitColor: Colors.success,
+      benefit: `Économisez ${fmt(GROUPEE_ECONOMIE)} F`, ton: 'succès',
     },
   ];
 
@@ -53,32 +55,17 @@ export default function LivraisonModeChoice({ base, value, onChange }: Props) {
         const active = value === o.id;
         const price = o.id === 'express' ? base : base - GROUPEE_ECONOMIE;
         return (
-          <TouchableOpacity
+          <OptionCard
             key={o.id}
-            style={[styles.card, active && styles.cardActive]}
-            activeOpacity={0.9}
+            icon={o.icon}
+            titre={o.title}
+            benefice={o.benefit}
+            ton={o.ton}
+            meta={o.detail}
+            prix={`${fmt(price)} F`}
+            actif={active}
             onPress={() => onChange(o.id)}
-          >
-            <View style={[styles.iconWrap, active && styles.iconWrapActive]}>
-              <Icon name={o.icon} size={20} weight="bold" color={active ? Colors.primary : Colors.textSecondary} />
-            </View>
-
-            <View style={styles.mid}>
-              <Text variant="cardTitle" numberOfLines={2}>{o.title}</Text>
-              <View style={[styles.benefit, { backgroundColor: active ? Colors.surface : Colors.bg }]}>
-                <Icon name={o.benefitIcon} size={12} weight="bold" color={o.benefitColor} />
-                <Text variant="captionSemibold" color={o.benefitColor}>{o.benefit}</Text>
-              </View>
-              <Text variant="caption" color={Colors.textSecondary}>
-                {o.detail}
-              </Text>
-            </View>
-
-            <View style={styles.right}>
-              <Text variant="heading2" color={active ? Colors.primary : Colors.textPrimary}>{fmt(price)} F</Text>
-              <Radio selected={active} />
-            </View>
-          </TouchableOpacity>
+          />
         );
       })}
 
@@ -95,31 +82,6 @@ export default function LivraisonModeChoice({ base, value, onChange }: Props) {
 
 const styles = StyleSheet.create({
   wrap: { gap: 10 },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 12,
-    borderRadius: Radii.lg,
-    borderWidth: Strokes.medium,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-  },
-  cardActive: { borderColor: Colors.primary, backgroundColor: Colors.primarySubtle },
-  iconWrap: {
-    width: 40, height: 40, borderRadius: 20,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: Colors.bg,
-  },
-  iconWrapActive: { backgroundColor: Colors.surface },
-  mid: { flex: 1, gap: 4 },
-  benefit: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    borderRadius: Radii.pill,
-    paddingVertical: 3, paddingHorizontal: 8,
-  },
-  right: { alignItems: 'flex-end', gap: 6 },
   note: {
     flexDirection: 'row', gap: 10, alignItems: 'flex-start',
     padding: 12, borderRadius: Radii.md,
