@@ -6,7 +6,8 @@ import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
-import { Colors, Radii, Spacing, Strokes } from '@/constants/tokens';
+import Checkbox from '@/components/Checkbox';
+import { Colors, Spacing, Strokes } from '@/constants/tokens';
 
 // JS1 — Conditions d'utilisation (contrat d'affiliation).
 // « J'accepte et je commence » → tableau de bord (premier accès).
@@ -44,9 +45,7 @@ export default function Conditions() {
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.checkRow} activeOpacity={0.7} onPress={() => setAccepted((v) => !v)}>
-          <View style={[styles.checkbox, accepted && styles.checkboxOn]}>
-            {accepted && <Icon name="tick" size={16} color={Colors.textOnPrimary} weight="bold" />}
-          </View>
+          <Checkbox checked={accepted} />
           <Text variant="bodySmall" style={styles.checkLabel}>
             J’ai lu et j’accepte le contrat d’affiliation.
           </Text>
@@ -75,14 +74,5 @@ const styles = StyleSheet.create({
     gap: Spacing[4],
   },
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing[3] },
-  checkbox: {
-    width: 24, height: 24,
-    borderRadius: Radii.sm,
-    borderWidth: Strokes.medium,
-    borderColor: Colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxOn: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   checkLabel: { flex: 1 },
 });

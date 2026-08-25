@@ -5,6 +5,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
+import Checkbox from '@/components/Checkbox';
 import { Colors, Radii, Spacing, Strokes } from '@/constants/tokens';
 
 type Step = { icon: IconName; title: string; body: string };
@@ -59,9 +60,7 @@ export default function Presentation() {
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.checkRow} activeOpacity={0.7} onPress={() => setAccepted((v) => !v)}>
-          <View style={[styles.checkbox, accepted && styles.checkboxChecked]}>
-            {accepted && <Icon name="check" size={14} color="#fff" weight="bold" />}
-          </View>
+          <Checkbox checked={accepted} />
           <Text variant="bodySmall" color={Colors.textSecondary} style={styles.checkLabel}>
             J'accepte les{' '}
             <Text
@@ -126,20 +125,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: Spacing[3],
-  },
-  checkbox: {
-    width: 22, height: 22,
-    borderRadius: 6,
-    borderWidth: Strokes.medium,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 1,
-  },
-  checkboxChecked: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
   },
   checkLabel: { flex: 1, lineHeight: 20 },
 });

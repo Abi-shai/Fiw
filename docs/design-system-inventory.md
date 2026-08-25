@@ -2855,3 +2855,50 @@ restent — c'est ce que dit la maquette — mais ils adoptent ses décisions :
 Le hub Compte et Sécurité changent de surface (page blanche, plus de cartes) et
 de rythme. `npx tsc --noEmit` est propre, mais **cette fusion n'a pas été vue
 tourner** — c'est le premier écran à ouvrir.
+
+---
+
+# Partie XXXVII — Les quatre contrôles écrits (25 août 2026)
+
+Les quatre primitives dessinées le 24 août ont enfin leur pendant code. Huit
+points d'appel migrés, quatre motifs faits main supprimés.
+
+| Composant | Remplace | Sites |
+|---|---|---|
+| `Checkbox` | Deux cases divergentes — 22/rayon 6 et 24/`radius/sm` | `affilie/conditions`, `affilie/presentation` |
+| `Toggle` | Le `trackColor`/`thumbColor`/`ios_backgroundColor` répété à chaque rangée | `compte/securite`, `compte/preferences` |
+| `SegmentedControl` | Deux traitements — piste `track` + pastille blanche, et piste blanche + pastille `primarySubtle` | `transport/configure`, `affilie/reseau` |
+| `Spinner` | `ActivityIndicator` posé à la main | `affilie/retrait-traitement`, `Button` (chargement) |
+
+## Deux composants qui ne dessinent rien
+
+`Toggle` et `Spinner` **enveloppent la primitive de plateforme** au lieu de la
+redessiner — le `Switch` et l'`ActivityIndicator` de React Native. C'est
+délibéré, et c'est ce que dit la maquette : elle a repris la géométrie iOS du
+`Switch` (51 × 31, pouce 27) plutôt que d'en inventer une, parce qu'une maquette
+que le code ne peut pas rendre ne sert à personne.
+
+Leur valeur n'est donc pas visuelle, elle est **structurelle** : les couleurs et
+les deux tailles réelles vivent à un seul endroit au lieu d'être recopiées à
+chaque emploi. C'est le même service que rend `inputTypo()` aux champs de saisie.
+
+## Les deux arbitrages appliqués
+
+- **Checkbox 24 / `radius/sm` / liseré `thick`**, et liseré `textTertiary` au
+  repos comme le `Radio` — pas `border`, qui est le liseré des surfaces.
+  `affilie/presentation` perd sa version à 22 et son rayon 6 hors échelle.
+- **Segment : piste `track`, pastille active `surface` + `Shadows.sm`.**
+  `affilie/reseau` perd sa piste blanche à liseré et son libellé actif en bleu —
+  le bleu revient à ce qui *sélectionne une valeur*, pas à ce qui *filtre une vue*.
+
+## État de la migration
+
+**50 des 56 composants de la bibliothèque ont désormais leur pendant code.**
+Restent six : `Hint` (7 sites), `Toast` (2), `ResultState` (5), `ScreenFooter`
+(12), `OptionCard` (encore dédoublé en `RapprochementChoice` et
+`LivraisonModeChoice`), et `MapSurface` — qui n'est qu'un placeholder de
+maquette pour `LeafletMap`, donc hors périmètre.
+
+`npx tsc --noEmit` propre. Non vérifié à l'écran : le contrôle segmenté change
+d'aspect sur `affilie/reseau`, et les cases à cocher d'`affilie/presentation`
+grandissent de 2 px.

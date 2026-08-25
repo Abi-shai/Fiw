@@ -12,6 +12,7 @@ import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import Button from '@/components/Button';
 import ListRow from '@/components/ListRow';
+import SegmentedControl from '@/components/SegmentedControl';
 import GammeCard from '@/components/GammeCard';
 import { GroupedSheet, SheetCard } from '@/components/Sheet';
 import RouteCard from '@/components/RouteCard';
@@ -194,23 +195,11 @@ export default function ConfigureScreen() {
 
           {/* Carte 2 : switcher de catégorie + choix de l'offre. */}
           <SheetCard>
-            <View style={styles.segment}>
-              {([['course', 'Classique'], ['covoit', 'Covoiturage']] as const).map(([cat, label]) => {
-                const active = category === cat;
-                return (
-                  <TouchableOpacity
-                    key={cat}
-                    style={[styles.segmentItem, active && styles.segmentItemActive]}
-                    onPress={() => handleCategory(cat)}
-                    activeOpacity={0.85}
-                  >
-                    <Text variant="label" color={active ? Colors.textPrimary : Colors.textSecondary}>
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            <SegmentedControl
+              items={[{ id: 'course', label: 'Classique' }, { id: 'covoit', label: 'Covoiturage' }]}
+              value={category}
+              onChange={(id) => handleCategory(id as 'course' | 'covoit')}
+            />
 
             <Animated.View style={{
               opacity: switchAnim,
@@ -324,19 +313,6 @@ const styles = StyleSheet.create({
   },
 
   // Switcher de catégorie (segmented control).
-  segment: {
-    flexDirection: 'row',
-    backgroundColor: Colors.track,
-    borderRadius: Radii.pill,
-    padding: 4,
-  },
-  segmentItem: {
-    flex: 1,
-    paddingVertical: 9,
-    alignItems: 'center',
-    borderRadius: Radii.pill,
-  },
-  segmentItemActive: { backgroundColor: Colors.surface, ...Shadows.sm },
 
   // Covoiturage.
   covoitRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, marginTop: 12 },
