@@ -11,8 +11,7 @@ const mmss = (s: number) =>
   `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
 const WHITE = Colors.textOnPrimary;
-const WHITE_60 = 'rgba(255,255,255,0.6)';
-const WHITE_70 = 'rgba(255,255,255,0.72)';
+const WHITE_MUTED = Colors.textOnInverseSecondary;
 
 /** Contrôle d'appel circulaire (haut-parleur / muet / raccrocher) — repris du
  *  benchmark inDrive/Bolt : cercle neutre translucide, blanc quand actif, rouge
@@ -30,7 +29,7 @@ function CallControl({ icon, label, active, danger, onPress }: {
           color={danger ? WHITE : active ? Colors.textPrimary : WHITE}
         />
       </View>
-      <Text variant="caption" color={active ? WHITE : WHITE_70}>{label}</Text>
+      <Text variant="caption" color={active ? WHITE : WHITE_MUTED}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -62,20 +61,20 @@ export default function CallScreen() {
     <View style={[styles.container, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 28 }]}>
       {/* Indicateur de sécurité (façon « End-to-end encrypted » d'inDrive). */}
       <View style={styles.secureRow}>
-        <Icon name="lock" size={13} weight="fill" color={WHITE_60} />
-        <Text variant="bodySmall" color={WHITE_60}>Appel masqué · via Fiw</Text>
+        <Icon name="lock" size={13} weight="fill" color={WHITE_MUTED} />
+        <Text variant="bodySmall" color={WHITE_MUTED}>Appel masqué · via Fiw</Text>
       </View>
 
       <View style={styles.center}>
         <Avatar name={prestataireName} size={112} bordered />
         <Text variant="heading1" color={WHITE} style={styles.name}>{prestataireName}</Text>
         <View style={styles.statusRow}>
-          <Icon name="phone" size={15} weight="fill" color={WHITE_70} />
-          <Text variant="label" color={WHITE_70}>
+          <Icon name="phone" size={15} weight="fill" color={WHITE_MUTED} />
+          <Text variant="label" color={WHITE_MUTED}>
             {connecting ? 'Connexion…' : mmss(secs)}
           </Text>
         </View>
-        <Text variant="bodySmall" color={WHITE_60} align="center" style={styles.note}>
+        <Text variant="bodySmall" color={WHITE_MUTED} align="center" style={styles.note}>
           Votre numéro reste masqué. L'appel passe par Fiw pour votre sécurité.
         </Text>
       </View>
@@ -102,7 +101,7 @@ export default function CallScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.textPrimary,
+    backgroundColor: Colors.surfaceInverse,
     paddingHorizontal: 24,
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -118,7 +117,7 @@ const styles = StyleSheet.create({
   control: { alignItems: 'center', gap: 8, width: 84 },
   controlCircle: {
     width: 64, height: 64, borderRadius: 32,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: Colors.onInverseSubtle,
     alignItems: 'center', justifyContent: 'center',
   },
   controlActive: { backgroundColor: Colors.surface },

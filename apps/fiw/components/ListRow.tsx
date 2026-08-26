@@ -21,8 +21,7 @@ type Props = {
   subtitleIcon?: IconName;
   /** Sous-titre en bleu marque : la seconde ligne n'est plus un fait mais une
    *  invitation (« Ajouter une adresse » sous un emplacement encore vide).
-   *  ⚠️ Sans contrepartie dans la maquette : `ListRow / Ton=action` y accentue le
-   *  TITRE. À porter dans Figma ou à remplacer par `ton="action"`. */
+   *  Miroir de l'axe `Sous-titre = neutre | accent` de la maquette. */
   subtitleAccent?: boolean;
   /** Valeur alignée à droite, avant le trailing. */
   value?: string;
@@ -47,6 +46,12 @@ const TITLE_COLOR: Record<ListRowTon, string> = {
   destructif: Colors.error,
 };
 
+const HEAD_COLOR: Record<ListRowTon, string> = {
+  neutre: Colors.textSecondary,
+  action: Colors.primary,
+  destructif: Colors.error,
+};
+
 /**
  * LA rangée du système (Figma `ListRow`). Une seule spécification — gouttière
  * 12, padding vertical 8, titre `bodyMedium`, valeur `label`, trailing 18 —
@@ -63,31 +68,42 @@ export default function ListRow({
 }: Props) {
   const showChevron = trailing === undefined && !!onPress;
   const Wrapper: React.ComponentType<any> = onPress ? TouchableOpacity : View;
+  // Désactivé : la maquette ne délave pas la rangée, elle REPEINT ses quatre
+  // encres en `textDisabled`. La nuance compte dès que la tête n'est pas du
+  // texte — un `Medallion` gardé à pleine opacité garde son disque net, là où
+  // une opacité globale l'aurait rendu translucide sur le fond.
   const head = leading ?? (icon ? (
-    <Icon
-      name={icon}
-      size={22}
-      color={ton === 'destructif' ? Colors.error : ton === 'action' ? Colors.primary : Colors.textSecondary}
-    />
+    <Icon name={icon} size={22} color={disabled ? Colors.textDisabled : HEAD_COLOR[ton]} />
   ) : null);
   return (
     <Wrapper
-      style={[styles.row, disabled && styles.disabled, style]}
+      style={[styles.row, style]}
       activeOpacity={0.6}
       onPress={onPress}
       disabled={disabled || !onPress}
     >
       {head}
       <View style={styles.body}>
-        <Text variant="bodyMedium" color={TITLE_COLOR[ton]} numberOfLines={1}>{title}</Text>
+        <Text
+          variant="bodyMedium"
+          color={disabled ? Colors.textDisabled : TITLE_COLOR[ton]}
+          numberOfLines={1}
+        >
+          {title}
+        </Text>
         {subtitle ? (
           <View style={styles.subtitleRow}>
             {subtitleIcon ? (
-              <Icon name={subtitleIcon} size={14} weight="fill" color={Colors.warning} />
+              <Icon
+                name={subtitleIcon}
+                size={14}
+                weight="fill"
+                color={disabled ? Colors.textDisabled : Colors.warning}
+              />
             ) : null}
             <Text
               variant="bodySmall"
-              color={subtitleAccent ? Colors.primary : Colors.textSecondary}
+              color={disabled ? Colors.textDisabled : subtitleAccent ? Colors.primary : Colors.textSecondary}
               numberOfLines={1}
               style={styles.flex1}
             >
@@ -97,9 +113,22 @@ export default function ListRow({
         ) : null}
       </View>
       {value ? (
-        <Text variant="label" color={Colors.textSecondary} numberOfLines={1} style={styles.value}>{value}</Text>
+        <Text
+          variant="label"
+          color={disabled ? Colors.textDisabled : Colors.textSecondary}
+          numberOfLines={1}
+          style={styles.value}
+        >
+          {value}
+        </Text>
       ) : null}
-      {showChevron ? <Icon name="chevronRight" size={18} color={Colors.textTertiary} /> : trailing}
+      {showChevron ? (
+        <Icon
+          name="chevronRight"
+          size={18}
+          color={disabled ? Colors.textDisabled : Colors.textTertiary}
+        />
+      ) : trailing}
     </Wrapper>
   );
 }
@@ -111,7 +140,6 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 8,
   },
-  disabled: { opacity: 0.45 },
   body: { flex: 1, gap: 4 },
   subtitleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   flex1: { flex: 1 },

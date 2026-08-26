@@ -241,32 +241,16 @@ export default function CourseActiveScreen() {
           onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)}
         >
           <View style={styles.handleFloat} pointerEvents="none"><Handle /></View>
-          <SheetCard style={styles.headerCard}>
-            {step.key === 'en_route' && (
-              <Text variant="heading2">Votre chauffeur arrive dans {etaLabel}</Text>
-            )}
-            {step.key === 'arrived' && (
-              <View style={styles.titleRow}>
-                <Text variant="heading2" style={styles.flex1} numberOfLines={1}>Votre chauffeur est arrivé</Text>
-                <ActionPill label="J'arrive" icon="walk" onPress={() => {}} />
-              </View>
-            )}
-            {step.key === 'in_progress' && (
-              <Text variant="heading2">En route vers votre destination</Text>
-            )}
-          </SheetCard>
-        </View>
+          {/* CARTE 1 de la maquette — la bannière de frais d'attente, la ligne de
+              statut et le groupe véhicule ne font qu'UNE carte : `Transport /
+              En route` mesure 222 (texte 23 + gouttière 12 + groupe 155) et
+              `Arrivé · frais` 289. Le code en faisait deux, soit une gouttière de
+              6 et deux paddings de 16 en trop.
 
-        {/* CORPS — hug-content ; scrolle uniquement si le contenu dépasse l'écran. */}
-        <ScrollView
-          style={[styles.body, { height: bodyH }]}
-          contentContainerStyle={styles.bodyContent}
-          onContentSizeChange={(_w, h) => setBodyContentH(h)}
-          scrollEnabled={bodyContentH > bodyMaxH}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* En-tête prestataire (+ bannière frais d'attente à l'arrivée, DANS la
-              carte comme la maquette 163:903, pas flottante sur le fond). */}
+              Elle vit dans la zone d'en-tête, donc c'est elle qu'on voit au cran
+              replié : le Client y lit son chauffeur ET son véhicule sans avoir à
+              déplier — ce que l'ancien en-tête, réduit à une ligne de titre, ne
+              donnait pas. */}
           <SheetCard>
             {step.key === 'arrived' && (
               inGrace ? (
@@ -279,9 +263,30 @@ export default function CourseActiveScreen() {
                 </InfoBanner>
               )
             )}
+            {step.key === 'en_route' && (
+              <Text variant="heading2">Votre chauffeur arrive dans {etaLabel}</Text>
+            )}
+            {step.key === 'arrived' && (
+              <View style={styles.titleRow}>
+                <Text variant="heading2" style={styles.flex1} numberOfLines={1}>Votre chauffeur est arrivé</Text>
+                <ActionPill label="J'arrive" icon="walk" onPress={() => {}} />
+              </View>
+            )}
+            {step.key === 'in_progress' && (
+              <Text variant="heading2">En route vers votre destination</Text>
+            )}
             <VehicleGroup prestataire={prestataire} illu={illu} onPress={expand} />
           </SheetCard>
+        </View>
 
+        {/* CORPS — hug-content ; scrolle uniquement si le contenu dépasse l'écran. */}
+        <ScrollView
+          style={[styles.body, { height: bodyH }]}
+          contentContainerStyle={styles.bodyContent}
+          onContentSizeChange={(_w, h) => setBodyContentH(h)}
+          scrollEnabled={bodyContentH > bodyMaxH}
+          showsVerticalScrollIndicator={false}
+        >
           {/* InfosCourse — titre + itinéraire à plat + paiement (maquette 271:1288). */}
           <SheetCard>
             <Text variant="heading2">Détails de la course</Text>
@@ -306,7 +311,7 @@ export default function CourseActiveScreen() {
 
           {/* Actions — contacts, urgence, annulation. Dernière carte : blanc
               jusqu'en bas (zone sûre absorbée), pas de vide gris. */}
-          <SheetCard style={[styles.lastCard, { paddingBottom: 20 + insets.bottom }]}>
+          <SheetCard style={[styles.lastCard, { paddingBottom: 16 + insets.bottom }]}>
             <ActionTileRow>
               <ActionTile icon="phone" label="Appeler" onPress={onCall} />
               <ActionTile icon="chat" label="Chat" onPress={onChat} />
@@ -328,7 +333,7 @@ export default function CourseActiveScreen() {
         <BottomSheet title="Annuler la course ?" onClose={() => setCancelOpen(false)}>
           {(close) => (
             <View style={styles.cancelSheet}>
-              <AlertBadge icon="car" />
+              <AlertBadge icon="car" weight="fill" />
               <Text variant="body" color={Colors.textSecondary} align="center" style={styles.cancelText}>
                 Votre chauffeur est déjà en route vers vous. Annuler maintenant peut allonger votre prochaine attente.
               </Text>
@@ -384,7 +389,6 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   // 1re carte : coins hauts alignés sur la feuille (28), comme GroupedSheet.
-  headerCard: { borderTopLeftRadius: SHEET_RADIUS, borderTopRightRadius: SHEET_RADIUS },
   // Dernière carte : coins bas carrés, blanc jusqu'au bord de l'écran.
   lastCard: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
   // Corps — fond transparent pour laisser transparaître le `track` dans les gaps.

@@ -1,3 +1,5 @@
+import { type IconName } from '@/components/Icon';
+
 export const DAKAR_CENTER = { lat: 14.6937, lng: -17.4441 };
 
 export const SUGGESTIONS = [
@@ -261,10 +263,14 @@ export const makeCodeRemise = () => String(Math.floor(1000 + Math.random() * 900
 // Même ordre que la page Moyens de paiement : Espèces en tête (moyen le plus
 // utilisé du marché dakarois, et défaut de départ). Les deux listes doivent
 // rester alignées — un ordre différent d'un écran à l'autre se lit comme un bug.
-export const PAYMENT_METHODS = [
-  { id: 'cash', label: 'Espèces', icon: '💵', color: '#6B7280' },
-  { id: 'wave', label: 'Wave', icon: '🌊', color: '#1EADFF' },
-  { id: 'orange', label: 'Orange Money', icon: '🟠', color: '#FF6200' },
+// `icon` est un glyphe du set `Icon`, pas un emoji : c'est ce que la rangée
+// affiche dans son `Medallion` quand le moyen n'a pas de logo de marque. Les
+// couleurs de marque ont disparu avec la pastille teintée qui les employait —
+// un logo porte déjà sa marque, il n'a pas besoin qu'on la repeigne derrière.
+export const PAYMENT_METHODS: { id: string; label: string; icon: IconName }[] = [
+  { id: 'cash', label: 'Espèces', icon: 'coins' },
+  { id: 'wave', label: 'Wave', icon: 'card' },
+  { id: 'orange', label: 'Orange Money', icon: 'card' },
 ];
 
 export const FRAIS_RAPPROCHEMENT = 350;

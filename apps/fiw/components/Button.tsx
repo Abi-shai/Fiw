@@ -21,7 +21,13 @@ import Spinner from '@/components/Spinner';
 //                      inline qui retire/supprime (ex. « Retirer » un compte
 //                      Mobile Money). Le pendant rouge de `link`, comme
 //                      `destructive` est le pendant rouge de `secondary`.
-type Variant = 'primary' | 'secondary' | 'destructive' | 'destructiveFilled' | 'link' | 'linkDestructive';
+// · linkInverse      — le lien posé sur un fond sombre ou `primary`, en
+//                      `textOnPrimary` (ex. « Fermer » de la célébration).
+//                      Un septième rôle et non un axe de ton : un axe aurait
+//                      obligé les six autres variantes à déclarer une valeur qui
+//                      n'a aucun sens pour un bouton plein. Il ne peint pas de
+//                      fond — c'est l'écran qui porte le bleu, le bouton s'y pose.
+type Variant = 'primary' | 'secondary' | 'destructive' | 'destructiveFilled' | 'link' | 'linkDestructive' | 'linkInverse';
 type Size = 'lg' | 'md' | 'sm';
 
 interface Props {
@@ -46,6 +52,7 @@ const BG: Record<Variant, { rest: string; pressed: string }> = {
   destructiveFilled:{ rest: Colors.error,   pressed: Colors.errorPressed },
   link:             { rest: 'transparent',  pressed: 'transparent' },
   linkDestructive:  { rest: 'transparent',  pressed: 'transparent' },
+  linkInverse:      { rest: 'transparent',  pressed: 'transparent' },
 };
 
 // Couleur du texte + icône par variante.
@@ -56,6 +63,7 @@ const FG: Record<Variant, string> = {
   destructiveFilled: Colors.textOnPrimary,
   link: Colors.primary,
   linkDestructive: Colors.error,
+  linkInverse: Colors.textOnPrimary,
 };
 
 // Bordure : seul `secondary` porte un contour (neutre gris). `destructive` est
@@ -88,7 +96,7 @@ export default function Button({
   const fg = FG[variant];
   const s = SIZING[size];
   const filled = variant === 'primary' || variant === 'destructiveFilled';
-  const isLink = variant === 'link' || variant === 'linkDestructive';
+  const isLink = variant === 'link' || variant === 'linkDestructive' || variant === 'linkInverse';
 
   const scale = useRef(new Animated.Value(1)).current;
   const press = (to: number) =>
@@ -110,7 +118,11 @@ export default function Button({
           // Contour des variantes à fond transparent (secondary = gris neutre,
           // destructive = rouge Error).
           BORDER[variant] && { borderWidth: Strokes.medium, borderColor: BORDER[variant] },
-          filled && !isDisabled && Shadows.sm,
+          // L'ombre reste dans les TROIS états : la maquette la porte aussi sur
+          // `désactivé` et `chargement` (les six variantes pleines de
+          // `Button · États` ont le même style d'effet). En désactivé c'est
+          // l'opacité 0,45 qui la fait pâlir avec le reste, pas son retrait.
+          filled && Shadows.sm,
           isDisabled && styles.disabled,
           isLink && pressed && styles.linkPressed,
         ]}

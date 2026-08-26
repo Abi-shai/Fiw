@@ -390,6 +390,28 @@ Deux familles : **pleine** (fond de couleur, pour le CTA) et **transparente** (s
 
 > **Choix de variante.** `secondary` (contour neutre gris) = action secondaire courante. `destructive` (texte rouge, **sans bordure ni fond**) = **annulation / action dangereuse secondaire** (ex. « Annuler la commande », « Annuler (gratuit) ») — à privilégier sur toutes les pages présentant ce type d'action, plutôt qu'un lien texte ad hoc. `destructiveFilled` (plein rouge) est **réservé** au cas où l'action destructive EST le CTA de l'écran (ex. « Raccrocher »). `link` (texte bleu primary, **sans fond ni bordure ni pilule**, empreinte compacte) = **action-lien inline** dans une rangée ou un formulaire (ex. « Modifier » un numéro, « Renvoyer le code ») — à privilégier plutôt qu'un `Text` + icône ad hoc. `linkDestructive` = le **pendant rouge de `link`** (même empreinte, texte `color-error`), pour l'action-lien qui retire/supprime dans une rangée (ex. « Retirer » un compte Mobile Money) — il permet d'opposer deux actions **de même forme** dans la même liste, seule la couleur changeant selon la portée (ex. slot rempli « Retirer » vs slot vide « Ajouter »).
 
+### L'état désactivé : peindre ou délaver (amendement du 25 août 2026)
+
+Deux mécaniques cohabitent dans la maquette, et **ce n'est pas une incohérence** :
+
+- **Un contrôle à fond plein se délave en bloc** — `Button` désactivé, c'est
+  l'opacité 0,45 sur les 21 variantes. Le fond et l'encre doivent pâlir
+  *ensemble* : baisser la seule encre sur un aplat bleu casserait le contraste,
+  et repeindre le seul fond laisserait un libellé plein sur un aplat mort.
+- **Une rangée d'encres se REPEINT** — `ListRow` désactivé garde son opacité à 1
+  et passe ses quatre encres (titre, sous-titre, tête, queue) en
+  `color-text-disabled`. Il n'y a pas d'aplat à accorder, et chaque encre a son
+  pendant désactivé dans la palette. Surtout : une opacité globale délaverait
+  aussi ce qui n'est **pas** de l'encre — le disque d'un `Medallion`, la photo
+  d'un `Avatar` deviennent translucides sur le fond et la rangée se troue.
+
+**Règle** : dès qu'un composant peut recevoir autre chose que du texte dans un
+emplacement (une tête, une fin de rangée), son état désactivé se **peint**. Le
+délavage est réservé aux contrôles dont on connaît tout le contenu.
+
+_(Née d'un vrai défaut : `ListRow` délavait la rangée entière, `Medallion` compris,
+là où la maquette ne grise que l'encre — Partie XLI de l'inventaire.)_
+
 ### Tailles (hauteurs pouce-friendly ≥ 48px)
 
 | Taille | Hauteur | Padding horizontal | Typographie | Icône | Usage |
@@ -436,7 +458,7 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 | `SearchBar` | Recherche | Deux variantes : `sheet` (dans une feuille — fond `bg`, rayon `md`, liseré `border`, h48) et `floating` (posée **sur la carte** — pilule blanche, liseré `hairline`, `shadow-float`, h46). Croix d'effacement quand le champ n'est pas vide, slot `trailing` optionnel (bouton carte, micro). **Ne couvre pas** les champs De/À de l'accueil : ce sont des rangées d'itinéraire à deux lignes, pas une recherche. _(Construite le 23 août 2026 — jusque-là ce tableau la décrivait alors qu'elle n'existait nulle part, et trois écrans la réimplémentaient chacun à sa façon.)_ |
 | `ScreenHeader` | En-tête de page | `IconButton` retour (icône forcée en `gray-700`, pas en bleu) + titre `heading2` + slot d'action à droite. Gère la safe-area. Le pendant « feuille » est `SheetHeader` (titre `heading1` + croix). **N'inclut pas** les boutons flottants sur carte (ce sont des `IconButton` posés séparément). |
 | `PlaceRow` | Ligne de lieu | Cercle d'icône + titre + sous-titre + trailing. Récents, suggestions, lieux enregistrés. |
-| `Field` | Toute saisie | Set à **trois axes** : `Type` = `texte` · `téléphone` · `zone`, `État` = `repos` · `actif` · `erreur` · `désactivé`, `Contenu` = `rempli` · `vide` — 24 variantes. Vide et rempli sont orthogonaux à l'état : un champ focus peut être vide, un requis en erreur l'est par définition. Le champ **vide** affiche un `Placeholder` en `text-tertiary` et **n'a pas de bouton d'effacement** (rien à effacer) ; le champ **rempli** le porte dans les trois types — au centre à droite en `texte` et `téléphone`, **en haut à droite** en `zone`. La couleur du × suit l'état (`text-tertiary` / `primary` / `error` / `text-disabled`). Libellé avec astérisque requis, icône de tête, slot trailing, texte d'aide sous le contrôle. `Type=téléphone` porte le chip indicatif (drapeau + `+code` + caret) ouvrant le `CountryPicker`, numéro **formaté par pays** (`constants/countries.ts`), **tous pays acceptés** — point d'entrée unique de toute saisie de téléphone, changement de numéro **et** onboarding (cf. `sitemap-client.md` §1). _(Absorbe `PhoneField` et `TextArea`, retirés le 23 août 2026.)_ |
+| `Field` | Toute saisie | Set à **trois axes** : `Type` = `texte` · `téléphone` · `zone`, `État` = `repos` · `actif` · `erreur` · `désactivé`, `Contenu` = `rempli` · `vide` — 24 variantes. Vide et rempli sont orthogonaux à l'état : un champ focus peut être vide, un requis en erreur l'est par définition. Le champ **vide** affiche un `Placeholder` en `text-tertiary` et **n'a pas de bouton d'effacement** (rien à effacer) ; le champ **rempli** le porte dans les trois types — au centre à droite en `texte` et `téléphone`, **en haut à droite** en `zone`. La couleur du × suit l'état (`text-tertiary` / `primary` / `error` / `text-disabled`). Libellé avec astérisque requis, icône de tête, slot trailing, texte d'aide sous le contrôle. `Type=téléphone` porte le chip indicatif (drapeau + `+code` + caret) ouvrant le `CountryPicker`, numéro **formaté par pays** (`constants/countries.ts`), **tous pays acceptés** — point d'entrée unique de toute saisie de téléphone, changement de numéro **et** onboarding (cf. `sitemap-client.md` §1). _(Absorbe `PhoneField` et `TextArea`, retirés le 23 août 2026 ; **absorption effective dans le code le 25 août 2026** — `Field` porte l'axe `type` = `texte` · `téléphone` · `zone`, et `components/PhoneField.tsx` est supprimé.)_ |
 | `PlaceField` | Saisie d'un Lieu | Départ / arrivée : deux lignes (libellé + valeur), icône de tête, bouton rond « choisir sur la carte » optionnel, état `actif`. Distinct de `Field` — on y saisit un Lieu, pas du texte libre. Pendant de `PlaceRow`, qui **affiche** un Lieu. |
 | `CountryPicker` | Choix du pays | Feuille **3 crans** (`hooks/useSnapSheet`) + barre de recherche + liste monde triée. Drapeaux = **PNG plats locaux** (`assets/flags/`, map `constants/flags.ts`) rendus via `FlagChip` — **pas de SVG** (`SvgXml` plante sur les drapeaux à bloc `<style>`). |
 | `SettingsRow` | Ligne de réglage | Icône ligne + label + **sous-titre** + slot `right` + chevron. Variante `destructive` (label rouge) ; prop `accent` = **rangée d'objet** (pastille bleue 42 px, voir la règle plus bas). Page Compte et sous-écrans. **Volontairement pauvre** : un objet plus riche (logo de service, badge d'état, action sur une 2ᵉ ligne — cf. carte de `compte/paiement.tsx`) mérite **son propre composant**, pas des slots ajoutés ici un par un. Le résumé de la rangée passe **toujours par `subtitle`**, jamais par une valeur alignée à droite : la valeur de droite dispute sa largeur au label et le fait passer à la ligne, d'où des rangées de hauteurs inégales. `subtitle` est en `numberOfLines={1}` — un résumé trop long se tronque, il ne déforme pas la liste. |
@@ -491,6 +513,26 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > pastille est désormais un `Medallion / Ton=accent` posé dans le `leading` de la
 > rangée, et le mode `plat` de `List` porte la géométrie sans carte décrite
 > ci-dessus (débord de la gouttière pour que les filets filent aux bords)._
+
+> **Le filet d'une liste en feuille file d'un bord à l'autre.** Une liste posée
+> dans une `BottomSheet` sépare ses rangées d'un filet **pleine largeur**
+> (`Divider / Retrait=0`) — quelle que soit la tête des rangées : icône 22,
+> `Medallion` 42 ou 56, `Avatar` 48. Une liste d'**écran** garde son retrait,
+> aligné sur le texte (`Divider / Retrait=50`, le défaut de `List`).
+>
+> Le pourquoi tient à ce que le filet sépare. Sur un écran, la liste est le
+> contenu : le filet y découpe des rangées entre elles, et se retirer sous le
+> texte dit « c'est la même famille, ligne après ligne ». Dans une feuille, la
+> liste n'est qu'un **bloc parmi d'autres** — un en-tête, un champ, un CTA
+> l'entourent ; le filet y sert de règle horizontale qui tient la colonne, et un
+> retrait le ferait flotter au milieu du bloc sans rien border. C'est aussi ce
+> qui évite d'avoir à recalculer un retrait par taille de tête : en feuille, il
+> n'y en a qu'un.
+>
+> _(Décidé le 25 août 2026, sur relevé : les huit filets des listes en feuille de
+> la maquette — accueil, adresse ×2, paiement ×2, destinataire — sont tous en
+> `Retrait=0`, quand le composant `List` seul est réglé sur 50. Le code calculait
+> jusque-là un retrait depuis la largeur de la tête, partout. Partie XLI.)_
 
 > **L'action « ajouter » d'un écran de gestion est un bouton `primary` sous la
 > liste.** Sur un écran dont c'est la **seule** action — Lieux enregistrés,

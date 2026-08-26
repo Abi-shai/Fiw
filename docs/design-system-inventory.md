@@ -3013,3 +3013,1010 @@ Un motif du produit qui n'a pas de composant pose **deux** questions, pas une :
 « quel composant lui manque ? » et « ce motif devrait-il exister ? ». J'avais
 sauté la seconde. Le relevé y répond mieux que l'intuition — ici il a supprimé le
 besoin au lieu de le satisfaire.
+
+---
+
+# Partie XL — Les deux fondations ouvertes, posées (25 août 2026)
+
+Maquette d'abord, code ensuite. Les deux décisions qui bloquaient les derniers
+motifs sont prises.
+
+## 1. Les rôles « sur fond inverse » — 11 jetons
+
+Treize `rgba` en dur dans sept fichiers, et un `textPrimary` détourné en couleur
+de **fond**. Nommés **par leur rôle**, comme tout le reste du système — jamais
+par leur valeur.
+
+| Primitive (masquée) | Jeton sémantique | Emploi |
+|---|---|---|
+| `alpha/white-18` | `onInverseSubtle` | Surface posée sur un fond sombre ou bleu — contrôle d'appel, médaillon de célébration, bouton verrouillé du Wallet |
+| `alpha/white-25` | `onInverseMuted` | Liseré sur fond sombre ou bleu |
+| `alpha/white-70` | `textOnInverseSecondary` | Texte secondaire sur fond sombre |
+| `alpha/ink-22` | `scrim` | Voile posé sur la **carto** — recherche, ancrage du pin |
+| `alpha/primary-6` | `primaryGhost` | Anneaux du radar — le palier au-dessous de `primarySubtle` |
+| — (alias `gray/ink`) | `surfaceInverse` | Le fond des surfaces sombres |
+
+**`surfaceInverse` est le jeton qui manquait vraiment.** L'écran d'appel peignait
+son fond avec `textPrimary` : une couleur de texte employée comme surface. Un
+changement d'encre y aurait repeint des écrans entiers.
+
+Deux valeurs voisines ont fusionné, sans perte visible : le blanc à 14 % du
+contrôle d'appel rejoint le 18 % des deux autres emplois, et les textes à 60 % et
+72 % de l'écran d'appel rejoignent 70 %.
+
+## 2. `Medallion` gagne `sm`, `AlertBadge` gagne un ton
+
+Le relevé a défait la question. Sur les treize tailles de pastille du produit, la
+moitié **ne sont pas des médaillons** — logos de moyens de paiement, avatars — et
+la pastille de 64 des deux clôtures n'était pas une taille manquante : c'était
+**`AlertBadge` dans un autre ton**.
+
+- **`Medallion / Size=sm` (36, glyphe 18)** — quand le médaillon accompagne une
+  DONNÉE et non une rangée : tuile de statistique, ligne de commission, liste
+  d'étapes. Les crans `md` et `lg` reprennent au passage le jeton `radius/pill`
+  au lieu d'un 21 écrit en dur.
+- **`AlertBadge / Ton = alerte | succès`** — la pastille de clôture rentre à 56
+  avec le reste, au lieu de vivre à 64 dans deux fichiers.
+
+## Ce que ça débloque
+
+| Écran | Avant | Après |
+|---|---|---|
+| `affilie/celebration` | Le seul état de résultat encore fait main | **`ResultState / Ton=marque`** |
+| `transport/call` | Fond emprunté à `textPrimary`, trois blancs en dur | `surfaceInverse`, `onInverseSubtle`, `textOnInverseSecondary` |
+| `affilie/dashboard` | Deux cercles d'icône, deux blancs en dur | **`Medallion sm`** ×2, `onInverseSubtle`, `onInverseMuted` |
+| Les deux `searching` | Voile et halo en dur | `scrim`, `primaryGhost` |
+| `home` · `compte/lieu` | Ombre du pin en dur | `scrim` |
+| Les deux `cloture` | Pastille 64 faite main | **`AlertBadge ton="succès"`** |
+| `affilie/presentation` | Liste d'étapes à cercles maison | **`Medallion`** |
+
+## Ce qui reste, et c'est tout
+
+- **Une seule couleur en dur dans l'app** : `rgba(242,243,245,0.5)` — le liseré de
+  la pastille de fermeture de la bannière Affilié (`home.tsx:934`), soit `track`
+  à moitié. Un seul emploi ; en faire un jeton serait inventer un rôle.
+- **« Fermer » de la célébration** — blanc sur fond bleu. `link` y serait bleu sur
+  bleu : c'est le dernier motif en attente, et il appelle **une variante de lien
+  inverse sur `Button`**, pas un jeton.
+
+`docs/style-guide.tokens.json` régénéré : **50 couleurs**. `npx tsc --noEmit`
+propre. Rien vérifié à l'écran — la passe touche l'écran d'appel, la célébration,
+les deux clôtures, les deux recherches et le tableau de bord Affilié.
+
+## Partie XL bis — Les deux derniers motifs (25 août 2026)
+
+### La dernière couleur en dur
+
+`rgba(242,243,245,0.5)` n'était pas où je l'avais dit : c'est le liseré de la
+**tuile de service** de l'accueil, soit `track` à 50 % posé sur un fond `track`
+— un bord d'un cheveu plus clair que son propre fond. `borderSubtle` (#F3F4F6
+contre #F2F3F5) reproduit exactement cette intention avec un jeton, sans inventer
+de rôle.
+
+Trois rayons 20 en dur sont tombés au passage (tuile de service, bannière
+Affilié, les deux écrans de recherche) : ils reprennent `Radii.card`.
+
+**Il ne reste plus aucune couleur ni aucun rayon écrit à la main dans l'app**,
+hors les trois couleurs de marques tierces (Orange, Wave, Free Money), qui
+n'appartiennent pas à la palette Fiw.
+
+### `Button / linkInverse`
+
+Le lien posé sur un fond sombre ou `primary`, en `textOnPrimary` — le « Fermer »
+de la célébration Affilié, seul motif du produit encore dessiné à la main.
+
+**Un septième rôle, pas un axe `Ton`.** Un axe aurait obligé les dix-huit
+variantes existantes à déclarer une valeur qui n'a aucun sens pour `primary` ou
+`secondary`, et ouvert une matrice de 36 cases pour n'en remplir que trois.
+`Variant` porte déjà le rôle complet dans ce set — `destructive` et
+`destructiveFilled` y cohabitent pour la même raison. **21 variantes.**
+
+Comme pour `ResultState / Ton=marque`, la variante porte un fond bleu **dans la
+maquette seulement** : en usage, l'écran peint le même bleu d'un bord à l'autre
+et la peinture du bouton disparaît dessous. Côté code, `linkInverse` ne peint
+rien.
+
+### État
+
+Le produit n'a plus un seul motif d'interface sans composant, ni une seule valeur
+hors jeton. `npx tsc --noEmit` propre — mais **la célébration, l'écran d'appel et
+les deux clôtures n'ont pas été vus tourner** depuis ces changements.
+
+---
+
+# Partie XLI — L'audit des variantes, et les six écarts corrigés (25 août 2026)
+
+Passe de **vérification** et non de construction, sur l'angle mort nommé en
+Partie XXXIV bis : *les audits précédents comparaient des jetons, pas des choix
+de variante.* Un composant peut employer les bons jetons et le mauvais
+sous-composant.
+
+## Méthode — lire les instances, pas les documents
+
+Pour chacun des **57 composants** des trois pages, `getMainComponentAsync()` sur
+chacune des **269 instances imbriquées**, variante du parent par variante du
+parent. Une instance dit alors deux choses : quel composant elle emploie, ET
+quelle variante de ce composant. C'est ce second point que rien n'avait relevé.
+
+L'énumération se fait sans changer de page — `await page.loadAsync()` puis
+`page.findAllWithCriteria(…)` — ce qui permet de balayer les trois pages en un
+script.
+
+## Les six écarts, corrigés
+
+| | Ce que dit la maquette | Ce que faisait le code |
+|---|---|---|
+| **`StepProgress`** (454:230) | Chaque jalon **garde son propre glyphe** ; c'est la GRAISSE qui dit l'acquis — `fill` dès qu'il est atteint, `bold` tant qu'il est à venir | `name={done ? 'tick' : step.icon}` et `weight="bold"` partout : le glyphe de l'étape franchie disparaissait au profit d'une coche |
+| **`ListRow / État=désactivé`** (597:246) | Opacité **1**, et les quatre encres repeintes en **`textDisabled`** — titre, sous-titre, tête, queue | `opacity: 0.45` sur la rangée entière. Une tête non textuelle — `Medallion`, `Avatar` — s'en trouvait délavée, disque compris |
+| **Le filet de l'accueil** (601:224) | `Divider` : filet 1 en **`border`**, et **un filet entre les deux rangées** de la liste | Un filet maison en `borderSubtle` (`home.tsx`), et **aucun filet** dans la liste « Récemment » |
+| **`PhoneField`** (567:201) | Le téléphone est un **type de `Field`** : 4 états × vide/rempli, en-tête, aide, et une croix d'effacement `IconButton link sm` | Un composant séparé figé sur `État=repos` — ni état, ni libellé, ni aide, ni croix |
+| **`ActionTile`** (526:148) | `Icon Weight=bold` dans **les deux** variantes : c'est la couleur qui porte le danger | `weight={danger ? 'fill' : 'bold'}` — la tuile SOS pesait plus lourd que ses voisines |
+| **`PaymentSheet`** (674:3375) | Les trois rangées portent un **`Medallion · Size=lg`** | Un repli à **l'emoji** dans une pastille teintée de la marque, dès qu'un moyen n'a pas d'illustration |
+
+## Ce que la correction a changé d'architecture
+
+**`Field` et `PhoneField` partagent enfin un cadre.** `FieldFrame` porte
+l'en-tête, le contrôle peint par son état et la ligne d'aide ; `FIELD_CONTROL`
+est le seul endroit où un champ change de couleur. Chaque type ne garde que son
+intérieur — et le téléphone n'a plus, en propre, que le chip indicatif et son
+filet. Les quatre états ne sont décrits qu'une fois, comme la maquette les tient
+sur un seul axe partagé par les trois types.
+
+**La croix d'effacement quitte l'emplacement libre.** `Field` prend `onClear` et
+habille lui-même le bouton (`IconButton link sm`) ; `trailing` ne sert plus qu'à
+ce que la maquette ne connaît pas — le cadenas de `compte/lieu`. Application
+directe de la règle de la Partie XXXIV bis : *un slot libre là où la maquette
+impose un traitement est un bug en attente.*
+
+⚠️ **Et j'avais commencé par la rater.** J'avais figé le × en `textTertiary`
+alors que le style guide écrit, depuis le 23 août : « la couleur du × suit
+l'état » — `text-tertiary` / `primary` / `error` / `text-disabled`. Il porte
+maintenant `CLEAR_COLOR[état]`, et il ne se montre que si le champ est **rempli**,
+l'autre moitié de la même ligne (« un champ vide n'a rien à effacer »). C'est la
+troisième fois que l'information était écrite et n'avait pas été lue — cette
+fois, dans le style guide plutôt que dans la maquette. **Un audit de la maquette
+seule ne suffit pas** : les cinq sources font foi, la règle de `CLAUDE.md` le dit,
+et l'audit avait lu les composants Figma sans relire la ligne `Field` du style
+guide.
+
+**`PAYMENT_METHODS` perd ses emojis et ses couleurs de marque.** Un moyen de
+paiement porte maintenant un `IconName` du set — c'est ce que le `Medallion`
+affiche à défaut de logo. Les trois couleurs de marque tierces disparaissent avec
+la pastille teintée qui les employait : un logo porte déjà sa marque.
+
+## Deux corrections au journal lui-même
+
+- **La Partie XL bis surestimait la fin du chantier.** « Plus aucun rayon écrit à
+  la main » : il en restait sept. Un seul avait un jeton en face
+  (`home.tsx`, 19 pour un cercle de 38 → `Radii.pill`) ; les six autres sont des
+  rayons de **vignette de logo** (14, 11, 11, 9) ou de **poignée** (3, 3), qui
+  n'ont pas de rôle dans l'échelle. Les nommer serait inventer un rôle — ils
+  restent, signalés.
+- **Le `letterSpacing: 0.8` retiré en Partie XXX avait survécu.** Le jeton
+  `SectionLabel` ne portait plus que `textTransform`, mais six écrans le
+  contournaient et réécrivaient le 0,8 à la main. Les huit déclarations passent
+  par `...SectionLabel`. Il n'en reste aucune.
+
+Deux commentaires périmés retirés au passage : `ListRow.subtitleAccent` n'est plus
+« sans contrepartie dans la maquette » (la Partie XXXV l'y a porté), et
+`IconButton / flat` n'a plus l'icône bleue depuis la Partie XXX.
+
+## Ce que l'audit a prouvé conforme
+
+**`Button · États` (18 variantes, 414:1290) — conforme sur les trois états.**
+C'était l'angle mort le plus suspecté, jamais confronté. Pressé : `primaryPressed`
+/ `bg` / `errorSubtle` / `errorPressed`, et opacité 0,55 pour les deux liens.
+Désactivé : opacité 0,45, fonds et encres conservés. Chargement : fond conservé,
+libellé remplacé par un `Spinner`. La table `BG[variant].pressed` du code est
+exactement celle de la maquette.
+
+Également confrontés variante par variante et conformes : `Medallion` (au pixel),
+`AlertBadge`, `Chip` (la seule bascule de graisse demandée est faite),
+`ReceiptCard` — dont le total fait main **est** ce que dit la maquette, son
+`TotalRow` n'étant pas un `InfoRow` —, `ListRow` au repos et dans ses deux tons,
+`PlaceField` (le correctif de la Partie XXXIV bis tient), `IconButton / flat` et
+les deux en-têtes, `OptionCard`, `Badge`, `SearchBar`, `Divider`, `VehicleGroup`,
+`CodeField`, `FlagChip`, `GammeCard`.
+
+## Les trois décisions, prises
+
+### 1. Le filet d'une liste en feuille file d'un bord à l'autre
+
+Les **huit** filets des listes posées dans une `BottomSheet` sont en `Retrait=0`
+— pleine largeur, tête de 42, 48 ou 56 confondues — quand le composant `List`
+seul est réglé sur `Retrait=50`. `Retrait=0` étant aussi la variante par défaut
+du set, la question était de savoir si c'était une règle ou un oubli.
+
+**Tranché : c'est une règle**, et elle est écrite dans le style guide avec son
+pourquoi. Sur un écran, la liste EST le contenu et le filet découpe des rangées
+d'une même famille : il se retire sous le texte. Dans une feuille, la liste n'est
+qu'un bloc parmi d'autres et le filet tient la colonne : un retrait le ferait
+flotter au milieu du bloc sans rien border. Bénéfice de côté : plus de retrait à
+recalculer par taille de tête.
+
+Appliqué à l'accueil (les deux listes), à la feuille paiement (68 → 0) et à la
+feuille destinataire (76 → 0). Les listes d'écran gardent le défaut de `List`.
+
+### 2. `PhoneField` est absorbé pour de bon
+
+Le style guide l'avait acté le 23 août — « `Field` absorbe `PhoneField`, retiré »
+— et la maquette porte le téléphone en `Type=téléphone`. Le code, lui, gardait un
+composant frère.
+
+**Tranché : le code se calque.** `Field` porte l'axe `type` = `texte` ·
+`téléphone` · `zone` sur une union discriminée, et `components/PhoneField.tsx` est
+**supprimé**. Ce que le téléphone garde en propre tient en trois objets — le chip
+indicatif, son filet, le formatage par pays. Le reste (cadre, quatre états,
+en-tête, aide, croix) est écrit une fois pour les trois types.
+
+Deux appelants migrés : `app/index.tsx` et `compte/numero.tsx`. Le second perd son
+libellé fait main (`caption` / `textTertiary`) au profit du `label` du champ, qui
+est celui de la maquette.
+
+Le booléen `zone` disparaît lui aussi : c'est une valeur de l'axe, pas un
+interrupteur.
+
+### 3. La pastille d'alerte est pleine
+
+`Transport / Modale · Annuler` employait `Icon=car, Weight=fill`,
+`Livraison / Modale · Annuler` `Icon=package, Weight=bold` : la maquette se
+contredisait.
+
+**Tranché : `fill` des deux côtés.** Le code passe les deux modales en `fill`, et
+l'instance Livraison de la maquette est corrigée (`swapComponent` vers
+`Icon=package, Weight=fill` — la liaison `error` du vecteur a survécu au swap,
+vérifiée après coup, le piège connu ne s'est pas déclenché). Les six pastilles
+d'alerte du produit sont maintenant pleines ; le composant garde `bold` par
+défaut, comme le composant Figma, ce sont les instances qui remplissent.
+
+## État
+
+`npx tsc --noEmit` propre. **Rien n'a été vu tourner** : la passe touche le
+suivi Livraison (`StepProgress`), toutes les rangées du produit (`ListRow`),
+l'accueil, la feuille paiement, la feuille destinataire et les deux écrans à
+champ téléphone — dont l'écran de connexion. S'y ajoutent les quatre écrans en
+attente depuis la Partie XL.
+
+Deux documents restent à mettre à jour, hors périmètre de cette passe :
+`docs/design-system-figma-code-map.md` (déjà signalé périmé) et
+`docs/design-system-ecarts-client.md`, qui listent tous deux `PhoneField` comme
+un fichier existant.
+
+---
+
+# Partie XLII — Les illustrations de gamme, et le Motion de l'accueil (25 août 2026)
+
+Suite de la Partie XLI, sur les zones que l'audit des variantes avait
+volontairement laissées de côté. Priorité posée par l'utilisatrice :
+`Illustration/Gamme` d'abord, les 32 variantes de `BottomSheet` ensuite.
+
+## 1. `Illustration/Gamme` — 15 variantes, trois axes
+
+Le set porte `mobility option` = moto · auto · covoiturage · vélo · auto-luxe,
+croisé avec **`View` = Default · top view · inline**.
+
+### 🐞 L'axe `inline` n'a jamais atteint le code
+
+Cinq variantes `View=inline`, toutes en **48 × 48**, avec le dessin **recadré et
+recentré** dans le carré (les voitures à 48 × 39,1 posées à y 4,4 ; le vélo à
+43,1 × 48 posé à x 2,5 ; la moto à 48 × 39,5).
+
+Le code n'a que deux familles — `GAMME_ILLUSTRATIONS` (Default) et
+`TOPVIEW_ILLUSTRATIONS` (top view). Là où il faut un rendu de 48, il **écrase le
+Default** avec `resizeMode="contain"` : `VehicleGroup.tsx:26` (48) et
+`AltSuggestCard.tsx:17` (42). Le commentaire de `VehicleGroup` explique même le
+contournement — « 48 et non 56 : les illustrations sont rognées au plus près du
+dessin, donc `contain` les fait remplir la boîte ».
+
+Or `contain` centre la **boîte alpha** du PNG, dont la marge transparente varie
+d'un véhicule à l'autre ; la variante `inline` recentre le dessin explicitement.
+Les deux ne donnent pas le même résultat. Et c'est la **Partie XXXVI** qui avait
+créé cet axe, précisément pour corriger le défaut `VehicleBlock` / vélo : la
+maquette a reçu le correctif, le code ne l'a jamais reçu.
+
+### L'échelle de la famille `Default` est incohérente côté code
+
+| gamme | cadre Figma | `ILLO_SIZES` | part du cadre |
+|---|---|---|---|
+| moto | 107 × 88 | 106 × 87 | **100 %** |
+| auto | 108 × 88 | 93 × 76 | 86 % |
+| covoiturage | 108 × 88 | 93 × 76 | 86 % |
+| auto-luxe | 108 × 88 | 93 × 76 | 86 % |
+| vélo | 79 × 88 | 78 × 76 | voir ci-dessous |
+
+Les **ratios** sont justes — vérifiés contre les en-têtes PNG des assets, aucune
+déformation. C'est l'**échelle** qui diverge, et seulement pour les voitures. La
+maquette donne la même hauteur de 88 aux quatre véhicules ; le code fait
+dominer la moto de 14 %. Le commentaire de `ILLO_SIZES` revendique cette
+domination (« elle est la gamme la plus vendue et occupe la carte en
+conséquence ») — **la maquette ne la dit pas.** À trancher : soit les voitures
+remontent à 108 × 88, soit la maquette élargit la moto.
+
+### 🐞 Le cadre `vélo / View=Default` de la maquette est périmé
+
+| source | gabarit | ratio |
+|---|---|---|
+| cadre Figma | 79 × 88 | **0,898** |
+| `assets/gamme-velo.png` | 310 × 304 | 1,020 |
+| `ILLO_SIZES.velo` | 78 × 76 | 1,026 |
+
+Le vélo a été réélargi le 14 août 2026 (« le cycliste y écarte les bras jusqu'aux
+poignées »). L'asset et le code ont suivi ; le **cadre Figma est resté aux
+proportions de l'ancien vélo debout**. C'est le seul des quinze où la maquette
+est en retard sur le code.
+
+### Deux points d'hygiène
+
+- Le commentaire de `ILLO_SIZES.luxe` — « Variante masquée dans le jeu Figma » —
+  est **faux** : `mobility option=auto-luxe, View=Default` existe bien (108 × 88).
+- Les directions d'auto-layout du set sont incohérentes (VERTICAL / HORIZONTAL /
+  NONE) pour une structure pourtant identique — un seul rectangle par variante.
+
+## 2. Figma Motion sur la feuille d'accueil
+
+`get_motion_context` sur `BottomSheet / Parcours=Accueil, État=Services` renvoie
+une **timeline de 2 000 ms en boucle** (cohorte enracinée sur le set, 486:1447)
+et **11 nœuds animés**, en deux blocs miroir — un par tuile de service.
+
+Ce n'est pas l'entrée que le code connaissait : c'est la **SORTIE**, et le code
+n'en avait aucune. `cardTimeline` faisait arriver la tuile ; rien ne la faisait
+partir. Au tap, `openSearch` basculait le mode sans transition.
+
+### Ce que dit la timeline, et ce qui est importé
+
+| Piste | Maquette | Importé |
+|---|---|---|
+| `En-tête` | opacité 1→0 sur 250 ms, translation 0→−15 sur 300 ms | ✅ |
+| `Frame 1` (pied) | opacité 1→0 (50→300), translation 0→+10 (50→350) | ✅ |
+| `Group 1` / `Group 2` | opacité 1→0 (50→350), dérive +(4,88 ; 4) et +(4,32 ; 4,8), échelle 1→0,92 | ✅ |
+| `Oversized Leaf` | opacité 0,6→0 sur 200 ms | ✅ |
+| `IlloPanel` | hauteur 109→228 (50→500), rayon 16→0 (250→500), fond blanc→transparent (250→500), translation 0→−55 | ✅ |
+| `Illustration` | translation →(−99 ; −99) et échelle ×2,5 sur 600 ms, en ressort | ❌ voir plus bas |
+
+Toute la sortie porte la même courbe, `cubic-bezier(0.4, 0, 0.2, 1)`, ajoutée en
+`EASE_STD`. **Ce n'est pas le miroir de l'entrée** : l'entrée fait descendre
+l'en-tête de 10 et remonter le pied de 10, la sortie pousse à −15 et +10, et
+surtout elle *défait* le panneau au lieu de le poser.
+
+### Trois décisions d'implémentation
+
+- **La hauteur du panneau est animée en rapport, pas en pixels.** 228 / 109 =
+  ×2,09 appliqué à la hauteur mesurée au `onLayout` : la tuile est en `flex: 1`,
+  ses 109 de la maquette n'existent qu'à 375 de large.
+- **Le groupe de véhicules gagne un enrobage.** La maquette a `Group 1` /
+  `Group 2` ; le code posait ses calques à plat dans le panneau. Sans enrobage,
+  la dérive et la réduction s'appliqueraient calque par calque, ce qui n'est pas
+  la même chose.
+- **Hauteur, rayon et fond restent hors driver natif** — le driver natif ne sait
+  pas les animer. Ils vivent sur la même vue que la translation du panneau, qui
+  les suit ; les autres pistes (opacités, transformations) restent natives.
+
+`prefers-reduced-motion` est respecté via la ref `reduceMotion` déjà présente :
+la sortie ne se joue pas, on passe directement. Un garde-fou empêche un second
+tap d'empiler deux navigations.
+
+### Resté ouvert — le blow-up héros
+
+La dixième piste, `Illustration` (×2,5 vers (−99 ; −99), en ressort à ~2,8 % de
+dépassement) **n'est pas importée**. Deux raisons :
+
+1. Elle n'existe que sur **une** tuile — Course. Dans la maquette,
+   `Illustration` et `Group 1` sont **frères** et jouent l'un contre l'autre : le
+   groupe s'en va en rétrécissant, un calque héros distinct grandit. La tuile
+   Livraison n'a que `Group 2`.
+2. Le code n'a pas de calque héros : ses véhicules sont les calques du groupe.
+   L'importer voudrait dire **ajouter un élément que la maquette a et que le code
+   n'a pas**, et décider s'il suit la tuile touchée (le seul sens produit) ou
+   reste sur Course (ce que dit la lettre du fichier).
+
+### Hygiène maquette
+
+Les deux calques d'enrobage de tuile s'appellent `Gentle Morph` (Course) et
+**`Transport`** (Livraison). Le second porte le nom d'un **autre service** du
+produit — à renommer avant qu'il n'induise en erreur.
+
+## État
+
+`npx tsc --noEmit` propre. **Rien n'a été vu tourner** — et cette passe ajoute
+une transition à l'accueil, l'écran le plus animé du produit.
+
+**Non fait, et c'était la priorité n° 2** : les 32 variantes de `BottomSheet`
+confrontées écran par écran (marges internes, ordre des blocs, hauteurs). Seule
+la variante d'accueil a été ouverte, et par son Motion. Restent aussi les ombres
+des 21 + 18 variantes de `Button`, `Icon` (142) et les six autres variantes de
+`CodeField`.
+
+---
+
+# Partie XLIII — Les 32 feuilles, confrontées écran par écran (25 août 2026)
+
+La priorité n° 2 de la Partie XLII. Relevé de la structure des 32 variantes de
+`BottomSheet` — blocs de premier et second niveau, hauteurs, paddings,
+gouttières, rayons, position dans le flux — puis confrontation aux écrans.
+
+## Le motif, et il est régulier
+
+Toutes les feuilles disent la même chose : racine `VERTICAL`, **aucun padding**,
+**gouttière 6** (la lèvre grise) ; cartes `SheetCard` en `pad16 gap12 bg:surface
+r16` ; `Handle` de 5 en `border`, rayon 3, **en position absolue à y=6** dans les
+32 variantes. Le code est conforme sur la gouttière de 6, sur le rayon 28 des
+coins hauts de la feuille, et sur la poignée.
+
+Un doute levé au passage : l'ordre du `Handle` dans la liste d'enfants est
+erratique (parfois 2ᵉ, parfois dernier). Ce n'est **pas** un défaut — il est
+absolu, son rang dans le flux n'a aucun effet.
+
+## 🐞 Le défaut de fond : la carte de feuille a 8 de trop, partout
+
+| | Padding vertical | Padding horizontal |
+|---|---|---|
+| Les 20 instances de `SheetCard` de la maquette | **16** | 16 |
+| `components/Sheet.tsx` | **20** | 16 |
+
+Vérifié sur les hauteurs : `Transport / Recherche` carte 1 fait 141 pour un
+`Contenu` de 109 — soit 109 + 16 + 16. Avec le py:20 du code elle ferait 149.
+
+Le commentaire du code revendiquait pourtant la maquette (« py:20 des
+maquettes »). **Il se trompait.** Chaque carte du produit était donc 8 plus haute
+que la maquette, et une feuille à quatre cartes 32 plus haute — ce qui explique
+seul une bonne partie des écarts de hauteur qu'on aurait pu chercher ailleurs.
+
+Corrigé : `padding: 16` sur les quatre côtés, et la zone sûre de la dernière
+carte passe de `20 + insets.bottom` à `16 + insets.bottom` dans les trois écrans
+qui la portent.
+
+## 🐞 Le 28 forcé en haut de la première carte n'avait jamais disparu
+
+La **Partie XXX** avait tranché : « la maquette met `radius/lg` aux quatre coins
+de chaque carte, y compris la première : le fond `track` de la feuille
+transparaît donc dans les coins hauts — c'est **la lèvre grise du motif**, pas un
+défaut. Le code forçait 28 en haut de la première carte. »
+
+Le relevé confirme la maquette : **30 des 32 variantes ont leur première carte en
+16/16/16/16.** Mais le code forçait toujours le 28, dans trois fichiers :
+`transport/course-active.tsx:387`, `livraison/configure.tsx:499`,
+`livraison/suivi.tsx:462` — un `styles.headerCard` que la Partie XXX n'avait pas
+vu. Les trois sont retirés, avec le style devenu orphelin.
+
+Et les **deux** variantes qui ne sont pas à 16 sont l'exact miroir de la même
+erreur, côté maquette : `Livraison / Configure` et `Livraison / En route` ont leur
+première carte en **28/28/20/20**. Ce sont aussi deux cartes **détachées** du
+composant — elles ont gardé l'ancien traitement en se détachant.
+
+## La maquette groupe ce que le code séparait — fusionné
+
+La maquette met la ligne d'ETA **et** le groupe véhicule dans **une seule carte** :
+
+- `Transport / En route` — carte 1 de 222, `Contenu` de 190 = texte 23 + gouttière
+  12 + `VehicleGroup` 155.
+- `Livraison / En route` — carte 1 de 299 = texte 23 + `StepProgress` 65 +
+  `VehicleGroup` 155.
+
+Le code en faisait **deux cartes** : un `headerCard` qui ne portait que le titre,
+puis une carte pour le `VehicleGroup`. Une gouttière de 6 et deux paddings de 16
+en trop, deux fois dans le produit.
+
+**Fusionné.** L'ordre suit la maquette : bannière (frais d'attente en Transport,
+consigne de collecte en Livraison) → ligne de statut → jalons en Livraison →
+groupe véhicule.
+
+### Ce que la fusion change, et ce n'est pas que de la géométrie
+
+La carte fusionnée vit dans le **`headerZone`** — la zone de glissement, qui est
+aussi *ce qu'on voit au cran replié* (`peek = sheetH − headerH`). Avant, replié,
+la feuille ne montrait qu'une ligne de titre. Maintenant elle montre le statut
+**et** le groupe véhicule : le Client lit son chauffeur, sa plaque et sa note sans
+déplier. La maquette ne le dit pas en toutes lettres, mais c'est la conséquence
+directe de sa carte 1 — et c'est meilleur.
+
+Les crans restent bien distincts : `mid = min(peek − 1, sheetH × 0,44)`, et avec
+un en-tête passé de ~60 à ~240 le calcul garde trois positions séparées (vérifié
+sur les hauteurs relevées, pas seulement sur la formule). `bodyMaxH` suit, la
+zone sûre reste absorbée en blanc par la dernière carte.
+
+### Les deux `configure`, elles, étaient déjà bonnes
+
+Vérifié dans la même passe : `transport/configure` a 3 cartes contre 3 dans la
+maquette, `livraison/configure` 4 contre 4, et les deux groupent déjà l'en-tête
+avec le `RouteCard` dans leur carte 1. Le découpage ne touchait que les deux
+écrans de suivi actif.
+
+## Ce que la maquette doit corriger chez elle
+
+| Sujet | Constat |
+|---|---|
+| **Cartes détachées** | **12 des 32** variantes redessinent la carte au lieu d'instancier `SheetCard` (accueil, les deux adresses, et les huit modales) ; **5 de plus** contiennent un frame *nommé* `SheetCard` qui n'en est pas une instance (Livraison Configure, En route, Arrivé, En cours, Remise). La Partie XXIII annonçait « les 42 cartes deviennent des instances » : c'est fait à moitié, et c'est ce détachement qui a laissé passer le 28/28/20/20 ci-dessus. |
+| **Poignée manquante** | `Transport / Modale · Annuler` et `Transport / Modale · SOS` n'ont **pas de `Handle`** ; leurs quatre homologues Livraison en ont un, et les 30 autres variantes aussi. |
+| **Rayon 20 isolé** | La carte d'action de `Transport / Recherche` est en **r20** là où son jumeau `Livraison / Recherche` est en r16, comme les 31 autres. |
+| **Gouttière 10 contre 12** | La carte à bouton unique est en `gap10` dans huit feuilles (les deux Recherche, Attente groupage, les deux SOS, les deux Paiement, Décrire le colis) et en `gap12` dans trois (les deux Annuler, Destinataire contacts). |
+| **Padding 12 isolé** | `Livraison / Modale · Destinataire (saisie)`, seconde carte : `pad16/12/16/12`. Unique sur 32. |
+| **Fond de modale** | Le `Contenu` de `Transport / Modale · SOS` peint `bg:track r28` ; son jumeau Livraison ne peint rien. |
+
+## État
+
+`npx tsc --noEmit` propre. La correction du padding touche **toutes les feuilles
+du produit** — accueil, configure ×2, recherche ×2, course active, suivi, et les
+huit modales. **Rien n'a été vu tourner**, et cette passe change la hauteur de
+chaque carte, plus la composition et le cran replié des deux écrans de suivi
+actif. Ce sont eux à ouvrir en premier.
+
+Restent, de la liste ouverte en Partie XLI : les ombres des 21 + 18 variantes de
+`Button`, `Icon` (142 variantes) et six des sept variantes de `CodeField`.
+
+---
+
+# Partie XLIV — Le nouveau style d'illustration, porté dans le code (25 août 2026)
+
+L'utilisatrice a refait la représentation visuelle des illustrations de gamme
+(`Illustration/Gamme`, 40:169). Les cinq véhicules sont passés de l'**aplat
+isométrique** au **rendu volumétrique**. Les dix assets consommés par le code
+(cinq `View=Default`, cinq `View=top view`) sont reconstruits.
+
+## 🐞 Le piège : l'export du MCP cuit un fond opaque
+
+`download_assets` renvoie un `export` du nœud — et **cet export contient un fond
+`#F9FAFB` OPAQUE**, alors que :
+
+- le cadre de la variante porte un blanc **invisible** (`visible: false`) ;
+- le set n'a aucune peinture ;
+- le fond de page est `#e3e3e3`, donc pas la source du gris ;
+- et la **source brute est bel et bien transparente** (alpha 0 au coin, vérifié).
+
+Preuve : source 1024×1024 transparente → export 432×352 opaque, quelle que soit
+l'échelle demandée. Un asset pris là aurait mis un rectangle gris clair derrière
+chaque véhicule, sur la carte comme dans les cartes de gamme.
+
+**Les assets sont donc reconstruits** depuis `rawImages` (la source transparente)
+et le recadrage du cadre : région visible = `[tx, tx+sx] × [ty, ty+sy]` de la
+matrice `imageTransform`, puis réduction par moyenne d'aire **en alpha
+prémultiplié** vers ×4 du gabarit logique. Chaque sortie a été vérifiée : coin à
+alpha 0, gabarit au pixel, et rendu comparé à l'œil.
+
+## 🐞 Deux rotations que la matrice ne dit pas
+
+`imageTransform` ne porte que l'échelle et la translation. Deux variantes ont une
+rotation ailleurs, et l'ignorer retourne le marqueur sur la carte :
+
+| Variante | Où est la rotation | Effet |
+|---|---|---|
+| `moto / View=top view` | sur le **rectangle** : `rotation: 180` | la source est nez au SUD ; la maquette la retourne |
+| `vélo / View=top view` | sur le **cadre** : `rotation: 90` (antihoraire) | cadre 76×51 non pivoté, rendu 51×76 |
+
+Le premier a été pris en défaut à l'œil : ma première reconstruction sortait la
+moto nez au sud, là où l'ancien asset ET le rendu Figma la donnent nez au nord.
+
+## L'ambiguïté qu'aucune dimension ne lève
+
+Sous `moto / top view` et `covoiturage / top view`, l'ancienne et la nouvelle
+image sont empilées : **même taille (1024×1024) et même matrice de recadrage**.
+Seul le canal alpha les distingue — l'ancienne est aplatie en RVB sans alpha, la
+nouvelle est en RVB+alpha. Choisir par les dimensions aurait pris la mauvaise.
+
+S'y ajoute que `moto / View=Default` empile **trois** peintures dont deux
+masquées. Lire `fills[0]` donne la périmée : c'est l'erreur qu'a faite mon
+premier relevé, et la raison pour laquelle il annonçait une empreinte qui n'était
+pas celle affichée. **Toujours filtrer sur `visible !== false`.**
+
+## Les constantes recalées
+
+| Constante | Avant | Après | Pourquoi |
+|---|---|---|---|
+| `ILLO_SIZES` | moto 106×87, vélo 78×76, les trois voitures 93×76 | moto 107×88, vélo 79×88, les trois voitures 108×88 | Ce sont les gabarits des cadres, et les assets sont rognés au pixel dessus. **Toute la famille partage la hauteur 88** : l'ancienne table faisait dominer la moto de 14 % en croyant citer la maquette, qui ne l'a jamais dit. |
+| `TOPVIEW_RATIOS` | 0,385 · 0,510 · 0,549 · 0,497 · 0,569 | 0,442 · 0,671 · 0,539 · 0,447 · 0,461 | Marge alpha nulle sur les quatre côtés (vérifiée) : le ratio de l'asset EST celui du cadre. Plus d'approximation « mesurée sur l'asset ». |
+| `TOPVIEW_MARKER.len` | 78 · 46 · 48 · 48 · 48 | 68 · 35 · 49 · 53 · 59 | Recalculées pour **conserver la largeur apparente** validée sur le terrain (le critère écrit dans le fichier) : `len = largeur ÷ ratio`. `ambLen` suit à ≈ 0,70·len. |
+
+## Correction à la Partie XLII
+
+J'y écrivais que le cadre `vélo / View=Default` était **périmé** — 79 × 88
+(ratio 0,898) contre un asset à 1,020 — et que le code avait raison. **C'était
+l'inverse** : le rendu actuel sort à 0,898, exactement le ratio du cadre. Le
+cadre était juste, c'est l'asset du dépôt qui datait. La conclusion de la
+Partie XLII sur ce point est fausse et remplacée par celle-ci.
+
+## Resté ouvert
+
+- **Les trois voitures divergent en vue de dessus** : ratios 0,447 · 0,461 ·
+  0,539. Pour trois berlines vues du dessus, c'est le signe que les rendus ne
+  sont pas **cadrés** de la même façon, pas que les véhicules diffèrent. D'où
+  trois longueurs de marqueur différentes (49 / 53 / 59) pour une même largeur
+  apparente. Un recadrage uniforme de l'artwork les ramènerait à une seule
+  valeur — à voir côté dessin.
+- ~~Les tuiles de l'accueil sont restées à l'ancien style.~~ **Fait — voir la
+  section « Les tuiles de l'accueil » en fin de partie.**
+- **Le poids double** : les dix assets passent d'environ 556 Ko à **1 011 Ko**.
+  Le rendu volumétrique coûte plus cher que l'aplat. À arbitrer si le poids du
+  bundle devient un sujet (une réduction à ×3 ferait ~‑45 %).
+- L'axe **`View=inline`** n'a toujours pas de pendant dans le code (Partie XLII) —
+  ses cinq variantes sont, elles aussi, dans le nouveau style.
+
+`npx tsc --noEmit` propre. **Rien n'a été vu tourner** : la carte (marqueurs
+redimensionnés), les cartes de gamme et les blocs véhicule changent tous.
+
+## Les tuiles de l'accueil, reprises sur `507:778`
+
+Relevé des deux `IlloPanel` de `BottomSheet / Parcours=Accueil, État=Services`.
+La maquette n'a pas seulement changé de style : **elle a réduit le sillage**.
+
+| Tuile | Avant (code) | Maquette (507:778) |
+|---|---|---|
+| Course | 3 calques — traînée moto, traînée berline, voiture de tête | **2** — une traînée (`hayon 2`, 111×88 à 20,25) + la voiture de tête (`hayon 1`, 122×100 à 16,5) |
+| Livraison | 2 calques — traînée moto + vélo de tête | **1** — le vélo seul (`moto (1) 4`, 102×114 à 22,5 / −5) |
+
+Les deux véhicules de tête emploient **exactement les sources et les recadrages
+des gammes** — `hayon 1` porte l'empreinte de `auto / View=Default`, `moto (1) 4`
+celle de `vélo / View=Default`, au chiffre près. Le nouveau style est donc arrivé
+sur l'accueil par la même image, pas par un dessin parallèle.
+
+Les assets sont rebâtis à ces gabarits (×4) et `SERVICE_ART` recomposé.
+Conséquence agréable : les assets étant maintenant rognés au pixel sur le dessin,
+`frame` et `img` **coïncident** — plus d'`img` en débord négatif à entretenir à la
+main.
+
+### 🐞 La tuile Course est à moitié migrée dans la maquette
+
+Trois images cohabitent dans son `IlloPanel`, et **deux sont restées à l'ancien
+style à plat** :
+
+| Calque | Source | Style |
+|---|---|---|
+| `hayon 1` (tête) | même que `auto / Default` | **nouveau**, volumétrique |
+| `hayon 2` (traînée) | 1024², empreinte `c5c8d3adf1` | ancien, aplat isométrique |
+| `Illustration` (633:2328) | 256², empreinte `30dc0e4183`, `scaleMode: FIT` | ancien, aplat isométrique |
+
+La traînée s'éteint à 30 % d'opacité, donc l'écart se voit peu — elle est portée
+telle quelle, avec un commentaire dans `home.tsx`. Mais elle reste à refaire.
+
+Quant à `Illustration` : c'est une **vieille voiture à plat de 256²**, posée à
+(−14, 77) dans un panneau qui fait 109 de haut — donc **clippée aux trois quarts**.
+Et c'est précisément le nœud que la timeline Figma Motion fait grossir ×2,5
+(Partie XLII). Cela renforce la conclusion d'alors : **ne pas porter le blow-up
+héros tel quel.** Il s'applique à un calque résiduel, dans l'ancien style, que la
+tuile ne montre presque pas.
+
+`home-ghost-moto.png` n'est **plus référencé** — la traînée moto a disparu des
+deux tuiles. Le fichier reste sur disque, à supprimer quand la décision sera
+confirmée.
+
+---
+
+# Partie XLV — La feuille d'accueil, élément par élément (26 août 2026)
+
+L'utilisatrice signale que la feuille d'accueil ne respecte pas la maquette. Elle
+avait raison, et pour une raison de méthode : les passes précédentes n'avaient
+regardé `507:778` **que par morceaux** — le filet en Partie XLI, la composition
+des 32 feuilles en Partie XLIII, le Motion en Partie XLII, les illustrations en
+Partie XLIV. Jamais l'arbre complet, jeton par jeton.
+
+## 🐞 Le principal : la tuile était 100 px trop haute
+
+| | Maquette 507:778 | Code |
+|---|---|---|
+| Tuile | **228** = 6 + 39 + 10 + **panneau 109** + 10 + **pied 48** + 6 | 328 = 6 + 39 + 10 + panneau **217** + 10 + pied **40** + 6 |
+
+Le code citait encore le nœud **336:1175**. La maquette a depuis **réduit le
+panneau illustré de moitié** et allongé le pied de 40 à 48.
+
+## Les autres écarts corrigés
+
+| Élément | Maquette | Code | Corrigé |
+|---|---|---|---|
+| Fond de tuile | **`primarySubtle`** | `track` | la tuile est bleue, pas grise |
+| Liseré de tuile | `#F2F3F5` = **`track`** | `borderSubtle` | jeton recalé |
+| Pied de tuile | **`Fiw/body`** (16/20) | `bodySmall` (14/18) + `lineHeight: 16` forcé | passe en `body`, surcharge retirée — le pied de 48 tient deux lignes de 20 |
+| Copie du pied Course | « Déplacez-vous en toute sécurité. » | « Rendez vous rapidement à votre destination. » | copie reprise |
+| Titre de feuille | style `Fiw/heading1` nu | `letterSpacing: -0.4` forcé | retiré — dernier survivant du −0,4 que la Partie XXX avait sorti du style |
+| Sous-titre de bannière | `Fiw/body` (interligne 20) | `lineHeight: 19` forcé | surcharge retirée |
+| Rangées « Récemment » | slot `Trailing` **vide** | chevron rendu par défaut | `trailing={null}` |
+
+Vérifié conforme au passage, sans y toucher : la bannière Affilié (76 de haut,
+`pad 6/14/6/6`, gouttière 12, `blue100`, rayon 20, tuile 64 à rayon 12, pastille
+de fermeture 38 à liseré `blue100` de 2), la gouttière de 12 entre les deux
+tuiles et sous la bannière, le panneau illustré (`surface`, rayon 16), la
+géométrie de la rangée (58 de haut, tête de 42, corps à gouttière 4), le filet
+`Divider · Retrait=0`, et la poignée (40 × 5, `border`, rayon 3, absolue).
+
+## La feuille groupée — appliquée
+
+**La maquette est une feuille GROUPÉE ; le code était une feuille blanche continue.**
+
+| | Maquette | Code |
+|---|---|---|
+| Fond de feuille | **`track`**, rayon 28, gouttière 6 | `surface` (blanc), continu |
+| Contenu | **deux cartes** `surface` rayon 16, padding **16** | un `ScrollView`, padding horizontal **20** |
+| Séparation en-tête+tuiles / récents | l'interstice gris de 6 entre les deux cartes | rien — un libellé « Récemment » en `caption` |
+
+Et ce n'est pas propre au mode services : `Transport / Adresse` — le mode
+recherche de ce même écran — est **aussi** une feuille groupée à deux cartes
+(`Frame 25` 216 et `Frame 26` 208, toutes deux `surface` rayon 16 padding 16,
+gouttière 6). Les deux modes de l'accueil suivent le même motif dans la maquette,
+et aucun des deux ne l'a dans le code.
+
+Les deux modes de l'accueil passent donc au motif groupé :
+
+| Mode | Carte 1 | Carte 2 |
+|---|---|---|
+| **services** | titre + bannière Affilié + les deux tuiles (`Frame 3`, 388) | les lieux récents |
+| **recherche** | `SheetHeader` + les deux `PlaceField` (`Frame 25`, 216) | la liste de résultats (`Frame 26`, 208) |
+
+Ce que ça entraîne, et qui est fait :
+
+- la feuille passe de `sheetSurface` à **`groupedSheetSurface`** — fond `track`,
+  rayon 28, ombre conservée ;
+- la **gouttière latérale passe de 20 à 16** : les cartes sont pleine largeur et
+  portent leur propre padding. `sheetContent`, `sheetHeader` et `searchWrap` (tous
+  à 20) disparaissent ;
+- la **poignée flotte hors flux** à 6 du haut, si bien que la première carte est
+  collée au sommet ;
+- la première carte est la **zone de glissement** (`panHandlers`), comme dans
+  `course-active` ;
+- le **libellé « Récemment » est retiré** : c'est l'interstice gris de 6 qui
+  sépare, pas un titre de section. C'est bien pour cela que les deux allaient
+  ensemble ;
+- les marges de champ (`fieldSpace` 12, `fieldSpaceLast` 4) et la marge basse de
+  la bannière disparaissent : la **gouttière 12 de la carte** les porte toutes ;
+- `SheetHeader` perd sa marge basse de 16 dans ce contexte (`sheetHeaderTight`),
+  sinon elle s'ajoutait à la gouttière de la carte ;
+- la dernière carte absorbe la zone sûre en blanc, coins bas carrés.
+
+Le risque était plus faible qu'annoncé : les crans de l'accueil sont des
+**constantes fixes** (`SNAPS = [TY_EXPANDED, TY_DEFAULT, TY_COLLAPSED]`), pas des
+hauteurs mesurées comme dans `course-active`. Restructurer le contenu ne touche
+donc pas la géométrie de glissement.
+
+## Les corrections portées dans la maquette
+
+Trois résidus relevés, corrigés côté Figma :
+
+- **Le sous-titre fantôme supprimé.** L'en-tête de la tuile Course portait
+  « Réservez une course » en `Fiw/caption`, mais dans un cadre `Texte` **fixé à
+  23 de haut** pour 41 de contenu : il était clippé, invisible au rendu. Le code
+  avait raison de ne pas l'afficher ; le calque est retiré.
+- **La faute de copie corrigée des deux côtés.** La maquette écrivait
+  « Faites vous **livrez** », le code « Faites vous **livré** » — les deux
+  fautifs. Les deux disent maintenant « **Faites-vous livrer**, aussi vite que
+  possible. »
+- **Le calque « Transport » renommé « Livraison ».** L'enrobage de la tuile
+  Livraison portait le nom d'un autre service du produit.
+
+Et le ménage des **peintures périmées** de la Partie XLIV : les images masquées
+empilées sous `moto / Default` (2), `moto / top view` (1) et
+`covoiturage / top view` (1) sont supprimées. Lire `fills[0]` ne peut donc plus
+renvoyer une version morte.
+
+## État
+
+`npx tsc --noEmit` propre. **Rien n'a été vu tourner** — et cette passe change
+l'architecture de la feuille d'accueil dans ses deux modes, en plus de la tuile
+qui perd 100 px et change de couleur. C'est l'écran à ouvrir en premier, et le
+mode recherche autant que le mode services.
+
+## Le recadrage de la feuille — corrigé
+
+Signalé par l'utilisatrice, et vérifié sur les **32 variantes** : le conteneur de
+`BottomSheet` est en **`clipsContent`** dans 32 cas sur 32, avec ses **quatre
+coins à 28** et le rayon **lié au jeton `radius/xl`** sur les quatre.
+
+Le code avait le bon jeton (`SHEET_RADIUS = Radii.xl`) mais **ne recadrait pas** :
+`sheetSurface` ne portait pas d'`overflow`. Conséquence, la première carte —
+pleine largeur, rayon 16 — débordait le coin arrondi de la feuille au lieu d'être
+coupée par son arc de 28 : un angle blanc dépassait. C'est précisément ce qui
+donne son arête au motif groupé.
+
+`overflow: 'hidden'` est ajouté sur `sheetSurface`, donc hérité par
+`groupedSheetSurface` et par les six écrans qui l'emploient.
+
+### Ce que le recadrage casse, et qu'il fallait déplacer
+
+`overflow` ne rogne que les **enfants** : l'ombre de la feuille survit (elle est
+peinte par la vue elle-même, `shadow*` sur iOS et `elevation` sur Android). En
+revanche tout enfant volontairement hors bornes se fait couper.
+
+Audit des six écrans à feuille : **un seul cas**, le bouton de recentrage de
+l'accueil (`recenterWrap`, `top: -60`), qui flottait au-dessus de l'arête tout en
+étant enfant de la feuille. Il vit maintenant **hors feuille**, et suit le cran
+par `Animated.subtract(ty, 60)`. Les deux animations de cette vue sont en
+`useNativeDriver: false` (celle de `useSnapSheet` comme `controlsFade`), donc pas
+de conflit de pilote.
+
+Les contrôles des deux écrans de recherche étaient déjà des frères de la feuille,
+pas des enfants — rien à y faire. Les poignées flottantes sont à `top: 6`, donc
+dans les bornes.
+
+### La divergence des coins bas, elle, reste
+
+La maquette met **28 aux quatre coins** ; le code n'en pose que **deux**
+(`borderTopLeftRadius` / `borderTopRightRadius`). Ce n'est pas un oubli : la
+maquette **flotte**, l'app est **ancrée au bord de l'écran** — des coins bas
+arrondis y laisseraient deux encoches sur le bord du téléphone. Décision de la
+Partie XXX, reconfirmée ici, et c'est aussi pourquoi la dernière carte garde ses
+coins bas carrés et absorbe la zone sûre en blanc.
+
+---
+
+# Partie XLVI — La liste ouverte, soldée (26 août 2026)
+
+Reprise des quatre chantiers restés ouverts en Partie XLIII et XLI.
+
+## 1. Les corrections de la maquette — faites
+
+| Sujet | Correction |
+|---|---|
+| **Gouttière 10 contre 12** | 5 cartes verticales + 3 cartes d'action horizontales passent à **12**, la valeur du composant. Effet visuel nul là où la carte n'a qu'un bouton — c'est de l'hygiène, pas du rendu. |
+| **Rayon isolé** | La carte d'action de `Transport / Recherche` passe de **20 à 16**, et le rayon est désormais **lié au jeton `radius/lg`** sur les quatre coins. |
+| **Padding isolé** | `Livraison / Destinataire (saisie)` : `16/12/16/12` → **16** partout. |
+| **Coins périmés** | Les deux cartes détachées de `Livraison / Configure` et `Livraison / En route` passent de **28/28/20/20 à 16**, liées à `radius/lg`. C'étaient les deux dernières traces du 28 forcé que la Partie XXX avait sorti du code. |
+| **Fond de modale** | Le `Contenu` de `Transport / Modale · SOS` peignait `track` + rayon 28 **en double** de la racine. Retiré ; il s'aligne sur son jumeau Livraison. |
+| **Poignée manquante** | Ajoutée aux deux modales Transport (`Annuler`, `SOS`), en absolu à `y 6`, centrée, contraintes identiques aux 30 autres. |
+
+Re-scan de contrôle après coup : **plus aucune** gouttière 10, aucun rayon hors
+16, aucun padding hors 16, aucun coin mixte, aucune variante sans poignée.
+
+## 🐞 2. Le maillon manquant de la Partie XLIII
+
+En allant inspecter `SheetCard` pour évaluer le chantier des cartes détachées :
+**le composant maître était en `pad 20/16/20/16`** — py 20 — quand ses
+**43 instances surchargent toutes à 16/16/16/16** (43 sur 43, vérifié).
+
+C'est l'explication de l'écart de la Partie XLIII. Le code écrivait
+`paddingVertical: 20` en citant « les maquettes » : il citait le **maître**, qui
+était périmé, pendant que les feuilles rendaient 16. Le correctif du code était
+donc juste, et le maître le rejoint maintenant — sa hauteur passe de 58 à 50, et
+les 43 surcharges deviennent redondantes.
+
+Contrôle après coup : aucune hauteur de feuille n'a bougé (les surcharges
+gagnent), aucun padding hors 16.
+
+## 3. Les ombres de `Button` — un écart
+
+Relevé des 21 + 18 variantes. **Seules `primary` et `destructiveFilled` portent
+une ombre**, et c'est exactement `Shadows.sm` du code : `0,1`, flou 3, étalement
+0, `rgba(0,102,255,0.08)` — le bleu de marque à 8 %, y compris sous le bouton
+rouge, via un style d'effet partagé. Les 15 autres variantes n'en ont aucune, et
+le code le dit aussi (`filled = primary | destructiveFilled`).
+
+**Mais la maquette porte l'ombre dans les TROIS états** — `pressé`, `désactivé`
+et `chargement` — tandis que le code écrivait `filled && !isDisabled`, donc la
+retirait dès que le bouton était désactivé ou en chargement. Corrigé :
+`filled && Shadows.sm`. En désactivé, c'est l'opacité 0,45 qui fait pâlir l'ombre
+avec le reste — pas son retrait.
+
+## 4. `Icon` et `CodeField` — conformes
+
+**`Icon` (142 variantes) : conforme, et sans trou.** Deux axes, `Icon`
+(71 glyphes) × `Weight` (`bold`, `fill`), et **chaque glyphe existe dans les deux
+graisses** — aucune variante manquante. Le diff avec le registre de
+`components/Icon.tsx` est **vide dans les deux sens** : 71 contre 71, mêmes noms.
+
+**`CodeField` (7 variantes) : conforme au chiffre près.** Axe `État` = `vide` ·
+`1` · `2` · `3` · `complet` · `erreur` · `lecture`. Cases 60 × 68, rayon 16,
+gouttière 12 ; repos `surface` + `border` 1 ; case courante `surface` +
+`primary` 2 **sans chiffre**, avec un curseur de 2 × 28 en `primary` rayon pilule ;
+remplie `surface` + `border` 1, chiffre `Fiw/codeCell` en encre ; `erreur` peint
+**les quatre** cases en `error` 2 avec les chiffres en `error` et **aucun
+curseur** ; `lecture` en `track` **sans liseré**. `components/CodeField.tsx` dit
+tout cela, valeur par valeur.
+
+## Resté ouvert — un seul sujet
+
+**Les 17 cartes détachées ne sont pas devenues des instances.** 12 variantes
+redessinent la carte, 5 contiennent un frame *nommé* `SheetCard` qui n'en est pas
+une instance. Les **défauts visuels** que ce détachement avait produits sont tous
+corrigés (les deux jeux de coins périmés) ; ce qui reste est du
+**futur-proofing** : instancier empêche la prochaine dérive.
+
+Non fait sciemment. `SheetCard` porte un **slot** (`Contenu#529:0`), et la
+manipulation de slots est le piège le plus coûteux de ce fichier (Partie XXXV :
+« cloner une variante à slots casse tout d'un coup — slots dégradés en frames,
+références perdues »). Dix-sept conversions méritent une passe dédiée, avec
+vérification visuelle après chacune.
+
+## Une observation, à confirmer
+
+`Livraison / En cours` et `Livraison / Remise` mesurent **915** aujourd'hui contre
+**907** au relevé de la Partie XLIII. La carte du code de remise passe de 204 à
+212 : son paragraphe (« Communiquez ce code à… ») fait maintenant **40** de haut
+contre 32, soit une ligne de plus.
+
+**Ce n'est pas dû aux corrections ci-dessus** — aucun des nœuds touchés
+n'appartient à ces deux feuilles, et le padding des cartes y est inchangé. C'est
+soit une retouche de cette copie, soit un changement de son style, survenu dans
+le fichier entre les deux relevés. À confirmer côté maquette.
+
+## État
+
+`npx tsc --noEmit` propre. Côté code, cette passe ne change qu'une ligne
+(`Button`) ; l'essentiel du travail était dans la maquette.
+
+---
+
+# Partie XLVII — Les cartes détachées, converties en instances (26 août 2026)
+
+Le dernier sujet de la liste. Il s'est révélé plus gros et plus simple que
+prévu — plus gros en volume, plus simple en risque.
+
+## D'abord, deux corrections à ce que j'avais écrit
+
+**Ce n'était pas 17 cartes mais 29.** La Partie XLIII comptait « 12 variantes +
+5 » : ce sont des **variantes**, pas des cartes. Une variante en redessine une à
+quatre. Le décompte réel des frames à convertir est **29**.
+
+**Et la « poignée manquante » des deux modales Transport n'existait pas.** Mon
+scan de la Partie XLIII ne regardait que les **enfants directs** de la variante ;
+or ces deux feuilles portaient leur poignée **imbriquée dans leur première
+carte** (en absolu, `y 6`, donc au bon endroit à l'écran). En « corrigeant », j'en
+avais ajouté une seconde à la racine : les deux modales ont eu deux poignées
+superposées pendant une passe. Les imbriquées sont retirées ; celles de la racine
+restent, c'est la convention des 30 autres feuilles.
+
+## 🐞 Piège d'API n° 12 — une référence de slot ne survit pas à sa mutation
+
+Premier essai, sur une instance jetable : `slot.appendChild(...)` puis relecture
+de `slot.children` →
+
+> `in get_name: Node with id "I848:1587;425:8" not found`
+
+Ce n'est pas l'append qui échoue, c'est la **référence** au slot qui devient
+périmée dès qu'on y touche. La parade est simple mais impérative :
+**retrouver le slot depuis l'instance après CHAQUE mutation**, jamais réutiliser
+la variable.
+
+```js
+const slot = () => figma.getNodeById(instId).findOne(n => n.type === 'SLOT');
+slot().children[0].remove();          // le texte d'attente du maître
+for (let i = 0; i < enfants.length; i++) {
+  slot().appendChild(enfants[i]);     // et non `s.appendChild`
+  if (sizings[i] === 'FILL') slot().children[i].layoutSizingHorizontal = 'FILL';
+}
+```
+
+C'est ce qui a rendu les 29 conversions sans histoire, là où la Partie XXXV
+prédisait que « cloner une variante à slots casse tout d'un coup ».
+
+## La recette
+
+Pour chaque frame `F` au gabarit d'une carte :
+
+1. relever son **parent**, son **index**, sa hauteur, ses enfants **dans
+   l'ordre**, et le `layoutSizingHorizontal` de chacun ;
+2. `master.createInstance()`, insérée **au même index** chez le même parent ;
+3. l'instance en `FILL` horizontal, `HUG` vertical (ce qu'était `F`) ;
+4. retirer le texte d'attente du slot, puis y déplacer les enfants dans l'ordre,
+   en restaurant le `FILL` de chacun ;
+5. supprimer `F` ;
+6. **comparer la hauteur avant / après.**
+
+Aucune surcharge à reproduire : les 29 frames étaient déjà à padding 16,
+gouttière 12 et rayon 16 — c'est-à-dire aux valeurs du maître, une fois celui-ci
+recalé en Partie XLVI.
+
+## Le résultat
+
+| | Avant | Après |
+|---|---|---|
+| Instances de `SheetCard` | 43 | **72** |
+| Cartes redessinées | 29 | **0** |
+| Écart de hauteur sur les 29 cartes | — | **aucun** |
+| Hauteur des 32 feuilles | — | **inchangée** |
+| Feuille sans poignée / à double poignée | 2 / 2 | **0 / 0** |
+| Padding, rayon ou gouttière hors norme | — | **aucun** |
+
+Rendu de la feuille d'accueil comparé avant/après conversion : **identique**.
+
+En prime, les noms de calque ad hoc disparaissent — `Frame 5`, `Frame 16`,
+`Frame 25`… deviennent tous `SheetCard`. Un seul nom était porteur de sens et il
+a été rendu : la carte des lieux récents de l'accueil s'appelle de nouveau
+**`Récemment`**. Les 49 autres cartes s'appellent `SheetCard`, ce qui rend une
+feuille à quatre cartes moins lisible dans le panneau de calques — les nommer par
+leur rôle serait une amélioration facile, à faire quand l'envie viendra.
+
+## Ce que ça achète
+
+Le détachement n'était pas une abstraction : c'est lui qui avait laissé passer les
+deux jeux de coins `28/28/20/20` (Partie XLIII), qui sont restés à l'ancien
+traitement en se détachant du composant. Les 29 cartes suivent maintenant leur
+maître — et le maître est enfin juste, depuis la Partie XLVI.
+
+## État
+
+Rien à changer côté code : cette passe est entièrement dans la maquette.
+`npx tsc --noEmit` reste propre. **La liste ouverte est vide.**

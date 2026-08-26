@@ -8,7 +8,7 @@ import Icon from '@/components/Icon';
 import FauxQR from '@/components/FauxQR';
 import Toast, { useToast } from '@/components/Toast';
 import Hint from '@/components/Hint';
-import { Colors, Radii, Spacing, Shadows, Outfit, Strokes } from '@/constants/tokens';
+import { Colors, Outfit, Radii, SectionLabel, Shadows, Spacing, Strokes } from '@/constants/tokens';
 import { AMBASSADEUR } from '@/constants/affilie';
 
 // JS2 — Mes Outils : QR code, code perso (copie + partage natif).
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     padding: Spacing[6],
     ...Shadows.sm,
   },
-  kicker: { textTransform: 'uppercase', letterSpacing: 0.8 },
+  kicker: { ...SectionLabel },
   code: { letterSpacing: 2, marginTop: Spacing[1], marginBottom: Spacing[4] },
   codeActions: { flexDirection: 'row', gap: Spacing[3] },
 

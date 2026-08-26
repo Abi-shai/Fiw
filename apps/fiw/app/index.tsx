@@ -8,7 +8,7 @@ import { Colors } from '@/constants/tokens';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import Logo from '@/components/Logo';
-import PhoneField from '@/components/PhoneField';
+import Field from '@/components/Field';
 import CountryPicker from '@/components/CountryPicker';
 import { COUNTRIES, isComplete, type Country } from '@/constants/countries';
 
@@ -32,7 +32,8 @@ export default function OnboardingScreen() {
           <Text variant="display" style={styles.title}>Bienvenue</Text>
           <Text variant="body" color={Colors.textSecondary} style={styles.subtitle}>Entrez votre numéro pour continuer</Text>
 
-          <PhoneField
+          <Field
+            type="téléphone"
             country={country}
             digits={digits}
             onChangeDigits={setDigits}

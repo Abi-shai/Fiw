@@ -300,7 +300,19 @@ export default function LivraisonSuiviScreen() {
           onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)}
         >
           <View style={styles.handleFloat} pointerEvents="none"><Handle /></View>
-          <SheetCard style={styles.headerCard}>
+          {/* CARTE 1 de la maquette — consigne, statut, jalons et groupe véhicule
+              ne font qu'UNE carte : `Livraison / En route` mesure 299 (texte 23 +
+              jalons 65 + groupe 155) et `Arrivé` 384 (bannière 60 en plus). Le
+              code en faisait deux.
+
+              Elle vit dans la zone d'en-tête : au cran replié, le Client voit
+              donc son étape ET son prestataire d'un coup. */}
+          <SheetCard>
+            {step.key === 'collecte' && (
+              <InfoBanner icon="package">
+                Remettez le colis au prestataire — il enregistre le n° de suivi.
+              </InfoBanner>
+            )}
             {step.key === 'collecte' ? (
               <View style={styles.titleRow}>
                 <Text variant="heading2" style={styles.flex1} numberOfLines={1}>{headerTitle}</Text>
@@ -314,6 +326,7 @@ export default function LivraisonSuiviScreen() {
               activeIndex={JALON_INDEX[step.key]}
               segmentProgress={segFill}
             />
+            <VehicleGroup prestataire={prestataire} illu={gamme.illu} onPress={expand} />
           </SheetCard>
         </View>
 
@@ -325,16 +338,6 @@ export default function LivraisonSuiviScreen() {
           scrollEnabled={bodyContentH > bodyMaxH}
           showsVerticalScrollIndicator={false}
         >
-          {/* Prestataire (+ consigne à la collecte). */}
-          <SheetCard>
-            {step.key === 'collecte' && (
-              <InfoBanner icon="package">
-                Remettez le colis au prestataire — il enregistre le n° de suivi.
-              </InfoBanner>
-            )}
-            <VehicleGroup prestataire={prestataire} illu={gamme.illu} onPress={expand} />
-          </SheetCard>
-
           {/* Colis — description libre (seule info saisie), n° de suivi, code
               de remise. Le type et la taille ne sont plus demandés (2 août). */}
           <SheetCard>
@@ -385,7 +388,7 @@ export default function LivraisonSuiviScreen() {
           </SheetCard>
 
           {/* Actions — contacts, urgence, annulation (avant collecte uniquement). */}
-          <SheetCard style={[styles.lastCard, { paddingBottom: 20 + insets.bottom }]}>
+          <SheetCard style={[styles.lastCard, { paddingBottom: 16 + insets.bottom }]}>
             <ActionTileRow>
               <ActionTile icon="phone" label="Appeler" onPress={onCall} />
               <ActionTile icon="chat" label="Chat" onPress={onChat} />
@@ -408,7 +411,7 @@ export default function LivraisonSuiviScreen() {
         <BottomSheet title="Annuler la livraison ?" onClose={() => setCancelOpen(false)}>
           {(close) => (
             <View style={styles.cancelSheet}>
-              <AlertBadge icon="package" />
+              <AlertBadge icon="package" weight="fill" />
               <Text variant="body" color={Colors.textSecondary} align="center" style={styles.cancelText}>
                 Votre prestataire est en route vers le point de collecte. L'annulation est gratuite tant que le colis n'a pas été collecté.
               </Text>
@@ -459,7 +462,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 2,
   },
-  headerCard: { borderTopLeftRadius: SHEET_RADIUS, borderTopRightRadius: SHEET_RADIUS },
   lastCard: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
   body: { backgroundColor: 'transparent' },
   bodyContent: { paddingTop: CARD_GAP, gap: CARD_GAP },

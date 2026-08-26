@@ -1,29 +1,24 @@
 import React from 'react';
 import { View, StyleSheet, Image } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import Text from '@/components/Text';
 import Button from '@/components/Button';
 import Radio from '@/components/Radio';
 import List from '@/components/List';
 import ListRow from '@/components/ListRow';
-import { Colors, Radii } from '@/constants/tokens';
+import Medallion from '@/components/Medallion';
 import { PAYMENT_METHODS } from '@/constants/data';
 import { PAY_ILLUSTRATIONS } from '@/constants/illustrations';
 
-/** Logo du service, à son gabarit de 56 — le `leading` de la rangée. Les moyens
- *  sans illustration retombent sur une pastille teintée de la marque. */
+/** Tête de la rangée, au gabarit de 56 de la maquette. Le logo de marque quand
+ *  le moyen en a un — un logo se reconnaît plus vite qu'un glyphe — et sinon le
+ *  `Medallion lg` que la maquette met sur les trois rangées. Le repli n'est donc
+ *  plus un motif à part : c'est le composant du système. */
 function PayLogo({ method }: { method: typeof PAYMENT_METHODS[number] }) {
   const illustration = PAY_ILLUSTRATIONS[method.id];
-  if (illustration) {
-    return (
-      <View style={styles.logoWrap}>
-        <Image source={illustration} style={styles.illo} />
-      </View>
-    );
-  }
+  if (!illustration) return <Medallion icon={method.icon} size="lg" />;
   return (
-    <View style={[styles.logoWrap, styles.fallback, { backgroundColor: method.color + '1A' }]}>
-      <Text style={styles.emoji}>{method.icon}</Text>
+    <View style={styles.logoWrap}>
+      <Image source={illustration} style={styles.illo} />
     </View>
   );
 }
@@ -41,8 +36,10 @@ export default function PaymentSheetContent({ value, onChange, onDone }: {
 }) {
   return (
     <View style={styles.wrap}>
-      {/* Retrait du filet = logo 56 + gouttière 12. */}
-      <List style_="plat" inset={68} style={styles.list}>
+      {/* Filet pleine largeur : en feuille, il file d'un bord à l'autre du
+          contenu — cf. la règle « Le filet d'une liste en feuille » du style
+          guide. Le retrait est réservé aux listes d'écran. */}
+      <List style_="plat" inset={0} style={styles.list}>
         {PAYMENT_METHODS.map((m) => (
           <ListRow
             key={m.id}
@@ -63,6 +60,4 @@ const styles = StyleSheet.create({
   list: { marginBottom: 0 },
   logoWrap: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
   illo: { width: 52, height: 52, borderRadius: 14 },
-  fallback: { borderRadius: Radii.lg },
-  emoji: { fontSize: 28 },
 });
