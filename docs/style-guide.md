@@ -647,6 +647,21 @@ deux modales Livraison ont été alignées et le code a suivi.)_
   23 août 2026 après relevé Mobbin — Wolt, PayPal, Google Home, Grab Driver, Alan
   marquent tous l'erreur au champ **et** sous le champ. Un CTA grisé sans explication
   ne dit pas **lequel** des champs bloque.)_
+- **Deux notes, deux portées — et c'est l'icône qui les sépare, pas la taille ni
+  la couleur.** Une note qui commente **un champ** est un `Hint` **avec son
+  icône**, collé sous le champ. Une note qui commente **une liste entière** est
+  le `footnote` de `List` : même caption tertiaire, **sans icône**. Les deux
+  partagent taille et gris — l'icône est le seul signal, et elle suffit : elle
+  dit « ceci se rapporte à la chose juste au-dessus », là où la note nue couvre
+  tout le bloc.
+- **Une note de liste passe par le slot `footnote`, jamais par un `Hint` posé
+  après la liste.** Libre, elle hérite de la marge basse de la liste (28 px en
+  `plat`) et se retrouve **plus près de ce qui suit que de ce qu'elle
+  commente** — sur Lieux enregistrés elle flottait à 36 px de ses rangées pour
+  16 px du CTA, et se lisait comme la légende du bouton. Dans le slot, elle est
+  tenue contre sa liste, et elle ne peut pas lui survivre : elle est dans le
+  composant, pas à côté. _(20 août 2026 — point 5 de l'audit de cohérence de la
+  partie Compte ; transposé sur `List`/`Hint` après la migration.)_
 
 ---
 
