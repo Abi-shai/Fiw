@@ -3,7 +3,8 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
-import PlaceRow from '@/components/PlaceRow';
+import ListRow from '@/components/ListRow';
+import Medallion from '@/components/Medallion';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import { COURSE_HISTORY } from '@/constants/data';
@@ -25,12 +26,11 @@ export default function HistoryScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
           {COURSE_HISTORY.map((c) => (
-            <PlaceRow
+            <ListRow
               key={c.id}
-              icon={c.gammeId === 'moto' ? 'moto' : 'car'}
+              leading={<Medallion icon={c.gammeId === 'moto' ? 'moto' : 'car'} />}
               title={c.destName}
               subtitle={`${c.date} · ${fmt(c.total)} F CFA`}
-              trailing="chevronRight"
               onPress={() => router.push(`/history/${c.id}`)}
             />
           ))}

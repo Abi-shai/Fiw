@@ -11,12 +11,14 @@ import Text from '@/components/Text';
 import Button from '@/components/Button';
 import Icon from '@/components/Icon';
 import IconButton from '@/components/IconButton';
-import {
-  GroupedSheet, SheetCard, ProgressBar, AvatarStack, AltSuggestCard,
-  VehicleGroup, TotalBar, InfoBanner,
-} from '@/components/RideSheet';
+import { GroupedSheet, SheetCard } from '@/components/Sheet';
+import AltSuggestCard from '@/components/AltSuggestCard';
+import AvatarStack from '@/components/AvatarStack';
+import InfoBanner from '@/components/InfoBanner';
+import ProgressBar from '@/components/ProgressBar';
+import VehicleGroup from '@/components/VehicleGroup';
 import LivraisonModeChoice, { type LivraisonMode } from '@/components/LivraisonModeChoice';
-import { Colors, Outfit, Radii, Shadows } from '@/constants/tokens';
+import { Colors, Outfit, Radii, Shadows, Strokes } from '@/constants/tokens';
 import {
   DAKAR_CENTER, FRAIS_RAPPROCHEMENT, VELO_LIVREUR, MOTO_LIVREUR,
   livraisonGamme, complementaryLivraisonGamme, GROUPEE_ECONOMIE,
@@ -52,9 +54,9 @@ type Phase = 'searching' | 'frais' | 'groupage' | 'groupage_wait' | 'reveal' | '
 const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/[\s  ]/g, '.');
 
 const NEARBY = [
-  { label: 'M', bg: '#e7ecff', fg: Colors.primaryPressed },
-  { label: 'S', bg: Colors.warningSubtle, fg: '#b45309' },
-  { label: 'K', bg: Colors.successSubtle, fg: '#047857' },
+  { label: 'M', bg: Colors.primarySubtle, fg: Colors.primaryPressed },
+  { label: 'S', bg: Colors.warningSubtle, fg: Colors.warningInk },
+  { label: 'K', bg: Colors.successSubtle, fg: Colors.successInk },
 ];
 
 function Radar() {
@@ -117,7 +119,7 @@ export default function LivraisonSearchingScreen() {
   const groupee = groupResult === 'success';
   const finalPrice = (isFar ? base + frais : base) - (groupee ? GROUPEE_ECONOMIE : 0);
 
-  const driver = params.gammeId === 'velo' ? VELO_LIVREUR : MOTO_LIVREUR;
+  const prestataire = params.gammeId === 'velo' ? VELO_LIVREUR : MOTO_LIVREUR;
   const gamme = livraisonGamme(params.gammeId);
   const alt = complementaryLivraisonGamme(params.gammeId || 'velo');
 
@@ -357,13 +359,13 @@ export default function LivraisonSearchingScreen() {
                   <View style={styles.flex1}>
                     <Text variant="heading2" color={Colors.primaryPressed}>Total à payer</Text>
                     <Text variant="bodySmall" color={Colors.textSecondary} style={styles.breakdown}>
-                      <Text variant="bodySmall" style={styles.breakdownStrong}>{fmt(base)} F</Text>
+                      <Text variant="bodySmallSemibold">{fmt(base)} F</Text>
                       {' de livraison + '}
-                      <Text variant="bodySmall" style={styles.breakdownStrong}>{fmt(frais)} F</Text>
+                      <Text variant="bodySmallSemibold">{fmt(frais)} F</Text>
                       {' de frais de rapprochement.'}
                     </Text>
                   </View>
-                  <Text style={styles.totalCardAmount}>{fmt(finalPrice)} F</Text>
+                  <Text variant="amount" color={Colors.primary}>{fmt(finalPrice)} F</Text>
                 </View>
               </SheetCard>
 
@@ -448,14 +450,13 @@ export default function LivraisonSearchingScreen() {
                   </InfoBanner>
                 )}
                 {groupResult === 'fail' && (
-                  <InfoBanner icon="info" tone="warn">
+                  <InfoBanner icon="info" tone="alerte">
                     Pas de colis voisin — le vôtre part seul, au prix normal.
                   </InfoBanner>
                 )}
                 <Text variant="heading2">Votre prestataire arrive dans environ {revealEta}</Text>
-                <VehicleGroup driver={driver} illu={gamme.illu} />
+                <VehicleGroup prestataire={prestataire} illu={gamme.illu} />
               </SheetCard>
-              <TotalBar amount={finalPrice} />
             </>
           ) : (
             <>
@@ -487,14 +488,14 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   flex1: { flex: 1 },
 
-  mapScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(17, 24, 39, 0.22)' },
+  mapScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: Colors.scrim },
   mapCenterOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
   radarWrap: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
   ring: {
     position: 'absolute',
     width: 80, height: 80, borderRadius: 40,
-    borderWidth: 2, borderColor: Colors.primary,
-    backgroundColor: 'rgba(0, 102, 255, 0.06)',
+    borderWidth: Strokes.thick, borderColor: Colors.primary,
+    backgroundColor: Colors.primaryGhost,
   },
 
   banner: {
@@ -511,7 +512,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
   bannerImg: { width: 44, height: 44 },
-  bannerText: { flex: 1, fontSize: 15, lineHeight: 20 },
+  bannerText: { flex: 1 },
 
   controls: { position: 'absolute', left: 16 },
 
@@ -523,12 +524,10 @@ const styles = StyleSheet.create({
   totalCard: {
     flexDirection: 'row', alignItems: 'center', gap: 16,
     backgroundColor: Colors.primarySubtle,
-    borderRadius: 20,
+    borderRadius: Radii.card,
     paddingHorizontal: 16, paddingVertical: 12,
   },
   breakdown: { marginTop: 4, lineHeight: 21 },
-  breakdownStrong: { fontFamily: Outfit.semibold, color: Colors.textPrimary },
-  totalCardAmount: { fontFamily: Outfit.bold, fontSize: 22, lineHeight: 29, color: Colors.primary },
 
   demoControls: { position: 'absolute', right: 16 },
   demoChip: {
@@ -536,7 +535,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: Radii.pill,
     paddingVertical: 8, paddingHorizontal: 12,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: Colors.hairline,
+    borderWidth: Strokes.hairline, borderColor: Colors.hairline,
     ...Shadows.float,
   },
 });

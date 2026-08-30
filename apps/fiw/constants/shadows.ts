@@ -1,12 +1,17 @@
 import { ViewStyle } from 'react-native';
 
-// Ombres teintées bleu marque (style-guide). Chaque token empaquette les props
-// iOS (shadow*) + Android (elevation) pour un rendu homogène entre OS.
-// `sheet` : variante orientée vers le haut pour les bottom sheets.
-// `float` : ombre neutre (non teintée) pour les éléments posés sur la carte —
-// se détache mieux d'un fond carto coloré qu'une ombre teintée marque.
+// Miroir des styles d'effet Figma `Fiw/shadow/*`. Chaque token empaquette les
+// props iOS (shadow*) + Android (elevation, absent de Figma) pour un rendu
+// homogène entre OS.
+//
+// `sm`/`md`/`lg` sont teintées bleu marque pour rester dans la cohérence
+// chromatique. Les deux ombres de mise en avant ne le sont pas :
+// `float` (éléments posés sur la carte) se détache mieux d'un fond carto coloré
+// en neutre, et `sheet` (arête haute des bottom sheets) est un gris `gray/700`
+// franc — le bleu marque n'y portait pas assez pour décoller la feuille du fond.
 const BRAND = '#0066FF';
 const NEUTRAL = '#0B1220';
+const SHEET = '#374151';   // gray/700
 
 export const Shadows: Record<'sm' | 'md' | 'lg' | 'sheet' | 'float', ViewStyle> = {
   sm: {
@@ -31,9 +36,9 @@ export const Shadows: Record<'sm' | 'md' | 'lg' | 'sheet' | 'float', ViewStyle> 
     elevation: 14,
   },
   sheet: {
-    shadowColor: BRAND,
+    shadowColor: SHEET,
     shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.14,
+    shadowOpacity: 0.3,
     shadowRadius: 24,
     elevation: 16,
   },

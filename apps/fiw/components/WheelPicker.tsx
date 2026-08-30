@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, ScrollView } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Colors, Outfit } from '@/constants/tokens';
+import Text from '@/components/Text';
 
 // Géométrie partagée avec les parents (bande de sélection, hauteur de zone).
 export const WHEEL_ITEM_H = 44;
@@ -69,7 +69,7 @@ export default function WheelPicker({ items, index, onChange, width = 72 }: Prop
           const scale = scrollY.interpolate({ inputRange, outputRange: [0.82, 1, 0.82], extrapolate: 'clamp' });
           return (
             <Animated.View key={`${item}-${i}`} style={[styles.item, { opacity, transform: [{ scale }] }]}>
-              <Animated.Text style={styles.value}>{item}</Animated.Text>
+              <Text variant="heading1">{item}</Text>
             </Animated.View>
           );
         })}
@@ -83,11 +83,5 @@ const styles = StyleSheet.create({
     height: WHEEL_ITEM_H,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  value: {
-    fontFamily: Outfit.semibold,
-    fontSize: 22,
-    lineHeight: 30,
-    color: Colors.textPrimary,
   },
 });

@@ -1,8 +1,9 @@
 import React, { useRef } from 'react';
-import { Pressable, Animated, StyleSheet, ActivityIndicator, ViewStyle, View } from 'react-native';
-import { Colors, Radii, Shadows, Outfit } from '@/constants/tokens';
+import { Pressable, Animated, StyleSheet, ViewStyle, View } from 'react-native';
+import { Colors, Radii, Shadows, type TextVariant, Strokes } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
+import Spinner from '@/components/Spinner';
 
 // Système de boutons Fiw :
 // · primary          — plein bleu marque (CTA principal).
@@ -20,7 +21,13 @@ import Icon, { type IconName } from '@/components/Icon';
 //                      inline qui retire/supprime (ex. « Retirer » un compte
 //                      Mobile Money). Le pendant rouge de `link`, comme
 //                      `destructive` est le pendant rouge de `secondary`.
-type Variant = 'primary' | 'secondary' | 'destructive' | 'destructiveFilled' | 'link' | 'linkDestructive';
+// · linkInverse      — le lien posé sur un fond sombre ou `primary`, en
+//                      `textOnPrimary` (ex. « Fermer » de la célébration).
+//                      Un septième rôle et non un axe de ton : un axe aurait
+//                      obligé les six autres variantes à déclarer une valeur qui
+//                      n'a aucun sens pour un bouton plein. Il ne peint pas de
+//                      fond — c'est l'écran qui porte le bleu, le bouton s'y pose.
+type Variant = 'primary' | 'secondary' | 'destructive' | 'destructiveFilled' | 'link' | 'linkDestructive' | 'linkInverse';
 type Size = 'lg' | 'md' | 'sm';
 
 interface Props {
@@ -45,6 +52,7 @@ const BG: Record<Variant, { rest: string; pressed: string }> = {
   destructiveFilled:{ rest: Colors.error,   pressed: Colors.errorPressed },
   link:             { rest: 'transparent',  pressed: 'transparent' },
   linkDestructive:  { rest: 'transparent',  pressed: 'transparent' },
+  linkInverse:      { rest: 'transparent',  pressed: 'transparent' },
 };
 
 // Couleur du texte + icône par variante.
@@ -55,6 +63,7 @@ const FG: Record<Variant, string> = {
   destructiveFilled: Colors.textOnPrimary,
   link: Colors.primary,
   linkDestructive: Colors.error,
+  linkInverse: Colors.textOnPrimary,
 };
 
 // Bordure : seul `secondary` porte un contour (neutre gris). `destructive` est
@@ -63,11 +72,20 @@ const BORDER: Partial<Record<Variant, string>> = {
   secondary: Colors.border,
 };
 
-// Hauteurs « pouce-friendly » (cibles tactiles ≥ 48px) + typo par taille.
-const SIZING: Record<Size, { height: number; padX: number; font: number; family: string; icon: number; gap: number }> = {
-  lg: { height: 56, padX: 28, font: 16, family: Outfit.semibold, icon: 20, gap: 10 },
-  md: { height: 48, padX: 20, font: 15, family: Outfit.semibold, icon: 18, gap: 8 },
-  sm: { height: 40, padX: 16, font: 14, family: Outfit.medium,   icon: 16, gap: 6 },
+// Hauteurs « pouce-friendly » (cibles tactiles ≥ 48px) + géométrie par taille.
+const SIZING: Record<Size, { height: number; padX: number; icon: number; gap: number }> = {
+  lg: { height: 56, padX: 28, icon: 20, gap: 10 },
+  md: { height: 48, padX: 20, icon: 18, gap: 8 },
+  sm: { height: 40, padX: 16, icon: 16, gap: 6 },
+};
+
+// Typo du libellé : une variante par (taille × lien). Les variantes `link`
+// descendent d'une graisse — le lien se lit comme du texte, pas comme un plein.
+// `sm` est déjà en Medium, les deux colonnes y coïncident.
+const LABEL: Record<Size, { plain: TextVariant; link: TextVariant }> = {
+  lg: { plain: 'bodySemibold', link: 'bodyMedium' },
+  md: { plain: 'buttonMd',     link: 'buttonMdLink' },
+  sm: { plain: 'buttonSm',     link: 'buttonSm' },
 };
 
 export default function Button({
@@ -78,7 +96,7 @@ export default function Button({
   const fg = FG[variant];
   const s = SIZING[size];
   const filled = variant === 'primary' || variant === 'destructiveFilled';
-  const isLink = variant === 'link' || variant === 'linkDestructive';
+  const isLink = variant === 'link' || variant === 'linkDestructive' || variant === 'linkInverse';
 
   const scale = useRef(new Animated.Value(1)).current;
   const press = (to: number) =>
@@ -99,18 +117,22 @@ export default function Button({
           { backgroundColor: pressed ? BG[variant].pressed : BG[variant].rest },
           // Contour des variantes à fond transparent (secondary = gris neutre,
           // destructive = rouge Error).
-          BORDER[variant] && { borderWidth: 1.5, borderColor: BORDER[variant] },
-          filled && !isDisabled && Shadows.sm,
+          BORDER[variant] && { borderWidth: Strokes.medium, borderColor: BORDER[variant] },
+          // L'ombre reste dans les TROIS états : la maquette la porte aussi sur
+          // `désactivé` et `chargement` (les six variantes pleines de
+          // `Button · États` ont le même style d'effet). En désactivé c'est
+          // l'opacité 0,45 qui la fait pâlir avec le reste, pas son retrait.
+          filled && Shadows.sm,
           isDisabled && styles.disabled,
           isLink && pressed && styles.linkPressed,
         ]}
       >
         {loading ? (
-          <ActivityIndicator color={fg} size="small" />
+          <Spinner size="sm" color={fg} />
         ) : (
           <View style={[styles.content, { gap: s.gap }]}>
             {icon && <Icon name={icon} size={s.icon} color={fg} />}
-            <Text variant="label" color={fg} style={{ fontFamily: isLink ? Outfit.medium : s.family, fontSize: s.font }}>{label}</Text>
+            <Text variant={LABEL[size][isLink ? 'link' : 'plain']} color={fg}>{label}</Text>
             {trailingIcon && <Icon name={trailingIcon} size={s.icon} color={fg} />}
           </View>
         )}

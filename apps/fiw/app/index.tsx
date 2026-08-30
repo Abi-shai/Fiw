@@ -1,15 +1,21 @@
 import React, { useState } from 'react';
 import {
-  View, StyleSheet, TextInput, KeyboardAvoidingView,
+  View, StyleSheet, KeyboardAvoidingView,
   Platform, TouchableOpacity, ScrollView
 } from 'react-native';
 import { router } from 'expo-router';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import { Colors } from '@/constants/tokens';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
+import Logo from '@/components/Logo';
+import Field from '@/components/Field';
+import CountryPicker from '@/components/CountryPicker';
+import { COUNTRIES, isComplete, type Country } from '@/constants/countries';
 
 export default function OnboardingScreen() {
-  const [phone, setPhone] = useState('+221 77 000 00 00');
+  const [country, setCountry] = useState<Country>(() => COUNTRIES.find((c) => c.code === 'SN')!);
+  const [digits, setDigits] = useState('');
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
     <KeyboardAvoidingView
@@ -18,37 +24,32 @@ export default function OnboardingScreen() {
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Text color={Colors.surface} style={styles.logoText}>fiw</Text>
-          </View>
-          <Text variant="body" color={Colors.textSecondary}>Votre mobilité à Dakar</Text>
+          <Logo size={80} />
+          <Text variant="body" color={Colors.textSecondary} style={styles.tagline}>Votre mobilité à Dakar</Text>
         </View>
 
         <View style={styles.form}>
           <Text variant="display" style={styles.title}>Bienvenue</Text>
           <Text variant="body" color={Colors.textSecondary} style={styles.subtitle}>Entrez votre numéro pour continuer</Text>
 
-          <View style={styles.inputWrapper}>
-            <Text style={styles.flag}>🇸🇳</Text>
-            <TextInput
-              style={styles.input}
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              placeholder="+221 XX XXX XX XX"
-              placeholderTextColor={Colors.textTertiary}
-            />
-          </View>
+          <Field
+            type="téléphone"
+            country={country}
+            digits={digits}
+            onChangeDigits={setDigits}
+            onPressDial={() => setPickerOpen(true)}
+          />
 
           <Button
             label="Se connecter"
             onPress={() => router.push('/otp')}
+            disabled={!isComplete(country, digits)}
             style={styles.btn}
           />
 
           <TouchableOpacity onPress={() => router.push('/otp')} style={styles.createLink}>
             <Text variant="bodySmall" color={Colors.textSecondary}>
-              Pas encore de compte ? <Text variant="bodySmall" color={Colors.primary} style={styles.createBold}>Créer un compte</Text>
+              Pas encore de compte ? <Text variant="bodySmallSemibold" color={Colors.primary}>Créer un compte</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -60,6 +61,13 @@ export default function OnboardingScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      <CountryPicker
+        visible={pickerOpen}
+        selectedCode={country.code}
+        onSelect={(c) => { setCountry(c); setDigits(''); setPickerOpen(false); }}
+        onClose={() => setPickerOpen(false)}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -72,48 +80,11 @@ const styles = StyleSheet.create({
     paddingTop: 80,
     paddingBottom: 48,
   },
-  logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: Radii.lg,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  logoText: {
-    fontFamily: Outfit.bold,
-    fontSize: 32,
-    letterSpacing: -1,
-  },
+  tagline: { marginTop: 16 },
   form: { flex: 1 },
   title: { marginBottom: 8 },
   subtitle: { marginBottom: 32 },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bg,
-    borderRadius: Radii.md,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    height: 56,
-  },
-  flag: { fontSize: 22, marginRight: 10 },
-  input: {
-    flex: 1,
-    fontSize: 17,
-    color: Colors.textPrimary,
-    fontFamily: Outfit.medium,
-  },
-  btn: { marginTop: 8 },
+  btn: { marginTop: 24 },
   createLink: { marginTop: 20, alignItems: 'center' },
-  createBold: { fontFamily: Outfit.semibold },
   footer: { paddingVertical: 32, alignItems: 'center' },
 });

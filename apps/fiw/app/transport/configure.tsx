@@ -11,11 +11,14 @@ import IconButton from '@/components/IconButton';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import Button from '@/components/Button';
+import ListRow from '@/components/ListRow';
+import SegmentedControl from '@/components/SegmentedControl';
 import GammeCard from '@/components/GammeCard';
-import { GroupedSheet, SheetCard, RouteCard } from '@/components/RideSheet';
+import { GroupedSheet, SheetCard } from '@/components/Sheet';
+import RouteCard from '@/components/RouteCard';
 import PaymentSheetContent from '@/components/PaymentSheet';
-import { Colors, Radii, Outfit, Shadows } from '@/constants/tokens';
-import { GAMMES, COVOITURAGE, COVOITURAGE_NODETOUR_PRICE, DAKAR_CENTER, WAIT_GRACE_MINUTES, WAIT_FEE_PER_MIN } from '@/constants/data';
+import { Colors, Radii, Shadows, Strokes } from '@/constants/tokens';
+import { GAMMES, COVOITURAGE, COVOITURAGE_NODETOUR_PRICE, DAKAR_CENTER, PAYMENT_METHODS, WAIT_GRACE_MINUTES, WAIT_FEE_PER_MIN } from '@/constants/data';
 import { topviewSprite } from '@/constants/illustrations';
 
 // Carte gamme : composant partagé avec la Livraison (`components/GammeCard`).
@@ -139,6 +142,7 @@ export default function ConfigureScreen() {
   };
 
   const payImg = PAY_ILLUSTRATIONS[selectedPayment] ?? PAY_ILLUSTRATIONS.cash;
+  const payLabel = (PAYMENT_METHODS.find((p) => p.id === selectedPayment) ?? PAYMENT_METHODS[0]).label;
 
   return (
     <View style={styles.container}>
@@ -183,7 +187,6 @@ export default function ConfigureScreen() {
 
             {/* Itinéraire à plat, comme la course active (maquette 118:525). */}
             <RouteCard
-              plain
               departure={departureName}
               destination={params.destName}
               onEdit={editItinerary}
@@ -192,23 +195,11 @@ export default function ConfigureScreen() {
 
           {/* Carte 2 : switcher de catégorie + choix de l'offre. */}
           <SheetCard>
-            <View style={styles.segment}>
-              {([['course', 'Classique'], ['covoit', 'Covoiturage']] as const).map(([cat, label]) => {
-                const active = category === cat;
-                return (
-                  <TouchableOpacity
-                    key={cat}
-                    style={[styles.segmentItem, active && styles.segmentItemActive]}
-                    onPress={() => handleCategory(cat)}
-                    activeOpacity={0.85}
-                  >
-                    <Text variant="label" color={active ? Colors.textPrimary : Colors.textSecondary} style={styles.segmentText}>
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            <SegmentedControl
+              items={[{ id: 'course', label: 'Classique' }, { id: 'covoit', label: 'Covoiturage' }]}
+              value={category}
+              onChange={(id) => handleCategory(id as 'course' | 'covoit')}
+            />
 
             <Animated.View style={{
               opacity: switchAnim,
@@ -219,10 +210,10 @@ export default function ConfigureScreen() {
                   <View style={styles.covoitRow}>
                     <GammeCard {...gammeCardProps(covoitGamme)} selected onPress={() => {}} />
                     <View style={styles.covoitInfo}>
-                      <Text variant="label" style={styles.covoitTitle}>
+                      <Text variant="bodySemibold">
                         {noDetour ? 'Trajet sans détour' : 'Trajet partagé'}
                       </Text>
-                      <Text variant="caption" color={Colors.textSecondary} style={styles.covoitDesc}>
+                      <Text variant="bodySmall" color={Colors.textSecondary}>
                         {noDetour
                           ? 'Toujours partagé, mais seuls les passagers déjà sur votre route sont pris. Trajet plus direct.'
                           : 'Partagé avec d’autres passagers. Prix indiqué par passager.'}
@@ -239,8 +230,8 @@ export default function ConfigureScreen() {
                       {noDetour && <Icon name="tick" size={15} weight="bold" color={Colors.surface} />}
                     </View>
                     <View style={styles.flex1}>
-                      <Text variant="label" style={styles.detourTitle}>Pas de détour</Text>
-                      <Text variant="caption" color={Colors.textSecondary} style={styles.detourSub}>Uniquement les passagers déjà sur votre route</Text>
+                      <Text variant="label">Pas de détour</Text>
+                      <Text variant="caption" color={Colors.textSecondary}>Uniquement les passagers déjà sur votre route</Text>
                     </View>
                   </TouchableOpacity>
                 </>
@@ -269,12 +260,16 @@ export default function ConfigureScreen() {
                 {WAIT_GRACE_MINUTES} min d'attente offertes à l'arrivée, puis {WAIT_FEE_PER_MIN} F/min
               </Text>
             </View>
-            <View style={styles.footerRow}>
-              <TouchableOpacity style={styles.payBtn} onPress={openPay} activeOpacity={0.85}>
-                <Image source={payImg} style={styles.payImg} />
-              </TouchableOpacity>
-              <Button label="Confirmer la course" onPress={confirm} style={styles.cta} />
-            </View>
+            {/* Le moyen de paiement se lit en rangée pleine largeur au-dessus du
+                CTA — Uber, Careem, Gojek, Waymo et Grab le posent tous là. La
+                pastille carrée d'avant ne disait ni lequel ni qu'on pouvait en
+                changer. */}
+            <ListRow
+              leading={<Image source={payImg} style={styles.payLogo} />}
+              title={payLabel}
+              onPress={openPay}
+            />
+            <Button label="Confirmer la course" onPress={confirm} />
           </SheetCard>
       </GroupedSheet>
 
@@ -318,28 +313,10 @@ const styles = StyleSheet.create({
   },
 
   // Switcher de catégorie (segmented control).
-  segment: {
-    flexDirection: 'row',
-    backgroundColor: Colors.track,
-    borderRadius: Radii.pill,
-    padding: 4,
-  },
-  segmentItem: {
-    flex: 1,
-    paddingVertical: 9,
-    alignItems: 'center',
-    borderRadius: Radii.pill,
-  },
-  segmentItemActive: { backgroundColor: Colors.surface, ...Shadows.sm },
-  segmentText: { fontSize: 14 },
 
   // Covoiturage.
   covoitRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, marginTop: 12 },
   covoitInfo: { flex: 1, gap: 5, paddingTop: 8 },
-  covoitTitle: { fontFamily: Outfit.semibold, fontSize: 16, lineHeight: 22 },
-  covoitDesc: { fontSize: 14, lineHeight: 19 },
-  detourTitle: { fontSize: 14, lineHeight: 19 },
-  detourSub: { fontSize: 12, lineHeight: 16 },
   detourRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     marginTop: 12,
@@ -354,14 +331,11 @@ const styles = StyleSheet.create({
   // Carte confirmation.
   confirmCard: { gap: 12 },
   waitNote: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  footerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  payBtn: { padding: 4 },
-  payImg: { width: 40, height: 40, borderRadius: 11 },
-  cta: { flex: 1 },
+  payLogo: { width: 40, height: 40, borderRadius: 11 },
 
   radio: {
     width: 26, height: 26, borderRadius: 13,
-    borderWidth: 2, borderColor: Colors.textDisabled,
+    borderWidth: Strokes.thick, borderColor: Colors.textDisabled,
     alignItems: 'center', justifyContent: 'center',
   },
   radioSel: { backgroundColor: Colors.primary, borderColor: Colors.primary },

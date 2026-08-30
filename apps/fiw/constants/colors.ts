@@ -87,4 +87,40 @@ export const Colors = {
   warningSubtle:  '#FEF3C7',
   success:        '#10B981',
   successSubtle:  '#D1FAE5',
+  // Encres foncées des paliers fonctionnels — le pendant texte de `*Subtle`.
+  // `warning` et `success` sont des pleins : posés en TEXTE sur leur propre
+  // subtil ils tombent sous 3:1 (2.0:1 pour l'ambre, 2.4:1 pour le vert). Ces
+  // deux paliers-là sont faits pour écrire dessus, et pour rien d'autre.
+  // C'est exactement le manque annoncé plus haut à propos du jaune de marque.
+  warningInk:     '#B45309',
+  successInk:     '#047857',
+
+  // ── Sur fond sombre ou bleu ────────────────────────────────────────────
+  // Un écran plein `primary` ou `gray/ink` renverse la logique : il n'y a plus
+  // de surface à poser, seulement du blanc plus ou moins présent. Ces cinq
+  // rôles nomment ces degrés — jusqu'ici c'étaient neuf `rgba` en dur dans sept
+  // fichiers, et `textPrimary` détourné en couleur de FOND.
+  //
+  // `surfaceInverse` est un fond, pas une encre : c'est ce qui manquait pour
+  // que l'écran d'appel cesse d'emprunter la couleur du texte.
+  surfaceInverse:         '#1A1A1A',
+  /** Surface posée SUR un fond sombre ou bleu — contrôle d'appel, médaillon de
+   *  célébration, bouton verrouillé du Wallet. Blanc translucide plutôt qu'un
+   *  gris opaque : elle prend la teinte de ce qu'elle recouvre au lieu de la
+   *  trouer. */
+  onInverseSubtle:        'rgba(255, 255, 255, 0.18)',
+  /** Liseré sur un fond sombre ou bleu. */
+  onInverseMuted:         'rgba(255, 255, 255, 0.25)',
+  /** Texte secondaire sur fond sombre — le pendant de `textSecondary` là où
+   *  `textOnPrimary` (blanc plein) est l'encre principale. */
+  textOnInverseSecondary: 'rgba(255, 255, 255, 0.70)',
+
+  // ── Voiles ─────────────────────────────────────────────────────────────
+  /** Voile posé sur la CARTO — pendant la recherche, et sous le pin d'ancrage.
+   *  À distinguer du composant `Scrim`, qui voile l'écran derrière une feuille :
+   *  celui-ci assombrit la carte elle-même. */
+  scrim:                  'rgba(17, 24, 39, 0.22)',
+  /** Bleu de marque à peine posé — les anneaux du radar. Le palier au-dessous
+   *  de `primarySubtle`, pour une forme qui doit se deviner sans se lire. */
+  primaryGhost:           'rgba(0, 102, 255, 0.06)',
 };

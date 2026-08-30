@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, Switch, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
-import SettingsGroup from '@/components/SettingsGroup';
-import SettingsRow from '@/components/SettingsRow';
+import List from '@/components/List';
+import Toggle from '@/components/Toggle';
+import ListRow from '@/components/ListRow';
+import Medallion from '@/components/Medallion';
 import Button from '@/components/Button';
 import { useSafety, setShareOnStart, removeContact } from '@/stores/safety';
 
@@ -14,7 +16,6 @@ export default function SecuriteScreen() {
   // doit voir la même chose que cet écran (todo P11, question 4).
   const { shareOnStart, contacts } = useSafety();
 
-  const track = { true: Colors.primary, false: Colors.border };
 
   const confirmRemove = (id: string) =>
     Alert.alert('Retirer ce contact', 'Il ne recevra plus vos trajets.', [
@@ -33,7 +34,7 @@ export default function SecuriteScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
-        <SettingsGroup
+        <List
           title="Partage de trajet"
           // La seconde phrase vient du hub Compte, où elle était la dernière note
           // d'une page qui n'en a plus : le rôle d'urgence des Contacts de
@@ -42,20 +43,14 @@ export default function SecuriteScreen() {
           // (style-guide), et l'écran en avait déjà une.
           footnote="Quand c'est activé, vos Contacts de confiance reçoivent votre position en temps réel dès le départ de chaque course. Ils peuvent aussi être alertés en cas d'urgence."
         >
-          <SettingsRow
+          <ListRow
             icon="share"
-            label="Partager mon trajet au départ"
-            right={
-              <Switch
-                value={shareOnStart}
-                onValueChange={setShareOnStart}
-                trackColor={track}
-                thumbColor={Colors.surface}
-                ios_backgroundColor={Colors.border}
-              />
+            title="Partager mon trajet au départ"
+            trailing={
+              <Toggle value={shareOnStart} onValueChange={setShareOnStart} />
             }
           />
-        </SettingsGroup>
+        </List>
 
         {/* Pas de note ici : celle du partage de trajet, juste au-dessus, dit
             déjà ce que sont les Contacts de confiance. Une seule note par écran
@@ -64,23 +59,29 @@ export default function SecuriteScreen() {
             Un contact de confiance est un élément que le Client possède, pas un
             réglage : la liste porte la pastille bleue, comme les Lieux
             enregistrés — mêmes objets, même grammaire d'un écran à l'autre. */}
-        <SettingsGroup title="Contacts de confiance">
+        <List title="Contacts de confiance" style_="plat" bleed={20} inset={56}>
           {contacts.length === 0 ? (
-            <SettingsRow icon="user" accent label="Aucun contact" subtitle="Ajoutez-en un ci-dessous" chevron={false} />
+            <ListRow
+              leading={<Medallion icon="user" ton="accent" />}
+              title="Aucun contact"
+              subtitle="Ajoutez-en un ci-dessous"
+              trailing={null}
+              style={styles.row}
+            />
           ) : (
             contacts.map((c) => (
-              <SettingsRow
+              <ListRow
                 key={c.id}
-                icon="user"
-                accent
-                label={c.name}
+                leading={<Medallion icon="user" ton="accent" />}
+                title={c.name}
                 subtitle={c.phone}
-                chevron={false}
+                trailing={null}
                 onPress={() => confirmRemove(c.id)}
+                style={styles.row}
               />
             ))
           )}
-        </SettingsGroup>
+        </List>
 
         {/* Seule action de l'écran, donc `primary` — même forme que « Ajouter un
             lieu » sur Lieux enregistrés (cf. style-guide, 20 août 2026). */}
@@ -95,5 +96,8 @@ const styles = StyleSheet.create({
   // rangées à plat séparées par des filets, jamais des cartes (todo P5).
   container: { flex: 1, backgroundColor: Colors.surface },
   content: { paddingHorizontal: 20, paddingTop: 8 },
+  // La gouttière de page, reprise par chaque rangée : le débord de la liste
+  // fait filer les filets aux bords sans désaligner le texte.
+  row: { paddingHorizontal: 20 },
   add: { marginTop: 16 },
 });

@@ -3,8 +3,9 @@ import { View, StyleSheet, TextInput, KeyboardAvoidingView, Platform } from 'rea
 import { router, useLocalSearchParams } from 'expo-router';
 import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
+import ScreenFooter from '@/components/ScreenFooter';
 import Text from '@/components/Text';
-import { Colors, Radii, Spacing, Outfit } from '@/constants/tokens';
+import { Colors, Radii, Spacing, Outfit, Strokes } from '@/constants/tokens';
 import { AMBASSADEUR, detectOperator } from '@/constants/affilie';
 
 // JS3 — Saisie du numéro Mobile Money. « Valider » → récapitulatif de retrait.
@@ -50,9 +51,9 @@ export default function RetraitNumero() {
         </View>
       </View>
 
-      <View style={styles.footer}>
+      <ScreenFooter>
         <Button label="Valider" disabled={!valid} onPress={validate} />
-      </View>
+      </ScreenFooter>
     </KeyboardAvoidingView>
   );
 }
@@ -65,7 +66,7 @@ const styles = StyleSheet.create({
     fontFamily: Outfit.semibold,
     fontSize: 24,
     color: Colors.textPrimary,
-    borderBottomWidth: 2,
+    borderBottomWidth: Strokes.thick,
     borderBottomColor: Colors.primary,
     paddingVertical: Spacing[3],
     letterSpacing: 1,
@@ -77,5 +78,4 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: Radii.pill,
   },
-  footer: { paddingHorizontal: Spacing[4], paddingTop: Spacing[3], paddingBottom: Spacing[8] },
 });

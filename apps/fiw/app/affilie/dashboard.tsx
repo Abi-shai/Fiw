@@ -6,8 +6,9 @@ import * as Haptics from 'expo-haptics';
 import IconButton from '@/components/IconButton';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
+import Medallion from '@/components/Medallion';
 import Icon, { type IconName } from '@/components/Icon';
-import { Colors, Radii, Spacing, Shadows } from '@/constants/tokens';
+import { Colors, Radii, SectionLabel, Shadows, Spacing, Strokes } from '@/constants/tokens';
 import { AMBASSADEUR, COMMISSIONS, WITHDRAW_MIN, fcfa } from '@/constants/affilie';
 
 type Stat = { key: string; icon: IconName; value: string; label: string };
@@ -22,9 +23,7 @@ const STATS: Stat[] = [
 function StatCard({ stat }: { stat: Stat }) {
   return (
     <View style={styles.statCard}>
-      <View style={styles.statIcon}>
-        <Icon name={stat.icon} size={20} color={Colors.primary} />
-      </View>
+      <Medallion icon={stat.icon} size="sm" ton="accent" />
       <Text variant="heading1" style={styles.statValue}>{stat.value}</Text>
       <Text variant="caption" color={Colors.textSecondary}>{stat.label}</Text>
     </View>
@@ -91,10 +90,14 @@ export default function AffilieDashboard() {
 
         {/* Appels à l'action */}
         <Button label="Partager mon code" icon="share" onPress={share} style={styles.cta} />
-        <TouchableOpacity style={styles.linkRow} activeOpacity={0.7} onPress={() => router.push('/affilie/reseau')}>
-          <Text variant="label" color={Colors.primary}>Voir mon réseau</Text>
-          <Icon name="chevronRight" size={16} color={Colors.primary} />
-        </TouchableOpacity>
+        <Button
+          label="Voir mon réseau"
+          variant="link"
+          size="sm"
+          trailingIcon="chevronRight"
+          onPress={() => router.push('/affilie/reseau')}
+          style={styles.linkRow}
+        />
 
         {/* Commissions récentes */}
         <Text variant="caption" color={Colors.textTertiary} style={styles.sectionLabel}>COMMISSIONS RÉCENTES</Text>
@@ -105,9 +108,7 @@ export default function AffilieDashboard() {
         ) : (
           COMMISSIONS.map((c, i) => (
             <View key={c.id} style={[styles.commRow, i > 0 && styles.commBorder]}>
-              <View style={styles.commIcon}>
-                <Icon name="coins" size={16} color={Colors.primary} />
-              </View>
+              <Medallion icon="coins" size="sm" ton="accent" />
               <Text variant="bodySmall" color={Colors.textSecondary} style={styles.flex1}>{c.date}</Text>
               <Text variant="label" color={Colors.success}>+{fcfa(c.amount)}</Text>
             </View>
@@ -149,7 +150,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'space-between',
   },
-  kicker: { textTransform: 'uppercase', letterSpacing: 0.8 },
+  kicker: { ...SectionLabel },
   walletBalance: { marginTop: Spacing[1], letterSpacing: -0.6 },
   retirerBtn: {
     backgroundColor: Colors.surface,
@@ -158,7 +159,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing[3],
   },
   retirerBtnLocked: {
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: Colors.onInverseSubtle,
   },
   lockNote: {
     flexDirection: 'row',
@@ -166,8 +167,8 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: Spacing[4],
     paddingTop: Spacing[3],
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.25)',
+    borderTopWidth: Strokes.thin,
+    borderTopColor: Colors.onInverseMuted,
   },
   lockNoteText: { flex: 1, opacity: 0.9 },
 
@@ -182,32 +183,18 @@ const styles = StyleSheet.create({
     flexBasis: '47%',
     backgroundColor: Colors.surface,
     borderRadius: Radii.md,
-    borderWidth: 1,
+    borderWidth: Strokes.thin,
     borderColor: Colors.borderSubtle,
     padding: Spacing[4],
     gap: Spacing[2],
   },
-  statIcon: {
-    width: 36, height: 36,
-    borderRadius: Radii.sm,
-    backgroundColor: Colors.primarySubtle,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   statValue: { letterSpacing: -0.4 },
 
   cta: { marginTop: Spacing[6] },
-  linkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    marginTop: Spacing[4],
-  },
+  linkRow: { alignSelf: 'center', marginTop: Spacing[4] },
 
   sectionLabel: {
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    ...SectionLabel,
     marginTop: Spacing[8],
     marginBottom: Spacing[2],
   },
@@ -219,14 +206,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing[3],
   },
   commBorder: {
-    borderTopWidth: 1,
+    borderTopWidth: Strokes.thin,
     borderTopColor: Colors.borderSubtle,
-  },
-  commIcon: {
-    width: 30, height: 30,
-    borderRadius: Radii.sm,
-    backgroundColor: Colors.primarySubtle,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

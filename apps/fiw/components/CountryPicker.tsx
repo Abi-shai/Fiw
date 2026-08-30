@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, StyleSheet, Animated, Dimensions, TextInput, FlatList, TouchableOpacity, Pressable,
+  View, StyleSheet, Animated, Dimensions, FlatList, Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import { Colors } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
+import SearchBar from '@/components/SearchBar';
 import FlagChip from '@/components/FlagChip';
+import ListRow from '@/components/ListRow';
+import Divider from '@/components/Divider';
+import Scrim from '@/components/Scrim';
 import { Handle, sheetSurface } from '@/components/Sheet';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
 import { COUNTRIES, type Country } from '@/constants/countries';
@@ -71,7 +75,8 @@ export default function CountryPicker({ visible, selectedCode, onSelect, onClose
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents={visible ? 'auto' : 'none'}>
-      <Animated.View style={[StyleSheet.absoluteFill, styles.scrim, { opacity: scrimOpacity }]}>
+      <Animated.View style={StyleSheet.absoluteFill}>
+        <Scrim opacity={scrimOpacity} />
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
       </Animated.View>
 
@@ -83,23 +88,14 @@ export default function CountryPicker({ visible, selectedCode, onSelect, onClose
             <Text variant="heading1">Indicatif pays</Text>
           </View>
 
-          <View style={styles.search}>
-            <Icon name="search" size={18} color={Colors.textTertiary} />
-            <TextInput
-              style={styles.searchInput}
-              value={q}
-              onChangeText={setQ}
-              onFocus={() => snapTo(TY_EXPANDED)}
-              placeholder="Rechercher un pays ou un indicatif"
-              placeholderTextColor={Colors.textTertiary}
-              autoCorrect={false}
-            />
-            {q.length > 0 && (
-              <TouchableOpacity onPress={() => setQ('')} hitSlop={8}>
-                <Icon name="close" size={16} color={Colors.textTertiary} />
-              </TouchableOpacity>
-            )}
-          </View>
+          <SearchBar
+            value={q}
+            onChangeText={setQ}
+            onClear={() => setQ('')}
+            onFocus={() => snapTo(TY_EXPANDED)}
+            placeholder="Rechercher un pays ou un indicatif"
+            style={styles.search}
+          />
 
           <FlatList
             data={data}
@@ -108,14 +104,17 @@ export default function CountryPicker({ visible, selectedCode, onSelect, onClose
             style={styles.list}
             contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
             renderItem={({ item }) => (
-              <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={() => onSelect(item)}>
-                <FlagChip code={item.code} />
-                <Text variant="body" style={styles.name} numberOfLines={1}>{item.name}</Text>
-                <Text variant="body" color={Colors.textSecondary}>{item.dial}</Text>
-                {item.code === selectedCode && <Icon name="tick" size={18} color={Colors.primary} />}
-              </TouchableOpacity>
+              <ListRow
+                leading={<FlagChip code={item.code} />}
+                title={item.name}
+                value={item.dial}
+                trailing={item.code === selectedCode
+                  ? <Icon name="tick" size={18} color={Colors.primary} />
+                  : null}
+                onPress={() => onSelect(item)}
+              />
             )}
-            ItemSeparatorComponent={() => <View style={styles.sep} />}
+            ItemSeparatorComponent={() => <Divider />}
             ListEmptyComponent={
               <Text variant="body" color={Colors.textTertiary} align="center" style={styles.empty}>Aucun pays trouvé</Text>
             }
@@ -127,7 +126,6 @@ export default function CountryPicker({ visible, selectedCode, onSelect, onClose
 }
 
 const styles = StyleSheet.create({
-  scrim: { backgroundColor: '#000' },
   sheet: {
     position: 'absolute',
     left: 0, right: 0, bottom: 0,
@@ -137,23 +135,8 @@ const styles = StyleSheet.create({
   inner: { height: SHEET_H },
   dragZone: { paddingTop: 10, paddingBottom: 10 },
   handle: { marginBottom: 14 },
-  search: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: Colors.bg,
-    borderRadius: Radii.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: 14,
-    height: 48,
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  searchInput: { flex: 1, fontSize: 15, color: Colors.textPrimary, fontFamily: Outfit.regular, padding: 0 },
+  // Géométrie du champ dans `SearchBar` — ici seules les marges de l'emplacement.
+  search: { marginTop: 12, marginBottom: 8 },
   list: { flex: 1 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
-  name: { flex: 1, fontFamily: Outfit.medium },
-  sep: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.borderSubtle },
   empty: { marginTop: 40 },
 });

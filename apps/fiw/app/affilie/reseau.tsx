@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import ScreenHeader from '@/components/ScreenHeader';
-import Avatar from '@/components/Avatar';
+import Avatar, { AVATAR_ROW } from '@/components/Avatar';
 import Button from '@/components/Button';
+import SegmentedControl from '@/components/SegmentedControl';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import { Colors, Radii, Spacing } from '@/constants/tokens';
@@ -16,7 +17,7 @@ type Tab = 'prestataires' | 'clients';
 function MemberRow({ m }: { m: Member }) {
   return (
     <View style={styles.row}>
-      <Avatar name={m.name} size={44} bordered={m.active} />
+      <Avatar name={m.name} size={AVATAR_ROW} bordered={m.active} />
       <View style={styles.rowText}>
         <Text variant="label">{m.name}</Text>
         <Text variant="caption" color={Colors.textSecondary}>
@@ -43,21 +44,15 @@ export default function Reseau() {
     <View style={styles.container}>
       <ScreenHeader title="Mon réseau" />
 
-      {/* Segmented control */}
-      <View style={styles.segment}>
-        {(['prestataires', 'clients'] as Tab[]).map((t) => (
-          <TouchableOpacity
-            key={t}
-            style={[styles.segmentItem, tab === t && styles.segmentItemOn]}
-            activeOpacity={0.8}
-            onPress={() => setTab(t)}
-          >
-            <Text variant="label" color={tab === t ? Colors.primary : Colors.textSecondary}>
-              {t === 'prestataires' ? 'Chauffeurs & livreurs' : 'Clients'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <SegmentedControl
+        items={[
+          { id: 'prestataires', label: 'Chauffeurs & livreurs' },
+          { id: 'clients', label: 'Clients' },
+        ]}
+        value={tab}
+        onChange={(id) => setTab(id as Tab)}
+        style={styles.segment}
+      />
 
       {list.length > 0 ? (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
@@ -82,18 +77,7 @@ export default function Reseau() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
 
-  segment: {
-    flexDirection: 'row',
-    marginHorizontal: Spacing[4],
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.pill,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    padding: 4,
-    marginBottom: Spacing[2],
-  },
-  segmentItem: { flex: 1, alignItems: 'center', paddingVertical: Spacing[2], borderRadius: Radii.pill },
-  segmentItemOn: { backgroundColor: Colors.primarySubtle },
+  segment: { marginHorizontal: Spacing[4], marginBottom: Spacing[2] },
 
   content: { paddingHorizontal: Spacing[4], paddingVertical: Spacing[2] },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing[3], paddingVertical: Spacing[3] },

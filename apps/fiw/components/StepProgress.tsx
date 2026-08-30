@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Animated, type StyleProp, type ViewStyle } from 'react-native';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
-import { Colors, Outfit } from '@/constants/tokens';
+import { Colors, Strokes } from '@/constants/tokens';
 
 export type Step = { icon: IconName; label: string };
 
@@ -21,6 +21,12 @@ type Props = {
  * Gopuff) : pastilles-icônes reliées par des segments, remplies en primary au
  * fil de la progression ; le segment courant se remplit en continu via
  * `segmentProgress`. Réutilisable : suivi Livraison, legs Yobanté, Assistance.
+ *
+ * **Un jalon garde toujours son propre glyphe** — la maquette ne le remplace
+ * jamais par une coche. Ce qui dit qu'une étape est acquise, c'est la GRAISSE :
+ * `fill` dès que le jalon est atteint (fait ou courant), `bold` tant qu'il est à
+ * venir. Un `tick` effacerait l'étape dont on parle au moment où elle compte le
+ * plus — juste après l'avoir franchie.
  */
 export default function StepProgress({ steps, activeIndex, segmentProgress, style }: Props) {
   return (
@@ -29,7 +35,6 @@ export default function StepProgress({ steps, activeIndex, segmentProgress, styl
         {steps.map((step, i) => {
           const done = i < activeIndex;
           const current = i === activeIndex;
-          const on = done || current;
           // Le segment i relie le jalon i-1 au jalon i : plein jusqu'au jalon
           // courant, en remplissage animé vers le jalon suivant, gris au-delà.
           const filling = i === activeIndex + 1 && segmentProgress;
@@ -50,12 +55,12 @@ export default function StepProgress({ steps, activeIndex, segmentProgress, styl
                   ) : null}
                 </View>
               )}
-              <View style={[styles.dot, on && styles.dotOn, current && styles.dotCurrent]}>
+              <View style={[styles.dot, done && styles.dotDone, current && styles.dotCurrent]}>
                 <Icon
-                  name={done ? 'tick' : step.icon}
-                  size={13}
-                  weight="bold"
-                  color={on ? Colors.surface : Colors.textTertiary}
+                  name={step.icon}
+                  size={20}
+                  weight={done || current ? 'fill' : 'bold'}
+                  color={current ? Colors.surface : done ? Colors.primary : Colors.textTertiary}
                 />
               </View>
             </React.Fragment>
@@ -65,13 +70,14 @@ export default function StepProgress({ steps, activeIndex, segmentProgress, styl
       <View style={styles.labels}>
         {steps.map((step, i) => {
           const current = i === activeIndex;
+          const done = i < activeIndex;
           return (
             <Text
               key={step.label}
-              variant="caption"
+              variant={current ? 'captionSemibold' : 'caption'}
               align={i === 0 ? 'left' : i === steps.length - 1 ? 'right' : 'center'}
-              color={current ? Colors.textPrimary : Colors.textTertiary}
-              style={[styles.label, current && styles.labelCurrent]}
+              color={current ? Colors.primary : done ? Colors.textPrimary : Colors.textTertiary}
+              style={styles.label}
               numberOfLines={1}
             >
               {step.label}
@@ -83,30 +89,32 @@ export default function StepProgress({ steps, activeIndex, segmentProgress, styl
   );
 }
 
-const DOT = 28;
+const DOT = 44;
 
 const styles = StyleSheet.create({
   wrap: { gap: 6 },
-  track: { flexDirection: 'row', alignItems: 'center' },
+  track: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   dot: {
     width: DOT, height: DOT, borderRadius: DOT / 2,
     backgroundColor: Colors.track,
     alignItems: 'center', justifyContent: 'center',
   },
-  dotOn: { backgroundColor: Colors.primary },
-  // Jalon courant : anneau subtil qui le détache des jalons faits.
+  // Jalon fait : `blue100` et non le plein — c'est le jalon COURANT qui porte le
+  // bleu de marque, ce qui le distingue au premier coup d'œil de ce qui est déjà
+  // franchi.
+  dotDone: { backgroundColor: Colors.blue100 },
+  // Jalon courant : plein `primary` + anneau subtil intérieur, qui le détache
+  // des jalons faits sans changer l'empreinte de la pastille.
   dotCurrent: {
-    borderWidth: 3, borderColor: Colors.primarySubtle,
-    width: DOT + 6, height: DOT + 6, borderRadius: (DOT + 6) / 2,
-    marginVertical: -3,
+    backgroundColor: Colors.primary,
+    borderWidth: Strokes.heavy, borderColor: Colors.primarySubtle,
   },
   segment: {
     flex: 1, height: 3, borderRadius: 1.5,
     backgroundColor: Colors.track,
-    marginHorizontal: 4,
     overflow: 'hidden',
   },
-  segmentOn: { backgroundColor: Colors.primary },
+  segmentOn: { backgroundColor: Colors.blue100 },
   segmentFill: {
     position: 'absolute',
     left: 0, top: 0, bottom: 0,
@@ -115,5 +123,4 @@ const styles = StyleSheet.create({
   },
   labels: { flexDirection: 'row', justifyContent: 'space-between', gap: 4 },
   label: { flex: 1 },
-  labelCurrent: { fontFamily: Outfit.semibold },
 });

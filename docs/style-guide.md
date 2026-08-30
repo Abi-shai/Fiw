@@ -1,5 +1,12 @@
 # Fiw — Style Guide
 
+> **Source de vérité des valeurs : `apps/fiw/constants/*.ts`.** Ce document en
+> explique les intentions ; `docs/style-guide.tokens.json` en est la traduction
+> machine, **générée** par `python3 scripts/gen-style-guide-tokens.py` — ne pas
+> l'éditer à la main. Il avait divergé au point d'être faux (icônes Lucide jamais
+> installées, boutons 52/44, ni `displayXl` ni jaune de marque) ; il est désormais
+> dérivé, donc régénérable au lieu d'être à maintenir.
+
 > Référence de design pour les applications **Fiw** (client) et **Fiw Pro** (prestataire). Mode clair uniquement. Les tokens sont nommés sémantiquement pour permettre l'ajout du mode sombre sans repartir de zéro.
 
 ---
@@ -127,6 +134,19 @@ Dérivés de l'échelle de gris Tailwind (gray-50 → gray-900) ; les tokens son
 | `color-warning-subtle` | `#FEF3C7` | Fond message d'avertissement |
 | `color-success` | `#10B981` | Confirmations, prestataire en ligne |
 | `color-success-subtle` | `#D1FAE5` | Fond message de succès |
+| `color-warning-ink` | `#B45309` | **Texte** sur `warning-subtle` |
+| `color-success-ink` | `#047857` | **Texte** sur `success-subtle` |
+
+**Pourquoi des encres séparées.** `warning` et `success` sont des **pleins** : posés
+en texte sur leur propre palier subtil ils tombent sous 3:1 (2.0:1 pour l'ambre,
+2.4:1 pour le vert). Ces deux paliers-là existent uniquement pour **écrire sur** le
+subtil — c'est exactement le manque annoncé plus haut à propos du jaune de marque
+(« le jaune plein remplit, il ne dessine jamais »).
+
+Le couple équivalent en bleu existait déjà : `primary-subtle` en fond,
+`primary-pressed` en encre. _(Ajoutés le 23 août 2026 : trois teintes de
+l'`AvatarStack` vivaient en hex codés en dur dans `searching.tsx` — c'étaient les
+dernières valeurs hors token du produit.)_
 
 ---
 
@@ -139,40 +159,142 @@ Dérivés de l'échelle de gris Tailwind (gray-50 → gray-900) ; les tokens son
 
 ### Échelle
 
-| Token | Taille | Graisse | Usage |
-|---|---|---|---|
-| `text-display` | 28px | Bold 700 | Titres onboarding |
-| `text-heading1` | 22px | SemiBold 600 | Titre d'écran |
-| `text-heading2` | 18px | SemiBold 600 | En-tête de section |
-| `text-body` | 15px | Regular 400 | Texte courant |
-| `text-body-small` | 13px | Regular 400 | Texte secondaire |
-| `text-label` | 13px | Medium 500 | Labels, boutons |
-| `text-caption` | 11px | Regular 400 / Light 300 | Horodatages, mentions légales |
+Miroir exact des **22 styles de texte Figma** `Fiw/*`. **La maquette fait autorité
+sur l'échelle** : elle a été réglée à la main, le code s'y aligne
+(`constants/typography.ts`). Toute taille/graisse passe par une variante de
+l'atome `Text` — jamais de `fontSize`/`fontFamily` brut dans un écran.
 
-### Interlignage recommandé
+#### Échelle de base — une graisse par taille
 
-| Contexte | Line height |
-|---|---|
-| Titres (`display`, `heading1`, `heading2`) | × 1.3 |
-| Corps (`body`, `body-small`) | × 1.6 |
-| Labels et captions | × 1.4 |
+| Token | Taille | Interligne | Graisse | Usage |
+|---|---|---|---|---|
+| `displayXl` | 40px | 50 | Bold 700 | Grand nombre mis en avant (compte à rebours, gros montant) |
+| `display` | 28px | 35 | Bold 700 | Titres onboarding |
+| `heading1` | 22px | 28 | SemiBold 600 | Titre d'écran, titre de feuille |
+| `heading2` | 18px | 23 | SemiBold 600 | En-tête de section |
+| `body` | 16px | 20 | Regular 400 | Texte courant |
+| `bodySmall` | 14px | 18 | Regular 400 | Texte secondaire |
+| `label` | 14px | 18 | Medium 500 | Libellés |
+| `caption` | 12px | 15 | Regular 400 | Horodatages, mentions légales, `Callout` |
+
+#### Axe de graisse — les tailles employées en plusieurs graisses
+
+L'échelle de base ne donne qu'une graisse par taille, or le design en emploie
+plusieurs. Ces variantes existent pour que l'accentuation n'ait pas à passer par
+une surcharge `style={{ fontFamily }}`, qui contournait l'atome `Text` et était le
+principal vecteur de divergence.
+
+| Token | Réglage | Complète |
+|---|---|---|
+| `bodyMedium` | 16/20 Medium | `body` |
+| `bodySemibold` | 16/20 SemiBold | `body` |
+| `bodySmallSemibold` | 14/18 SemiBold | `bodySmall` (Regular) et `label` (Medium) |
+| `captionMedium` | 12/15 Medium | `caption` |
+| `captionSemibold` | 12/15 SemiBold | `caption` |
+| `heading2Bold` | 18/23 Bold | `heading2` |
+
+#### Rôles — un réglage que sa taille seule ne décrit pas
+
+Ils portent un nom d'**emploi** et non de graisse, pour qu'un changement de
+l'échelle de base ne les décroche pas de la maquette — c'est exactement ce qui est
+arrivé à `cardTitle` quand `body` est passé de 15 à 16.
+
+| Token | Réglage | Emploi |
+|---|---|---|
+| `cardTitle` | 15/24 SemiBold | Titre d'une carte de choix (`OptionCard`) |
+| `fieldPrefix` | 15/21 Medium | Préfixe dans un champ — indicatif de `PhoneField` |
+| `infoValue` | 14/20 SemiBold | Valeur d'une rangée de restitution (`InfoRow`) |
+| `amount` | 20/28 Bold | Montant mis en avant |
+| `codeCell` | 28/36 Bold | Chiffre d'un code à saisir (`CodePill`, OTP) |
+| `buttonMd` | 15/20 SemiBold | Libellé de bouton `md` |
+| `buttonMdLink` | 15/20 Medium | Idem, variante `link` — descend d'une graisse |
+| `buttonSm` | 14/20 Medium | Libellé de bouton `sm`, `ActionPill` |
+
+**Deux réglages à 15 px, assumés.** L'échelle saute de 14 à 16, mais la maquette
+emploie délibérément un 15 à trois endroits, avec trois interlignages (24, 21, 20)
+et deux graisses. D'où trois entrées distinctes plutôt qu'une surcharge.
+
+#### Champs de saisie
+
+Un `TextInput` ne peut pas passer par l'atome `Text` — c'est par là que l'échelle
+divergeait. Il reprend donc une variante via **`inputTypo('body')`**, qui en tire
+famille et taille **sans l'interligne** : poser `lineHeight` sur un champ d'une
+seule ligne décale le texte verticalement sur Android. Les champs **multilignes**,
+qui ont besoin de cet interligne pour respirer, reprennent la variante entière
+(`...Typography.body`).
+
+#### Ce qui reste hors échelle, et pourquoi
+
+| Site | Réglage | Raison |
+|---|---|---|
+| `PlateChip` | 15/20 Bold, `letterSpacing` 1.5 | Plaque d'immatriculation — la chasse élargie est le motif ; conforme à la maquette |
+| `FlagChip` | 10/14 SemiBold, `letterSpacing` 0.3 | Code ISO sur un drapeau ; conforme à la maquette |
+| `Avatar`, `PrestataireRow` | taille calculée | `fontSize: size * 0.38` — aucun cran fixe, cf. §Axes de taille |
+| `Logo` textuel (`index`) | 32 Bold | Signe de marque, pas du texte courant |
+| Emojis (`PaymentSheet`, drapeau `index`) | 28, 22 | Taille d'un glyphe, pas de la typographie |
+| `WheelPicker`, saisies de montant `affilie` | 22/30, 24, 48 | Chiffres d'un sélecteur ou d'une saisie de montant, absents de la maquette |
+
+### Libellé de section en capitales
+
+Le titre qui coiffe une liste ou une carte (`SettingsGroup`, `ReceiptCard`,
+« DÉTAIL DU PRIX »…) a **un seul** traitement : `caption` + capitales +
+`letterSpacing 0.8` + `color-text-tertiary`, exposé par `SectionLabel` dans
+`constants/typography.ts`.
+
+Le tracking et la casse vivent dans ce token, pas dans les `StyleSheet` des
+composants — c'est ce qui empêche la divergence de revenir. _(Il y en avait deux
+jusqu'au 23 août 2026 : `caption`/0.8/tertiaire dans `SettingsGroup`, `label`/0.5/
+secondaire dans `ReceiptCard`, pour dire exactement la même chose. 0.8 l'emporte :
+à cette taille, des capitales ont besoin de plus d'air que du corps de texte.)_
+
+### Interlignage
+
+**Un seul régime : l'`AUTO` de Figma**, c'est-à-dire les métriques intrinsèques
+d'Outfit — un ratio de **×1.25**, arrondi au pixel. Les valeurs de la table
+ci-dessus en découlent et ont été **mesurées** dans le fichier, pas calculées.
+
+Elles sont fixées en dur côté RN (et non laissées à l'`AUTO` de React Native) :
+les deux moteurs ne garantissent pas la même résolution, une valeur explicite
+garantit la parité avec la maquette.
+
+_Ce document prescrivait jusqu'au 24 août 2026 trois ratios distincts — titres
+×1.3, corps ×1.6, labels ×1.4 — qui ne correspondaient ni à la maquette ni à ce
+que le code appliquait. En particulier le corps de texte passe de ×1.6 à ×1.25 :
+les paragraphes de plusieurs lignes sont sensiblement plus serrés qu'avant._
 
 ---
 
 ## Espacement
 
-Base : **4px**. Tous les espacements internes (padding, margin, gap) sont des multiples de cette base.
+Base : **4px**. L'index d'un jeton vaut sa valeur divisée par 4 — `space-4` = 16px.
 
-| Token | Valeur |
-|---|---|
-| `space-1` | 4px |
-| `space-2` | 8px |
-| `space-3` | 12px |
-| `space-4` | 16px |
-| `space-6` | 24px |
-| `space-8` | 32px |
-| `space-12` | 48px |
-| `space-16` | 64px |
+| Token | Valeur | Note |
+|---|---|---|
+| `space-1` | 4px | |
+| `space-1.5` | 6px | **Demi-cran.** Interstice entre cartes d'une feuille groupée (`CARD_GAP`) |
+| `space-2` | 8px | |
+| `space-2.5` | 10px | **Demi-cran.** Gap interne de la famille `Button` |
+| `space-3` | 12px | |
+| `space-3.5` | 14px | **Demi-cran.** Padding horizontal des champs et pilules |
+| `space-4` | 16px | |
+| `space-5` | 20px | Padding vertical des cartes de feuille |
+| `space-6` | 24px | |
+| `space-7` | 28px | |
+| `space-8` | 32px | |
+| `space-12` | 48px | |
+| `space-16` | 64px | |
+
+**Trois demi-crans assumés.** 6, 10 et 14 ne sont pas des multiples de 4, contrairement
+à ce que ce document affirmait jusqu'au 24 août 2026. Ils sont pourtant délibérés et
+récurrents — 6 structure toutes les feuilles groupées, 14 tous les champs — et les
+snapper sur la grille changerait le produit. Ils portent donc un jeton plutôt que de
+rester en dur. Dans Figma : `space/1-5`, `space/2-5`, `space/3-5`, le tiret tenant lieu
+de décimale (Figma interdit le point dans un nom de variable).
+
+**En dessous de 4px, pas de jeton.** Les valeurs de 1, 2 et 3px sont des réglages
+optiques internes à un composant (chasse d'une pastille, respiration d'un badge), pas
+du rythme de mise en page. Elles restent en dur et sont concentrées dans `GammeCard`,
+`OptionCard` et `Badge`.
 
 ---
 
@@ -183,20 +305,48 @@ Base : **4px**. Tous les espacements internes (padding, margin, gap) sont des mu
 | `radius-sm` | 8px | Tags, badges |
 | `radius-md` | 12px | Boutons, **champs de saisie & SearchBar**, cards |
 | `radius-lg` | 16px | Grandes cartes |
+| `radius-card` | 20px | **Cartes de feuille** — `SheetCard`, `VehicleGroup` (et son bloc véhicule interne), `InfoBanner`. Palier propre aux cartes empilées dans un `GroupedSheet` : entre `lg` et `xl`, il épouse le rayon 28 de la feuille sans le répéter. Exposé en code sous `Radii.card` (ex-constante locale `CARD_RADIUS`). |
 | `radius-xl` | 28px | **Bottom sheets, modals** |
+| `radius-pill` | 999px | Éléments totalement arrondis (chips, segmented, pastilles) |
+
+---
+
+## Liserés
+
+Miroir de la collection Figma `Fiw Stroke` et de `constants/strokes.ts`. Cinq
+épaisseurs, nommées par le poids visuel et non par le nombre.
+
+| Token | Valeur | Usage |
+|---|---|---|
+| `stroke-hairline` | le plus fin possible | Éléments **flottant sur la carte** — détache du fond carto sans peser. Se marie avec la couleur `hairline`. |
+| `stroke-thin` | 1px | Liseré par défaut : champs, cartes, rangées, boutons secondaires |
+| `stroke-medium` | 1.5px | Doit se voir sans crier : contour d'un bouton, carte de choix, pastille de plaque |
+| `stroke-thick` | 2px | Liseré porteur : anneau d'un `Radio`, liseré blanc détachant un avatar, champ actif |
+| `stroke-heavy` | 3px | Segment franchi d'un `StepProgress` — un trait qui **est** le contenu, pas un contour |
+
+**`hairline` est le seul jeton du système dont la valeur diffère entre les deux
+mondes.** React Native la calcule selon la densité de l'écran
+(`StyleSheet.hairlineWidth` ≈ 0.5 en @2x, ≈ 0.33 en @3x) ; la maquette porte un
+nominal de **0.5**. C'est voulu : « le trait le plus fin possible » est une notion
+de plateforme, pas une valeur de design. Même nature que l'interligne `AUTO` de
+Figma, résolu à ×1.25 côté code.
+
+Aucun liseré n'est écrit en dur : les 69 déclarations de l'app passent par
+`Strokes.*`, et les 88 nœuds de la bibliothèque Figma sont liés à la variable
+correspondante.
 
 ---
 
 ## Ombres
 
-Teintées bleu brand pour rester dans la cohérence chromatique — **sauf `shadow-float`**, volontairement neutre (voir ci-dessous).
+Miroir des styles d'effet Figma `Fiw/shadow/*`. Teintées bleu marque pour rester dans la cohérence chromatique — **sauf `shadow-sheet` et `shadow-float`**, volontairement neutres (voir ci-dessous).
 
 | Token | Valeur CSS | Usage |
 |---|---|---|
 | `shadow-sm` | `0 1px 3px rgba(0, 102, 255, 0.08)` | Inputs focus, cards plates |
 | `shadow-md` | `0 4px 12px rgba(0, 102, 255, 0.12)` | Cards interactives, FAB |
 | `shadow-lg` | `0 8px 24px rgba(0, 102, 255, 0.16)` | Bottom sheets, modals, toasts |
-| `shadow-sheet` | `0 -6px 24px rgba(0, 102, 255, 0.14)` | Arête haute des bottom sheets (orientée vers le haut) |
+| `shadow-sheet` | `0 -6px 24px rgba(55, 65, 81, 0.30)` | Arête haute des bottom sheets (orientée vers le haut). Gris `gray/700`, pas bleu marque : le bleu n'y portait pas assez pour décoller la feuille du fond. |
 | `shadow-float` | `0 5px 18px rgba(11, 18, 32, 0.24)` | Éléments flottant sur la carte (neutre, diffuse) |
 
 ---
@@ -240,6 +390,28 @@ Deux familles : **pleine** (fond de couleur, pour le CTA) et **transparente** (s
 
 > **Choix de variante.** `secondary` (contour neutre gris) = action secondaire courante. `destructive` (texte rouge, **sans bordure ni fond**) = **annulation / action dangereuse secondaire** (ex. « Annuler la commande », « Annuler (gratuit) ») — à privilégier sur toutes les pages présentant ce type d'action, plutôt qu'un lien texte ad hoc. `destructiveFilled` (plein rouge) est **réservé** au cas où l'action destructive EST le CTA de l'écran (ex. « Raccrocher »). `link` (texte bleu primary, **sans fond ni bordure ni pilule**, empreinte compacte) = **action-lien inline** dans une rangée ou un formulaire (ex. « Modifier » un numéro, « Renvoyer le code ») — à privilégier plutôt qu'un `Text` + icône ad hoc. `linkDestructive` = le **pendant rouge de `link`** (même empreinte, texte `color-error`), pour l'action-lien qui retire/supprime dans une rangée (ex. « Retirer » un compte Mobile Money) — il permet d'opposer deux actions **de même forme** dans la même liste, seule la couleur changeant selon la portée (ex. slot rempli « Retirer » vs slot vide « Ajouter »).
 
+### L'état désactivé : peindre ou délaver (amendement du 25 août 2026)
+
+Deux mécaniques cohabitent dans la maquette, et **ce n'est pas une incohérence** :
+
+- **Un contrôle à fond plein se délave en bloc** — `Button` désactivé, c'est
+  l'opacité 0,45 sur les 21 variantes. Le fond et l'encre doivent pâlir
+  *ensemble* : baisser la seule encre sur un aplat bleu casserait le contraste,
+  et repeindre le seul fond laisserait un libellé plein sur un aplat mort.
+- **Une rangée d'encres se REPEINT** — `ListRow` désactivé garde son opacité à 1
+  et passe ses quatre encres (titre, sous-titre, tête, queue) en
+  `color-text-disabled`. Il n'y a pas d'aplat à accorder, et chaque encre a son
+  pendant désactivé dans la palette. Surtout : une opacité globale délaverait
+  aussi ce qui n'est **pas** de l'encre — le disque d'un `Medallion`, la photo
+  d'un `Avatar` deviennent translucides sur le fond et la rangée se troue.
+
+**Règle** : dès qu'un composant peut recevoir autre chose que du texte dans un
+emplacement (une tête, une fin de rangée), son état désactivé se **peint**. Le
+délavage est réservé aux contrôles dont on connaît tout le contenu.
+
+_(Née d'un vrai défaut : `ListRow` délavait la rangée entière, `Medallion` compris,
+là où la maquette ne grise que l'encre — Partie XLI de l'inventaire.)_
+
 ### Tailles (hauteurs pouce-friendly ≥ 48px)
 
 | Taille | Hauteur | Padding horizontal | Typographie | Icône | Usage |
@@ -254,7 +426,7 @@ Deux familles : **pleine** (fond de couleur, pour le CTA) et **transparente** (s
 
 **Bibliothèque** : [Phosphor Icons](https://phosphoricons.com) via `phosphor-react-native` (+ `react-native-svg`). Exposée **uniquement** via l'atome `Icon` (sous-ensemble nommé et curé) — jamais d'import direct, pour empêcher le mélange de familles.
 
-- **Poids** : `bold` par défaut partout — outline à trait épais, style graphique affirmé cohérent avec le logo et les éléments de marque (on évite le trait fin de `regular`). `fill` réservé aux états **actifs/sélectionnés** (onglet courant, marqueur carte actif, favori activé, étoile pleine) — emphase au-dessus du `bold`. Ni `regular` ni `duotone` ne sont utilisés comme style de base.
+- **Poids** : exposé dans Figma comme axe `Weight=bold | fill` du set `Icon` (71 glyphes × 2 poids = 142 variantes, géométrie extraite de `phosphor-react-native`). `bold` par défaut partout — outline à trait épais, style graphique affirmé cohérent avec le logo et les éléments de marque (on évite le trait fin de `regular`). `fill` réservé aux états **actifs/sélectionnés** (onglet courant, marqueur carte actif, favori activé, étoile pleine) — emphase au-dessus du `bold`. Ni `regular` ni `duotone` ne sont utilisés comme style de base.
 - Taille standard dans les boutons : 18px
 - Taille standard inline (texte) : 16px
 - Taille grande (actions flottantes, écrans vides) : 24px
@@ -282,11 +454,12 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 | `Text` | Typographie | Variants sémantiques, mappe graisse→famille Outfit. Seul point d'entrée typo. |
 | `Icon` | Icône | Phosphor, sous-ensemble nommé, `regular`/`fill`. |
 | `Button` | Action | 6 variantes (`primary` / `secondary` contour neutre / `destructive` texte Error / `destructiveFilled` plein rouge / `link` texte-action sans fond / `linkDestructive` idem en rouge), tailles `lg`/`md`/`sm`, slots icône, loading/disabled. |
-| `IconButton` | Bouton rond icône | `floating` (blanc + liseré + ombre, sur carte ; **icône gris foncé `gray-700`** — neutre, registre nav, pas le bleu marque) / `flat` (fond gris, dans sheet ; icône bleu marque). |
-| `SearchBar` | Recherche | Pilotée par prop : `asButton` (lanceur → navigue) ou `editable` (saisie). Slot trailing optionnel (carte, micro), bouton clear. |
-| `TopBar` | En-tête | Slots gauche/titre/droite. Variantes `solid` (gère safe-area) / `transparent` (réutilisée comme en-tête de sheet). **N'inclut pas** les boutons flottants sur carte (ce sont des `IconButton`). |
+| `IconButton` | Bouton rond icône | Set `Variant` × `Size`. **Variantes** : `floating` (blanc + liseré + ombre, sur carte ; **icône gris foncé `gray-700`** — neutre, registre nav, pas le bleu marque) · `flat` (fond gris, dans sheet ; icône bleu marque) · `secondary` (transparent + liseré `border`, icône `textPrimary` — action de second rang lisible sur fond teinté, ex. bouton carte d'un `PlaceField`) · `link` (**nu**, ni fond ni liseré, icône bleu marque — actions inline d'un champ : effacer, afficher le mot de passe). **Tailles** : `lg` 46 / icône 24 · `md` 40 / icône 22 · `sm` 32 / icône 18. Défaut : `lg` en `floating`, `md` ailleurs. ⚠️ `sm` passe sous la cible tactile de 48 — réservé à l'intérieur d'un contrôle qui porte déjà la zone de frappe. _(Étendu le 23 août 2026.)_ |
+| `SearchBar` | Recherche | Deux variantes : `sheet` (dans une feuille — fond `bg`, rayon `md`, liseré `border`, h48) et `floating` (posée **sur la carte** — pilule blanche, liseré `hairline`, `shadow-float`, h46). Croix d'effacement quand le champ n'est pas vide, slot `trailing` optionnel (bouton carte, micro). **Ne couvre pas** les champs De/À de l'accueil : ce sont des rangées d'itinéraire à deux lignes, pas une recherche. _(Construite le 23 août 2026 — jusque-là ce tableau la décrivait alors qu'elle n'existait nulle part, et trois écrans la réimplémentaient chacun à sa façon.)_ |
+| `ScreenHeader` | En-tête de page | `IconButton` retour (icône forcée en `gray-700`, pas en bleu) + titre `heading2` + slot d'action à droite. Gère la safe-area. Le pendant « feuille » est `SheetHeader` (titre `heading1` + croix). **N'inclut pas** les boutons flottants sur carte (ce sont des `IconButton` posés séparément). |
 | `PlaceRow` | Ligne de lieu | Cercle d'icône + titre + sous-titre + trailing. Récents, suggestions, lieux enregistrés. |
-| `PhoneField` | Saisie de numéro | Chip indicatif (drapeau + `+code` + caret) ouvrant le `CountryPicker`, numéro **formaté par pays** (`constants/countries.ts`). **Tous pays acceptés.** Point d'entrée unique de toute saisie de téléphone — changement de numéro **et onboarding** (cf. `sitemap-client.md` §1) : même saisie, même présentation. |
+| `Field` | Toute saisie | Set à **trois axes** : `Type` = `texte` · `téléphone` · `zone`, `État` = `repos` · `actif` · `erreur` · `désactivé`, `Contenu` = `rempli` · `vide` — 24 variantes. Vide et rempli sont orthogonaux à l'état : un champ focus peut être vide, un requis en erreur l'est par définition. Le champ **vide** affiche un `Placeholder` en `text-tertiary` et **n'a pas de bouton d'effacement** (rien à effacer) ; le champ **rempli** le porte dans les trois types — au centre à droite en `texte` et `téléphone`, **en haut à droite** en `zone`. La couleur du × suit l'état (`text-tertiary` / `primary` / `error` / `text-disabled`). Libellé avec astérisque requis, icône de tête, slot trailing, texte d'aide sous le contrôle. `Type=téléphone` porte le chip indicatif (drapeau + `+code` + caret) ouvrant le `CountryPicker`, numéro **formaté par pays** (`constants/countries.ts`), **tous pays acceptés** — point d'entrée unique de toute saisie de téléphone, changement de numéro **et** onboarding (cf. `sitemap-client.md` §1). _(Absorbe `PhoneField` et `TextArea`, retirés le 23 août 2026 ; **absorption effective dans le code le 25 août 2026** — `Field` porte l'axe `type` = `texte` · `téléphone` · `zone`, et `components/PhoneField.tsx` est supprimé.)_ |
+| `PlaceField` | Saisie d'un Lieu | Départ / arrivée : deux lignes (libellé + valeur), icône de tête, bouton rond « choisir sur la carte » optionnel, état `actif`. Distinct de `Field` — on y saisit un Lieu, pas du texte libre. Pendant de `PlaceRow`, qui **affiche** un Lieu. |
 | `CountryPicker` | Choix du pays | Feuille **3 crans** (`hooks/useSnapSheet`) + barre de recherche + liste monde triée. Drapeaux = **PNG plats locaux** (`assets/flags/`, map `constants/flags.ts`) rendus via `FlagChip` — **pas de SVG** (`SvgXml` plante sur les drapeaux à bloc `<style>`). |
 | `SettingsRow` | Ligne de réglage | Icône ligne + label + **sous-titre** + slot `right` + chevron. Variante `destructive` (label rouge) ; prop `accent` = **rangée d'objet** (pastille bleue 42 px, voir la règle plus bas). Page Compte et sous-écrans. **Volontairement pauvre** : un objet plus riche (logo de service, badge d'état, action sur une 2ᵉ ligne — cf. carte de `compte/paiement.tsx`) mérite **son propre composant**, pas des slots ajoutés ici un par un. Le résumé de la rangée passe **toujours par `subtitle`**, jamais par une valeur alignée à droite : la valeur de droite dispute sa largeur au label et le fait passer à la ligne, d'où des rangées de hauteurs inégales. `subtitle` est en `numberOfLines={1}` — un résumé trop long se tronque, il ne déforme pas la liste. |
 | `SettingsGroup` | Groupe de réglages | Regroupe des `SettingsRow` séparées par un filet 1 px **de bord à bord**, label de section en capitales (`label` 13 px medium, gris secondaire) + `footnote`. **Sans carte** — voir la règle ci-dessous. |
@@ -319,8 +492,8 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > nue.** Dans une liste d'**éléments que le Client possède** — un Lieu
 > enregistré, un Contact de confiance — le glyphe de tête passe en bleu marque
 > dans une pastille `color-primary-subtle` de **42 px** (géométrie de
-> `PlaceRow`, glyphe 20, gap 14 ; `SettingsRow` l'obtient par son prop
-> `accent`). Dans un groupe de **réglages**, il reste une icône ligne nue de
+> `Medallion / Ton=accent`, glyphe 20 ; une `ListRow` l'obtient en posant un
+> `Medallion` dans son `leading`). Dans un groupe de **réglages**, il reste une icône ligne nue de
 > 22 px.
 >
 > La pastille se met alors sur **toutes** les rangées de la liste, y compris
@@ -332,8 +505,34 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > Corollaire : la même pastille sur les deux écrans. Les Lieux enregistrés et
 > les Contacts de confiance sont deux listes de même nature ; deux tailles de
 > pastille pour un même motif se lisent comme une erreur, pas comme une nuance.
-> _(Décidé en rendant le 15 août 2026 ; la pastille de `SettingsRow`, née à
-> 34 px pour la seule rangée « Ajouter… », est passée à 42.)_
+> _(Décidé en rendant le 15 août 2026 ; la pastille, née à 34 px pour la seule
+> rangée « Ajouter… », est passée à 42.)_
+>
+> _Amendement du 25 août 2026 : `SettingsRow` et `SettingsGroup` sont absorbés
+> par `ListRow` et `List`, comme dans la maquette. La règle ne change pas — la
+> pastille est désormais un `Medallion / Ton=accent` posé dans le `leading` de la
+> rangée, et le mode `plat` de `List` porte la géométrie sans carte décrite
+> ci-dessus (débord de la gouttière pour que les filets filent aux bords)._
+
+> **Le filet d'une liste en feuille file d'un bord à l'autre.** Une liste posée
+> dans une `BottomSheet` sépare ses rangées d'un filet **pleine largeur**
+> (`Divider / Retrait=0`) — quelle que soit la tête des rangées : icône 22,
+> `Medallion` 42 ou 56, `Avatar` 48. Une liste d'**écran** garde son retrait,
+> aligné sur le texte (`Divider / Retrait=50`, le défaut de `List`).
+>
+> Le pourquoi tient à ce que le filet sépare. Sur un écran, la liste est le
+> contenu : le filet y découpe des rangées entre elles, et se retirer sous le
+> texte dit « c'est la même famille, ligne après ligne ». Dans une feuille, la
+> liste n'est qu'un **bloc parmi d'autres** — un en-tête, un champ, un CTA
+> l'entourent ; le filet y sert de règle horizontale qui tient la colonne, et un
+> retrait le ferait flotter au milieu du bloc sans rien border. C'est aussi ce
+> qui évite d'avoir à recalculer un retrait par taille de tête : en feuille, il
+> n'y en a qu'un.
+>
+> _(Décidé le 25 août 2026, sur relevé : les huit filets des listes en feuille de
+> la maquette — accueil, adresse ×2, paiement ×2, destinataire — sont tous en
+> `Retrait=0`, quand le composant `List` seul est réglé sur 50. Le code calculait
+> jusque-là un retrait depuis la largeur de la tête, partout. Partie XLI.)_
 
 > **L'action « ajouter » d'un écran de gestion est un bouton `primary` sous la
 > liste.** Sur un écran dont c'est la **seule** action — Lieux enregistrés,
@@ -360,6 +559,22 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > _(Tranché le 20 août 2026 ; variante carte à trois lignes construite,
 > comparée, écartée.)_
 
+### Axes de taille : `sm|md|lg` ou pixels ?
+
+Un composant expose une **échelle nommée** (`sm|md|lg`) quand chaque cran porte
+des décisions de design qui ne se déduisent pas l'une de l'autre — `Button` et
+`IconButton` changent de hauteur, de taille d'icône et de padding à chaque cran,
+et ces triplets sont choisis, pas calculés.
+
+Il expose un **nombre de pixels** quand toutes ses sous-mesures se déduisent par
+formule. `Avatar` en est le seul cas : `borderRadius = size/2` et
+`fontSize = size*0.38`, donc aucun cran ne décide de rien et une échelle nommée
+serait une fausse abstraction. Les deux tailles qui appartiennent au système
+sont malgré tout nommées — `AVATAR_ROW` (48, adossé au retrait 76 de `ListRow` :
+16 padding + 48 + 12 gap) et `AVATAR_CARD` (64, carte prestataire). Au-delà, les
+avatars « héros » (clôture, profil, appel plein écran) restent des valeurs
+libres : ils sortent du système de rangées et de cartes.
+
 ### BottomSheet (organisme)
 
 Basé sur `@gorhom/bottom-sheet`, enveloppé pour injecter les tokens (`radius-xl`, `shadow-lg`, `Handle`). Un `Panel` statique sépare le contenu bas **non-déplaçable** (ex. statut « recherche en cours »).
@@ -378,6 +593,16 @@ Basé sur `@gorhom/bottom-sheet`, enveloppé pour injecter les tokens (`radius-x
 
 **Physique du snap** (feuilles déplaçables, ex. accueil) : suit le doigt au 1:1, **rubber-band** aux bornes, et au lâcher un ressort qui **repart à la vélocité du doigt** (continuité de vélocité) — `SHEET_SPRING = stiffness 280 / damping 22 / mass 1` (vif, légèrement sous-amorti). Flick franc → cran suivant dans la direction ; drag lent → cran le plus proche.
 
+**Modales de feuille — en-tête obligatoire.** Toute feuille modale porte un
+`SheetHeader` (titre `heading1` à gauche + croix `flat`), y compris les
+confirmations destructives : le titre vit dans l'en-tête, jamais centré une
+seconde fois dans le corps. Le corps enchaîne alors `AlertBadge` puis le texte
+d'explication, centrés, dans un sous-cadre à gap 8. La croix n'ouvre aucune
+échappatoire nouvelle — `BottomSheet` se ferme déjà au glissé vers le bas et au
+tap sur le voile — elle rend seulement visible une sortie qui existait déjà.
+_(Règle actée le 24 août 2026 : 7 des 9 modales du set la suivaient déjà, les
+deux modales Livraison ont été alignées et le code a suivi.)_
+
 **Voile (scrim)** — composant `Scrim` : voile noir derrière la feuille dont l'opacité **suit la position de la feuille**. Nul quand la feuille est basse (`collapsed` / escamotée), net à `half`/medium (~0.38), marqué à `full`/expanded (~0.58) — pour assombrir la carte/le fond et concentrer l'attention sur la feuille. `pointerEvents="none"` (purement visuel, ne bloque pas le fond) et posé **entre le fond et les contrôles flottants** (les boutons carte restent nets). Comportement standard de toute bottom sheet montant aux niveaux hauts.
 
 ### Formulaires
@@ -387,7 +612,10 @@ Basé sur `@gorhom/bottom-sheet`, enveloppé pour injecter les tokens (`radius-x
   `color-primary-subtle` + liseré `color-primary` lui donne le poids d'un élu qu'il
   n'est pas, et le met en concurrence avec le CTA, seule action réelle de l'écran.
   Traitement de base : fond `color-surface`, liseré `color-border` 1 px, même rayon
-  que les autres blocs. **Sur un écran de formulaire, le bleu n'appartient qu'aux
+  que les autres blocs — **appliqué à tous les champs le 23 août 2026** (`Field`,
+  `PlaceField`, `SearchBar`), là où trois traitements coexistaient (fond `bg` sans
+  liseré côté code, fond `surface` + liseré pour `PhoneField`, fond `bg` + liseré
+  pour `SearchBar`). **Sur un écran de formulaire, le bleu n'appartient qu'aux
   CTA** (bouton primaire, lien-action). Le **focus clavier**, lui, peut se marquer en
   bleu : c'est un état. _(Règle née de la fiche de Lieu enregistré, 9 août 2026 :
   deux champs en bleu plein criaient plus fort qu'un bouton « Enregistrer »
@@ -411,7 +639,14 @@ Basé sur `@gorhom/bottom-sheet`, enveloppé pour injecter les tokens (`radius-x
 - **Champ requis** : astérisque `color-error` sur le **label de groupe**, placé au-dessus de son contrôle (jamais de label flottant à gauche). Le rouge est strictement réservé au requis et aux erreurs — jamais décoratif ; le bleu marque signale l'action (une rangée requise vide se style en **rangée-action bleue**, ex. « Ajouter le destinataire * »).
 - **Champ optionnel** : toujours étiqueté « (facultatif) » en toutes lettres, visuellement affaibli (texte tertiaire, sans chevron), placé **après** les champs requis.
 - **Note contextuelle** : caption grise + icône info, ancrée directement **sous le champ qu'elle explique** — jamais orpheline en fin de carte.
-- La validation passe par le **CTA désactivé** tant que les requis manquent (pas de message d'erreur inline en v1).
+- **Validation en deux temps.** Le **CTA reste désactivé** tant que les requis
+  manquent — c'est la barrière principale, elle évite la plupart des messages. Mais
+  quand une valeur est *saisie et invalide* (numéro trop court, format refusé), le
+  champ passe en **état `erreur`** : liseré `color-error` 1,5 px et message en
+  `color-error` sous le contrôle. _(La v1 excluait tout message inline ; levé le
+  23 août 2026 après relevé Mobbin — Wolt, PayPal, Google Home, Grab Driver, Alan
+  marquent tous l'erreur au champ **et** sous le champ. Un CTA grisé sans explication
+  ne dit pas **lequel** des champs bloque.)_
 
 ---
 

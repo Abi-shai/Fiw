@@ -3,9 +3,10 @@ import { View, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, Pl
 import { router } from 'expo-router';
 import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
+import ScreenFooter from '@/components/ScreenFooter';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
-import { Colors, Radii, Spacing, Outfit, Shadows } from '@/constants/tokens';
+import { Colors, Outfit, Radii, SectionLabel, Shadows, Spacing, Strokes } from '@/constants/tokens';
 import { AMBASSADEUR, WITHDRAW_MIN, fcfa } from '@/constants/affilie';
 
 type Method = { id: string; name: string; color: string };
@@ -101,9 +102,9 @@ export default function RetraitMethode() {
         </View>
       </View>
 
-      <View style={styles.footer}>
+      <ScreenFooter>
         <Button label="Continuer" disabled={!valid} onPress={onContinue} />
-      </View>
+      </ScreenFooter>
     </KeyboardAvoidingView>
   );
 }
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: Spacing[4] },
 
   hero: { alignItems: 'center', paddingTop: Spacing[8], gap: 6 },
-  kicker: { textTransform: 'uppercase', letterSpacing: 0.8 },
+  kicker: { ...SectionLabel },
   amountRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing[2] },
   amountInput: {
     fontFamily: Outfit.semibold,
@@ -138,8 +139,7 @@ const styles = StyleSheet.create({
   errorText: { marginTop: -2 },
 
   sectionLabel: {
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    ...SectionLabel,
     marginTop: Spacing[8],
     marginBottom: Spacing[3],
   },
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   details: {
     backgroundColor: Colors.surface,
     borderRadius: Radii.lg,
-    borderWidth: 1,
+    borderWidth: Strokes.thin,
     borderColor: Colors.borderSubtle,
     paddingHorizontal: Spacing[4],
     ...Shadows.sm,
@@ -158,13 +158,8 @@ const styles = StyleSheet.create({
     gap: Spacing[3],
     paddingVertical: Spacing[4],
   },
-  detailBorder: { borderTopWidth: 1, borderTopColor: Colors.borderSubtle },
+  detailBorder: { borderTopWidth: Strokes.thin, borderTopColor: Colors.borderSubtle },
   detailRowSelected: { backgroundColor: Colors.primarySubtle },
   methodDot: { width: 12, height: 12, borderRadius: 6 },
 
-  footer: {
-    paddingHorizontal: Spacing[4],
-    paddingTop: Spacing[3],
-    paddingBottom: Spacing[8],
-  },
 });

@@ -3,8 +3,11 @@ import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
+import ScreenFooter from '@/components/ScreenFooter';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
+import Checkbox from '@/components/Checkbox';
+import Medallion from '@/components/Medallion';
 import { Colors, Radii, Spacing } from '@/constants/tokens';
 
 type Step = { icon: IconName; title: string; body: string };
@@ -45,9 +48,7 @@ export default function Presentation() {
         <View style={styles.steps}>
           {STEPS.map((s) => (
             <View key={s.title} style={styles.step}>
-              <View style={styles.stepIcon}>
-                <Icon name={s.icon} size={22} color={Colors.primary} />
-              </View>
+              <Medallion icon={s.icon} ton="accent" />
               <View style={styles.stepText}>
                 <Text variant="label">{s.title}</Text>
                 <Text variant="bodySmall" color={Colors.textSecondary} style={styles.stepBody}>{s.body}</Text>
@@ -57,11 +58,9 @@ export default function Presentation() {
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <ScreenFooter rule>
         <TouchableOpacity style={styles.checkRow} activeOpacity={0.7} onPress={() => setAccepted((v) => !v)}>
-          <View style={[styles.checkbox, accepted && styles.checkboxChecked]}>
-            {accepted && <Icon name="check" size={14} color="#fff" weight="bold" />}
-          </View>
+          <Checkbox checked={accepted} />
           <Text variant="bodySmall" color={Colors.textSecondary} style={styles.checkLabel}>
             J'accepte les{' '}
             <Text
@@ -79,7 +78,7 @@ export default function Presentation() {
           disabled={!accepted}
           onPress={() => router.replace('/affilie/dashboard')}
         />
-      </View>
+      </ScreenFooter>
     </View>
   );
 }
@@ -102,44 +101,14 @@ const styles = StyleSheet.create({
 
   steps: { marginTop: Spacing[8], gap: Spacing[4] },
   step: { flexDirection: 'row', gap: Spacing[3], alignItems: 'flex-start' },
-  stepIcon: {
-    width: 44, height: 44,
-    borderRadius: Radii.md,
-    backgroundColor: Colors.primarySubtle,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   stepText: { flex: 1, paddingTop: 2 },
   stepBody: { marginTop: 2 },
 
-  footer: {
-    paddingHorizontal: Spacing[4],
-    paddingTop: Spacing[4],
-    paddingBottom: Spacing[8],
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderSubtle,
-    backgroundColor: Colors.bg,
-    gap: Spacing[4],
-  },
 
   checkRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: Spacing[3],
-  },
-  checkbox: {
-    width: 22, height: 22,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 1,
-  },
-  checkboxChecked: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
   },
   checkLabel: { flex: 1, lineHeight: 20 },
 });

@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import Text from '@/components/Text';
+import Spinner from '@/components/Spinner';
 import { Colors, Spacing } from '@/constants/tokens';
 
 // JS3 — Traitement du retrait. Bascule automatiquement vers Confirmation
@@ -15,7 +16,7 @@ export default function RetraitTraitement() {
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color={Colors.primary} />
+      <Spinner />
       <Text variant="heading2" align="center" style={styles.title}>Traitement en cours…</Text>
       <Text variant="bodySmall" color={Colors.textSecondary} align="center" style={styles.body}>
         Nous envoyons votre retrait. Ne fermez pas l’application.

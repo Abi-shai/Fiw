@@ -2,14 +2,18 @@ import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Colors, Radii, Outfit, Shadows } from '@/constants/tokens';
+import { Colors, Radii, Shadows, Typography } from '@/constants/tokens';
 import {
   VELO_LIVREUR, MOTO_LIVREUR, PAYMENT_METHODS, FRAIS_RAPPROCHEMENT, GROUPEE_ECONOMIE,
 } from '@/constants/data';
 import Button from '@/components/Button';
+import IconButton from '@/components/IconButton';
+import ScreenFooter from '@/components/ScreenFooter';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import Avatar from '@/components/Avatar';
+import AlertBadge from '@/components/AlertBadge';
+import ResultState from '@/components/ResultState';
 import ReceiptCard from '@/components/ReceiptCard';
 
 const QUICK_TAGS = [
@@ -30,7 +34,7 @@ export default function LivraisonClotureScreen() {
     colisDesc: string; destinataireName: string; tracking: string;
   }>();
 
-  const driver = params.gammeId === 'velo' ? VELO_LIVREUR : MOTO_LIVREUR;
+  const prestataire = params.gammeId === 'velo' ? VELO_LIVREUR : MOTO_LIVREUR;
   const finalPrice = parseInt(params.finalPrice || '700', 10);
   const fraisRapprochement = params.selectedOption === 'B' ? FRAIS_RAPPROCHEMENT : 0;
   const groupee = params.mode === 'groupee';
@@ -60,19 +64,25 @@ export default function LivraisonClotureScreen() {
   if (submitted) {
     return (
       <View style={styles.thankYou}>
-        <View style={styles.thankYouBadge}>
-          <Icon name="thanks" size={40} color={Colors.primary} weight="fill" />
-        </View>
-        <Text variant="display" style={styles.thankYouTitle}>Merci pour votre avis !</Text>
-        <Text variant="body" color={Colors.textSecondary} align="center">
-          Votre retour aide toute la communauté Fiw.
-        </Text>
+        <ResultState
+          ton="accent"
+          titre="Merci pour votre avis !"
+          corps="Votre retour aide toute la communauté Fiw."
+        />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      {/* L'échappatoire d'un écran d'avis est le ✕ de l'en-tête, pas un lien
+          gris sous le CTA — c'est ce que font Shopee, Grab, Grubhub, Gojek,
+          Tesla et Walmart. Un lien gris jumeau du CTA lui dispute l'attention
+          sans jamais gagner. */}
+      <View style={[styles.dismiss, { top: insets.top + 8 }]}>
+        <IconButton name="close" variant="flat" onPress={() => router.replace('/home')} />
+      </View>
+
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 16 }]}
         keyboardShouldPersistTaps="handled"
@@ -80,9 +90,7 @@ export default function LivraisonClotureScreen() {
       >
         {/* Confirmation — pastille succès + date. */}
         <View style={styles.header}>
-          <View style={styles.successBadge}>
-            <Icon name="check" size={34} weight="fill" color={Colors.success} />
-          </View>
+          <AlertBadge icon="check" ton="succès" weight="fill" />
           <Text variant="display" style={styles.headerTitle}>Colis remis</Text>
           <Text variant="body" color={Colors.textSecondary}>
             à {params.destinataireName || 'votre destinataire'} · {dateStr} · {timeStr}
@@ -111,10 +119,10 @@ export default function LivraisonClotureScreen() {
 
         {/* Notation (héros). */}
         <View style={styles.ratingCard}>
-          <Avatar name={driver.name} size={72} bordered />
+          <Avatar name={prestataire.name} size={72} bordered />
           <Text variant="heading1" align="center" style={styles.ratingTitle}>Comment était votre livraison ?</Text>
           <Text variant="bodySmall" color={Colors.textSecondary} align="center">
-            {driver.name} · {driver.vehicle}
+            {prestataire.name} · {prestataire.vehicle}
           </Text>
 
           <View style={styles.starsRow}>
@@ -144,9 +152,9 @@ export default function LivraisonClotureScreen() {
                   activeOpacity={0.8}
                 >
                   <Text
-                    variant="bodySmall"
+                    variant={on ? 'bodySmallSemibold' : 'bodySmall'}
                     color={on ? Colors.primaryPressed : Colors.textPrimary}
-                    style={on ? styles.tagTextActive : undefined}
+
                   >
                     {tag}
                   </Text>
@@ -175,27 +183,19 @@ export default function LivraisonClotureScreen() {
         </View>
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+      <ScreenFooter rule>
         <Button label="Envoyer mon avis" onPress={handleSubmit} />
-        <TouchableOpacity style={styles.passerBtn} onPress={() => router.replace('/home')} activeOpacity={0.7}>
-          <Text variant="body" color={Colors.textSecondary}>Passer</Text>
-        </TouchableOpacity>
-      </View>
+      </ScreenFooter>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
+  dismiss: { position: 'absolute', right: 16, zIndex: 2 },
   scroll: { paddingHorizontal: 20, paddingBottom: 16, gap: 14 },
 
   header: { alignItems: 'center', paddingVertical: 12, gap: 6 },
-  successBadge: {
-    width: 64, height: 64, borderRadius: 32,
-    backgroundColor: Colors.successSubtle,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 6,
-  },
   headerTitle: {},
 
   ratingCard: {
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   },
   ratingTitle: { marginTop: 14 },
   starsRow: { flexDirection: 'row', gap: 8, marginTop: 16, marginBottom: 6 },
-  ratingLabel: { fontFamily: Outfit.medium, marginBottom: 16 },
+  ratingLabel: { marginBottom: 16 },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 14 },
   tag: {
     paddingHorizontal: 14, paddingVertical: 8,
@@ -215,38 +215,20 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.track,
   },
   tagActive: { backgroundColor: Colors.primarySubtle },
-  tagTextActive: { fontFamily: Outfit.semibold },
   addComment: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6 },
   commentInput: {
     alignSelf: 'stretch',
     backgroundColor: Colors.bg,
     borderRadius: Radii.md,
     padding: 14,
-    fontSize: 15,
-    lineHeight: 21,
-    fontFamily: Outfit.regular,
+    ...Typography.body,
     color: Colors.textPrimary,
     minHeight: 84,
   },
 
-  footer: {
-    paddingHorizontal: 20, paddingTop: 12,
-    gap: 2,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.border,
-    backgroundColor: Colors.surface,
-  },
-  passerBtn: { alignItems: 'center', paddingVertical: 12 },
 
   thankYou: {
     flex: 1, backgroundColor: Colors.surface,
     justifyContent: 'center', alignItems: 'center', padding: 40, gap: 10,
   },
-  thankYouBadge: {
-    width: 88, height: 88, borderRadius: 44,
-    backgroundColor: Colors.primarySubtle,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 10,
-  },
-  thankYouTitle: { marginBottom: 2 },
 });

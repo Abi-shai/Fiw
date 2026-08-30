@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { Colors, Radii, Outfit, Shadows } from '@/constants/tokens';
+import { Colors, Radii, Shadows } from '@/constants/tokens';
 import Text from '@/components/Text';
+import Divider from '@/components/Divider';
+import InfoRow from '@/components/InfoRow';
 
 export type ReceiptLine = { label: string; value: string };
 
@@ -24,14 +26,19 @@ export default function ReceiptCard({
 }: Props) {
   return (
     <View style={[styles.card, style]}>
-      <Text variant="label" color={Colors.textSecondary} style={styles.cardTitle}>{title}</Text>
-      {rows.map((r) => <Row key={r.label} label={r.label} value={r.value} />)}
+      <Text variant="heading2" style={styles.cardTitle}>{title}</Text>
 
-      <View style={styles.divider} />
+      <View style={styles.group}>
+        {rows.map((r) => <InfoRow key={r.label} label={r.label} value={r.value} />)}
+      </View>
 
-      {lines.map((l) => <Row key={l.label} label={l.label} value={l.value} />)}
+      <View style={styles.rule}><Divider /></View>
 
-      <View style={styles.divider} />
+      <View style={styles.group}>
+        {lines.map((l) => <InfoRow key={l.label} label={l.label} value={l.value} />)}
+      </View>
+
+      <View style={styles.rule}><Divider /></View>
 
       <View style={styles.totalRow}>
         <Text variant="heading2">{totalLabel}</Text>
@@ -41,14 +48,6 @@ export default function ReceiptCard({
   );
 }
 
-function Row({ label, value }: ReceiptLine) {
-  return (
-    <View style={styles.row}>
-      <Text variant="body" color={Colors.textSecondary}>{label}</Text>
-      <Text variant="body" style={styles.rowValue}>{value}</Text>
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   card: {
@@ -57,14 +56,10 @@ const styles = StyleSheet.create({
     padding: 20,
     ...Shadows.sm,
   },
-  cardTitle: { textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 16 },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  rowValue: { fontFamily: Outfit.medium, maxWidth: '60%', textAlign: 'right' },
-  divider: { height: 1, backgroundColor: Colors.border, marginVertical: 8 },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 },
+  // Titre de reçu et non libellé de section : la maquette l'écrit en `heading2`
+  // encre pleine, pas en capitales tertiaires — un reçu s'ouvre sur son objet.
+  cardTitle: { marginBottom: 16 },
+  group: { gap: 12 },
+  rule: { paddingVertical: 8 },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, paddingTop: 4 },
 });

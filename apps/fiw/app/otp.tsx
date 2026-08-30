@@ -3,17 +3,16 @@ import {
   View, StyleSheet, TextInput, TouchableOpacity
 } from 'react-native';
 import { router } from 'expo-router';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import { Colors } from '@/constants/tokens';
 import Button from '@/components/Button';
 import Text from '@/components/Text';
 import IconButton from '@/components/IconButton';
+import CodeField from '@/components/CodeField';
 
 export default function OTPScreen() {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<TextInput>(null);
-
-  const digits = code.split('').concat(Array(Math.max(0, 4 - code.length)).fill(''));
 
   const handleChange = (text: string) => {
     const cleaned = text.replace(/[^0-9]/g, '').slice(0, 4);
@@ -38,7 +37,7 @@ export default function OTPScreen() {
         <Text variant="display" style={styles.title}>Code de vérification</Text>
         <Text variant="body" color={Colors.textSecondary} style={styles.subtitle}>
           Nous avons envoyé un code au{'\n'}
-          <Text variant="body" style={styles.phone}>+221 77 000 00 00</Text>
+          <Text variant="bodySemibold">+221 77 000 00 00</Text>
         </Text>
 
         <TouchableOpacity
@@ -46,18 +45,7 @@ export default function OTPScreen() {
           onPress={() => inputRef.current?.focus()}
           activeOpacity={1}
         >
-          {digits.map((digit, i) => (
-            <View
-              key={i}
-              style={[
-                styles.codeBox,
-                code.length === i && styles.codeBoxCursor,
-                digit !== '' && styles.codeBoxFilled,
-              ]}
-            >
-              <Text color={Colors.primary} style={styles.codeDigit}>{digit}</Text>
-            </View>
-          ))}
+          <CodeField code={code} />
         </TouchableOpacity>
 
         <TextInput
@@ -78,9 +66,7 @@ export default function OTPScreen() {
           style={styles.btn}
         />
 
-        <TouchableOpacity style={styles.resend}>
-          <Text variant="label" color={Colors.primary}>Renvoyer le code</Text>
-        </TouchableOpacity>
+        <Button label="Renvoyer le code" variant="link" size="sm" onPress={() => {}} style={styles.resend} />
       </View>
     </View>
   );
@@ -92,34 +78,7 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingTop: 24 },
   title: { marginBottom: 12 },
   subtitle: { lineHeight: 22, marginBottom: 40 },
-  phone: { fontFamily: Outfit.semibold },
-  codeRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 40,
-  },
-  codeBox: {
-    flex: 1,
-    height: 64,
-    borderRadius: Radii.md,
-    backgroundColor: Colors.bg,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  codeBoxCursor: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primarySubtle,
-  },
-  codeBoxFilled: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primarySubtle,
-  },
-  codeDigit: {
-    fontFamily: Outfit.bold,
-    fontSize: 28,
-  },
+  codeRow: { marginBottom: 40 },
   hiddenInput: {
     position: 'absolute',
     width: 1,
@@ -127,5 +86,5 @@ const styles = StyleSheet.create({
     opacity: 0,
   },
   btn: {},
-  resend: { marginTop: 20, alignItems: 'center' },
+  resend: { alignSelf: 'center', marginTop: 20 },
 });
