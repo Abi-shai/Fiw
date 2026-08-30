@@ -21,5 +21,11 @@ const styles = StyleSheet.create({
     paddingVertical: 4, paddingHorizontal: 12,
     backgroundColor: Colors.surface,
   },
-  plateText: { fontFamily: Outfit.bold, fontSize: 15, letterSpacing: 1.5, color: Colors.textPrimary },
+  // Hors échelle typographique (plaque d'immatriculation), donc hors de l'atome
+  // `Text` : le correctif Android du padding de police est porté ici. Sur une
+  // pastille aussi serrée, cet espace décale le glyphe visiblement.
+  plateText: {
+    fontFamily: Outfit.bold, fontSize: 15, letterSpacing: 1.5,
+    color: Colors.textPrimary, includeFontPadding: false,
+  },
 });

@@ -118,6 +118,43 @@ def strokes() -> dict:
     return out
 
 
+def motion() -> dict:
+    """Identite de mouvement : courbes, fenetres de temps, echelonnement, ressort.
+
+    Les durees sont des FENETRES (« 50-500 ms » = commence a 50, fini a 500),
+    c'est la semantique de la planche `motion-identity-system` (842:2727).
+    """
+    src = read("motion.ts")
+    easing = {
+        name: f"cubic-bezier({', '.join(a.strip() for a in args.split(','))})"
+        for name, args in re.findall(r"(\w+):\s*Easing\.bezier\(([^)]*)\)", src)
+    }
+    if len(easing) != 2:
+        raise SystemExit(f"motion.ts : 2 courbes bezier attendues, {len(easing)} trouvee(s)")
+
+    block = re.search(r"duration:\s*\{(.*?)\},", src, re.S)
+    if not block:
+        raise SystemExit("motion.ts : bloc `duration` illisible")
+    duration = {k: int(v) for k, v in re.findall(r"(\w+):\s*(\d+)", block.group(1))}
+
+    gentle = re.search(r"gentle:\s*\{([^}]*)\}", src)
+    if not gentle:
+        raise SystemExit("motion.ts : ressort `gentle` illisible")
+    spring = {k: int(v) for k, v in re.findall(r"(\w+):\s*(\d+)", gentle.group(1))}
+
+    stagger = re.search(r"stagger:\s*(\d+)", src)
+    if not stagger:
+        raise SystemExit("motion.ts : `stagger` illisible")
+
+    return {
+        "$note": "Durees = FENETRES (debut-fin), pas durees d'animation.",
+        "easing": easing,
+        "spring-gentle": {**spring, "$bounce": 0.25, "$note": "damping derive de bounce 0.25 ; stiffness reprise du produit"},
+        "duration": duration,
+        "stagger": int(stagger.group(1)),
+    }
+
+
 def main() -> int:
     doc = {
         "$generated": (
@@ -132,6 +169,7 @@ def main() -> int:
         "radius": parse_numbers(read("radii.ts")),
         "shadow": shadows(),
         "stroke": strokes(),
+        "motion": motion(),
         "icon": {
             "library": "phosphor-react-native",
             "weight-default": "bold",
@@ -144,7 +182,8 @@ def main() -> int:
           f"{len(doc['color'])} couleurs, {len(doc['typography']['scale'])} styles de texte, "
           f"{len(doc['spacing'])} espacements, {len(doc['radius'])} rayons, "
           f"{len(doc['stroke'])} liseres, "
-          f"{len(doc['shadow'])} ombres")
+          f"{len(doc['shadow'])} ombres, "
+          f"{len(doc['motion']['duration'])} durees de motion")
     return 0
 
 

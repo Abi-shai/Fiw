@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, TextInput } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { router, useLocalSearchParams } from 'expo-router';
 import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
@@ -26,7 +27,11 @@ export default function RetraitNumero() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      // `padding` sur les deux OS. Le `KeyboardAvoidingView` vient de
+      // `react-native-keyboard-controller` et non de React Native : même prop,
+      // mais le décalage suit le clavier image par image au lieu d'attendre
+      // qu'il soit posé. Cf. `docs/style-guide.md` § Les deux OS.
+      behavior="padding"
     >
       <ScreenHeader title="Numéro Mobile Money" />
       <View style={styles.content}>
@@ -63,6 +68,10 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: Spacing[4], paddingTop: Spacing[4] },
   label: { marginBottom: Spacing[3] },
   input: {
+    // Android réserve un espace au-dessus de l'ascendante et sous la descendante
+    // de la police, iOS non — cf. `components/Text.tsx`. Ce site ne passe pas par
+    // l'atome, il porte donc le correctif lui-même.
+    includeFontPadding: false,
     fontFamily: Outfit.semibold,
     fontSize: 24,
     color: Colors.textPrimary,

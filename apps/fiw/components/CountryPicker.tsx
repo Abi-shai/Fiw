@@ -1,29 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  View, StyleSheet, Animated, Dimensions, FlatList, Pressable,
+  View, StyleSheet, Animated, FlatList, Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/tokens';
+import { useScreenHeight } from '@/hooks/useScreenHeight';
+import { Colors, Spacing } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import SearchBar from '@/components/SearchBar';
 import FlagChip from '@/components/FlagChip';
 import ListRow from '@/components/ListRow';
 import Divider from '@/components/Divider';
-import Scrim from '@/components/Scrim';
-import { Handle, sheetSurface } from '@/components/Sheet';
+import Scrim, { sheetScrimOpacity } from '@/components/Scrim';
+import { Handle, sheetSurface, sheetSnaps } from '@/components/Sheet';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
+import { useKeyboardState } from 'react-native-keyboard-controller';
 import { COUNTRIES, type Country } from '@/constants/countries';
 
-const SCREEN_H = Dimensions.get('window').height;
-// Crans en translateY (0 = couvre tout). Feuille à 3 niveaux comme l'accueil :
-// étendu (recherche + longue liste) / moitié (défaut) / replié (peek). Glissé
-// sous le replié → fermeture.
-const TY_EXPANDED = Math.round(SCREEN_H * 0.08);
-const TY_HALF = Math.round(SCREEN_H * 0.45);
-const TY_COLLAPSED = Math.round(SCREEN_H * 0.78);
-const SNAPS = [TY_EXPANDED, TY_HALF, TY_COLLAPSED];
-const SHEET_H = SCREEN_H - TY_EXPANDED;
 
 // Insensible casse + accents (« senegal » trouve « Sénégal »).
 const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -40,7 +33,19 @@ type Props = {
  *  l'accueil). Barre de recherche (pays ou indicatif) + liste triée. */
 export default function CountryPicker({ visible, selectedCode, onSelect, onClose }: Props) {
   const insets = useSafeAreaInsets();
+  const SCREEN_H = useScreenHeight();
+  // Feuille pleine hauteur à 3 crans comme l'accueil — les trois niveaux du
+  // système (85 / 50 / 25 % de hauteur visible). Glissé sous le replié →
+  // fermeture.
+  const SNAPS = useMemo(() => sheetSnaps(SCREEN_H, SCREEN_H), [SCREEN_H]);
+  const [TY_EXPANDED, TY_HALF, TY_COLLAPSED] = SNAPS;
+  const SHEET_H = SCREEN_H - TY_EXPANDED; // le plafond de 85 %
   const [q, setQ] = useState('');
+  // La feuille ne bouge PAS à l'ouverture du clavier (elle monte au cran haut au
+  // focus, sa barre de recherche est donc déjà en haut) : c'est la LISTE qui doit
+  // se dégager. Sans ça les derniers pays restent sous le clavier — Android ne
+  // redimensionne plus la fenêtre (`adjustNothing`, cf. `app/_layout.tsx`).
+  const kbHeight = useKeyboardState((s) => s.height);
 
   const { ty, snapTo, panHandlers } = useSnapSheet({
     snaps: SNAPS,
@@ -67,11 +72,9 @@ export default function CountryPicker({ visible, selectedCode, onSelect, onClose
     ? SORTED.filter((c) => norm(c.name).includes(query) || c.dial.includes(query))
     : SORTED;
 
-  const scrimOpacity = ty.interpolate({
-    inputRange: [TY_EXPANDED, TY_HALF, TY_COLLAPSED],
-    outputRange: [0.5, 0.4, 0],
-    extrapolate: 'clamp',
-  });
+  // Voile aux trois niveaux, plus le zéro de la feuille fermée (SCREEN_H) : sans
+  // ce dernier point, le cran replié tiendrait le voile à 25 % feuille fermée.
+  const scrimOpacity = sheetScrimOpacity(ty, SNAPS, SCREEN_H);
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents={visible ? 'auto' : 'none'}>
@@ -80,8 +83,8 @@ export default function CountryPicker({ visible, selectedCode, onSelect, onClose
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
       </Animated.View>
 
-      <Animated.View style={[sheetSurface, styles.sheet, { transform: [{ translateY: ty }] }]}>
-        <View style={styles.inner}>
+      <Animated.View style={[sheetSurface, styles.sheet, { height: SCREEN_H, transform: [{ translateY: ty }] }]}>
+        <View style={{ height: SHEET_H }}>
           {/* Zone de glissement : poignée + titre */}
           <View {...panHandlers} style={styles.dragZone}>
             <Handle style={styles.handle} />
@@ -102,7 +105,7 @@ export default function CountryPicker({ visible, selectedCode, onSelect, onClose
             keyExtractor={(c) => c.code}
             keyboardShouldPersistTaps="handled"
             style={styles.list}
-            contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+            contentContainerStyle={{ paddingBottom: (kbHeight || insets.bottom) + 24 }}
             renderItem={({ item }) => (
               <ListRow
                 leading={<FlagChip code={item.code} />}
@@ -114,7 +117,12 @@ export default function CountryPicker({ visible, selectedCode, onSelect, onClose
                 onPress={() => onSelect(item)}
               />
             )}
-            ItemSeparatorComponent={() => <Divider />}
+            // Les 8 du bloc de listing sont portés par le séparateur : sur une
+            // `FlatList`, la cellule enveloppe l'item avec son séparateur, donc
+            // un `gap` de conteneur laisserait le filet collé à sa rangée.
+            ItemSeparatorComponent={() => (
+              <View style={styles.sep}><Divider /></View>
+            )}
             ListEmptyComponent={
               <Text variant="body" color={Colors.textTertiary} align="center" style={styles.empty}>Aucun pays trouvé</Text>
             }
@@ -126,17 +134,18 @@ export default function CountryPicker({ visible, selectedCode, onSelect, onClose
 }
 
 const styles = StyleSheet.create({
+  // `height` est posée à l'exécution : elle vient du cadre mesuré, pas d'une
+  // constante de module.
   sheet: {
     position: 'absolute',
     left: 0, right: 0, bottom: 0,
-    height: SCREEN_H,
     paddingHorizontal: 20,
   },
-  inner: { height: SHEET_H },
   dragZone: { paddingTop: 10, paddingBottom: 10 },
   handle: { marginBottom: 14 },
   // Géométrie du champ dans `SearchBar` — ici seules les marges de l'emplacement.
   search: { marginTop: 12, marginBottom: 8 },
   list: { flex: 1 },
+  sep: { paddingVertical: Spacing[2] },
   empty: { marginTop: 40 },
 });

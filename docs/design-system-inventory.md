@@ -3822,6 +3822,42 @@ Les contrôles des deux écrans de recherche étaient déjà des frères de la f
 pas des enfants — rien à y faire. Les poignées flottantes sont à `top: 6`, donc
 dans les bornes.
 
+### 🐞 Correction du 26 août — ce recadrage a tué l'ombre
+
+L'utilisatrice a constaté que **plus aucune feuille du produit n'avait d'ombre**.
+Cause directe : l'`overflow: 'hidden'` ajouté ci-dessus.
+
+Mon explication d'alors était **fausse**. J'avais écrit que « l'ombre n'en souffre
+pas : `overflow` ne rogne que les enfants ». Sur iOS, `overflow: 'hidden'` pose
+`clipsToBounds` sur la couche, et **une couche qui se recadre rogne aussi sa
+propre ombre**. On ne peut pas avoir `Shadows.sheet` et un recadrage sur la même
+vue.
+
+**La parade, sans vue supplémentaire :** au lieu de COUPER la première carte par
+l'arc de la feuille, on lui fait **suivre l'arc**. `overflow` disparaît de
+`sheetSurface` (l'ombre revient), et un style exporté, `firstCardEdge`, donne à la
+première carte les coins hauts de la feuille (`SHEET_RADIUS`). Mêmes pixels que le
+`clipsContent` de la maquette, mécanisme différent.
+
+`GroupedSheet` l'injecte lui-même sur `cards[0]`, comme il le fait déjà pour la
+dernière carte — donc les deux écrans de recherche et `transport/configure` en
+héritent sans y toucher. Les quatre feuilles écrites à la main le posent sur leur
+première carte : l'accueil (ses deux modes), `course-active`, `livraison/suivi`,
+`livraison/configure`.
+
+Les feuilles BLANCHES — `BottomSheet`, `CountryPicker`, `Sheet` — n'ont jamais eu
+besoin du recadrage : leur contenu est blanc sur blanc, il n'y a pas d'angle à
+couper. Elles récupèrent simplement leur ombre.
+
+⚠️ Conséquence à ne pas perdre : le bouton de recentrage de l'accueil avait été
+sorti de la feuille **parce qu'elle recadrait**. Elle ne recadre plus, mais il
+reste dehors — c'est correct de toute façon (il flotte sur la carte, pas dans la
+feuille) et il suit le cran par `Animated.subtract(ty, 60)`.
+
+**Leçon** : `overflow` et `shadow*` s'excluent sur une même vue en iOS. Quand les
+deux sont nécessaires, il faut soit deux vues imbriquées, soit — comme ici —
+obtenir la découpe par la géométrie de l'enfant.
+
 ### La divergence des coins bas, elle, reste
 
 La maquette met **28 aux quatre coins** ; le code n'en pose que **deux**
@@ -4020,3 +4056,1952 @@ maître — et le maître est enfin juste, depuis la Partie XLVI.
 
 Rien à changer côté code : cette passe est entièrement dans la maquette.
 `npx tsc --noEmit` reste propre. **La liste ouverte est vide.**
+
+---
+
+# Partie XLVIII — Les deux tuiles de l'accueil, et la piste Motion orpheline (26 août 2026)
+
+Troisième retour de l'utilisatrice sur cet écran. Cette fois, relevé **exhaustif**
+de `853:12` et de tout son sous-arbre — alignements, rotations, opacités,
+peintures, effets, styles, matrices — plutôt qu'un échantillon. C'est ce qui
+manquait aux deux passes précédentes.
+
+## 🐞 La feuille décorative était 58 px trop bas
+
+C'est le plus visible. La boîte rendue de `Oversized Leaf - Top Right`, calculée
+depuis sa matrice, est à **(19 ; 28)** pour 154,62 de côté — identique dans les
+deux tuiles.
+
+Le code la posait à `LEAF_TOP = 86` : son centre tombait à y 163 dans un panneau
+qui fait 109, donc **la feuille était quasiment hors cadre**. À 28, elle occupe
+bien le haut du panneau, ce que son nom annonçait depuis le début.
+
+Le reste de son modèle était juste : `LEAF_BOX = 154.624` correspond au pixel à
+la boîte rendue, et la rotation `'80deg'` de RN équivaut au `-80` de Figma (les
+deux conventions de signe s'annulent).
+
+## Les autres écarts
+
+| Élément | Maquette | Code | Corrigé |
+|---|---|---|---|
+| **Couleur de la feuille** | `primarySubtle` | `track` | un bleu pâle sur le blanc du panneau, pas un gris |
+| **Liseré de la tuile** | **aucun** | `track` 1 | retiré ; le padding reprend sa valeur pleine (6, il était à 5 pour compenser le bord) |
+| **Traînée de la tuile Course** | **supprimée** — `Group 1` ne contient plus que le véhicule de tête | un calque `GHOST_AUTO` | retirée ; les deux tuiles n'ont plus qu'un calque |
+| `leafLeft` Livraison | 19 | 19,5 | aligné |
+| Pied de tuile | `p:CENTER` | pas de `justifyContent` | centré |
+
+Deux fausses pistes écartées en chemin, et c'est le relevé qui les a écartées :
+les titres `Course` / `Livraison` sont **intacts** (ma suppression du sous-titre
+fantôme n'avait bien retiré que lui), et la position de l'illustration de la
+bannière est **juste** — sa boîte rendue est centrée en (25,5 ; 40,7), exactement
+ce que le code calcule. Le `x: 19` de Figma est l'origine **non transformée** du
+calque pivoté, pas sa position à l'écran.
+
+## 🐞 La piste Motion du blow-up est orpheline
+
+`get_motion_context` renvoie toujours onze pistes, dont celle de `Illustration` —
+le ×2,5 vers (−99 ; −99) en ressort, resté ouvert depuis la Partie XLII.
+
+**Ce nœud n'existe plus.** Traversée complète de la carte : aucun
+`ROUNDED_RECTANGLE`, et les deux `IlloPanel` ne contiennent que la feuille
+décorative et un unique groupe véhicule. L'affinage de la maquette a retiré le
+calque héros en même temps que la traînée.
+
+La question laissée ouverte en Partie XLII — « faut-il porter le blow-up ? » — est
+donc tranchée **par le fichier** : il n'y a plus rien à faire grossir. Les dix
+pistes vivantes sont exactement les neuf importées plus celle-ci, morte.
+
+⚠️ À vérifier côté Figma : soit les keyframes survivent au nœud supprimé, soit
+l'outil sert un index antérieur à l'affinage. Dans les deux cas il ne faut pas
+implémenter cette piste.
+
+## Le vrai mécanisme du panneau, enfin écrit
+
+La Partie XLII avait implémenté l'expansion du panneau comme un **rapport**
+ajusté (228 / 109 = ×2,09) et un décalage de **−55** en dur. Les deux marchaient,
+mais ils ne disaient pas ce qui se passe.
+
+Le mécanisme, lui, est que **le panneau devient la tuile** : il prend sa hauteur
+entière et remonte jusqu'à son bord haut ; en perdant au même moment son rayon et
+son fond blanc, il laisse le `primarySubtle` et le rayon 20 de la tuile prendre le
+relais.
+
+La géométrie de la tuile est donc écrite en pièces — `CARD_PAD` 6, `CARD_HEAD_H`
+39, `CARD_GUTTER` 10, `CARD_FOOT_H` 48 — et la sortie s'en déduit :
+
+- hauteur cible = **`CARD_H`**, et non un rapport ;
+- décalage = **`-(CARD_PAD + CARD_HEAD_H + CARD_GUTTER)`**, soit ce qui surplombe
+  le panneau — le −55 magique disparaît.
+
+Les deux suivent d'eux-mêmes si l'en-tête ou le pied changent de hauteur.
+
+## Hygiène maquette
+
+Le fond des deux `IlloPanel` était un `#ffffff` **en dur** : lié au jeton
+`surface`.
+
+## État
+
+`npx tsc --noEmit` propre. `home-ghost-auto.png` et `home-ghost-moto.png` ne sont
+plus référencés ni l'un ni l'autre — les traînées ont disparu des deux tuiles.
+**Supprimés du dépôt** le 26 août 2026 (219 Ko), après vérification qu'aucun
+`require()` de l'app ne les cherchait plus : le typecheck ne l'aurait pas dit,
+Metro l'aurait dit au bundling.
+
+---
+
+# Partie XLIX — La gouttière des blocs de listing (26 août 2026)
+
+Demande de l'utilisatrice sur les deux blocs de listes de la feuille d'accueil
+(`853:168` et `853:240`), puis extension à tous les listings du produit.
+
+## Ce que disait la maquette, et ce qu'elle ne disait pas encore
+
+Les deux conteneurs de rangées des feuilles — `Lignes` et `Frame 27` — sont en
+**`gap 8` lié à `space/2`**, rangées et filets étant des frères à plat. Les cartes
+qui les portent restent à `pad 16`.
+
+**Mais le composant `List` collait encore ses rangées** : son slot `Contenu` était
+à `gap 0` dans les deux variantes. La règle n'était donc pas générale dans le
+fichier — elle vivait dans deux feuilles. L'utilisatrice l'a **étendue** : tout
+bloc de listing prend les 8, l'espace paramètres compris.
+
+Le composant `List` de la maquette est aligné en conséquence (les deux variantes
+passent de 218 à 234 de haut), gouttière liée à `space/2`.
+
+## Côté code
+
+Le code n'avait **aucune** gouttière de listing. Quatre symptômes différents :
+
+| Endroit | Avant | Après |
+|---|---|---|
+| `components/List.tsx` | chaque rangée dans son propre cadre → filet **collé** à sa rangée | rangées et filets **frères à plat**, gouttière `Spacing[2]` |
+| Accueil, lieux récents | pas de conteneur : les filets héritaient du **12** de la carte | conteneur propre à gouttière 8 |
+| Accueil, résultats de recherche | séparateur **collé**, plus un `paddingTop: 8` en double du padding de carte | `gap: Spacing[2]` dans le `contentContainerStyle`, `paddingTop` retiré |
+| `CountryPicker` · `history/index` | séparateur collé · rangées collées sans filet | `gap: Spacing[2]` |
+
+Le changement de `List.tsx` mérite d'être noté : il **fallait** aplatir la
+structure. Chaque rangée vivait dans un `View` avec son filet ; une gouttière sur
+le conteneur n'aurait espacé que les cadres, laissant le filet soudé à sa rangée.
+Les `View` deviennent des `React.Fragment` — rangées et filets sont alors de vrais
+frères, et les 8 tombent **des deux côtés** du filet, comme dans la maquette.
+
+**Six écrans en héritent sans y toucher** — `compte/index`, `compte/preferences`,
+`compte/securite`, `compte/lieux`, `livraison/configure` et `PaymentSheet` —
+puisqu'ils passent tous par `List`.
+
+## Une exception, assumée
+
+`MenuDrawer` garde son rythme à **14**. Ce n'est pas un listing de `ListRow` mais
+la sidebar, avec son propre composant de rangée et un padding vertical de 14 ; et
+ses filets séparent des **groupes**, pas des rangées. `ReceiptCard` reste aussi à
+l'écart : ses filets découpent des blocs de restitution, pas une liste.
+
+## État
+
+Règle écrite dans `docs/style-guide.md` avec son pourquoi — une `ListRow` porte
+déjà 8 de padding vertical, donc deux rangées collées mettent 16 entre leurs
+textes mais **0 entre leurs limites**, et le filet s'y écrase. `npx tsc --noEmit`
+propre.
+
+## 🐞 Correction du même jour — le `gap` ne marche pas sur une `FlatList`
+
+L'utilisatrice a vu à l'écran que la liste de résultats de l'accueil n'avait pas
+pris les 8. Elle avait raison, et c'est une erreur de ma part : j'avais posé
+`gap: Spacing[2]` sur le `contentContainerStyle` de la `FlatList` **sans le
+vérifier au rendu**.
+
+**Pourquoi ça ne marche pas.** Une liste virtualisée enveloppe chaque item
+**avec son séparateur** dans une cellule. Une gouttière de conteneur espace donc
+les *cellules* entre elles : le filet reste soudé à la rangée qui le précède et
+les 8 ne tombent qu'en dessous. Résultat, 8 au-dessus du filet contre 16
+en dessous — asymétrique, donc illisible comme un espacement.
+
+**La parade.** C'est le **séparateur** qui porte l'espace, `paddingVertical: 8`,
+ce qui donne 8 de chaque côté du filet — et avec les 8 de padding de la `ListRow`,
+16 de part et d'autre au rendu, exactement ce que produit la structure à plat de
+la maquette. Corrigé sur les deux listes virtualisées du produit : les résultats
+de l'accueil et le `CountryPicker`.
+
+**Les trois autres endroits étaient bons**, vérifiés après coup : `List.tsx`, la
+liste des lieux récents et `history/index` passent par un `View` ou un
+`ScrollView` ordinaire, où la gouttière s'applique bien entre rangées **et**
+filets — c'est justement pour ça qu'il fallait aplatir `List.tsx`.
+
+**Leçon** : une gouttière sur un conteneur virtualisé n'est pas la même chose que
+sur un conteneur à plat. Quand un espacement doit encadrer un séparateur, c'est le
+séparateur qui le porte.
+
+---
+
+# Partie L — La barre de confirmation, et l'annonce des frais retirée (26 août 2026)
+
+## La pastille de paiement revient à côté du CTA
+
+Les deux dernières cartes de `Configure` — `530:1037` (Transport) et `531:1227`
+(Livraison) — portent le même motif : **une seule rangée de 56**, pastille de
+paiement à gauche, CTA prenant la place restante, gouttière 10. Carte à `pad 16`,
+hauteur 88.
+
+Le code faisait autre chose, et **délibérément** : une `ListRow` pleine largeur
+nommant le moyen de paiement, puis le bouton en dessous. Son commentaire assumait
+le choix — « le moyen de paiement se lit en rangée pleine largeur au-dessus du
+CTA, Uber, Careem, Gojek, Waymo et Grab le posent tous là. La pastille carrée
+d'avant ne disait ni lequel ni qu'on pouvait en changer. »
+
+C'était donc une divergence argumentée, pas un oubli. La maquette a tranché pour
+la pastille ; le code s'aligne. Elle porte un `accessibilityLabel` qui nomme le
+moyen courant et l'action, ce que la rangée disait en clair.
+
+Au passage, cela **périme une affirmation de la Partie XXX** : « les boutons
+`payBtn` / `payImg` n'ont pas de composant en face, c'est un motif que la maquette
+ne connaît pas ». Elle le connaît désormais, dans les deux parcours.
+
+### Deux endroits où la maquette diverge d'elle-même
+
+| | Transport 530:1037 | Livraison 531:1227 | Retenu |
+|---|---|---|---|
+| Boîte de la pastille | 56, `pad 8` | 48, `pad 4` | **56** — la boîte ne peint rien, elle ne sert qu'à la cible tactile, et 56 les met toutes deux au-dessus du seuil de 44 |
+| Rayon de l'image | **0** | **11** | **11** — le 0 de Transport vient de ce qu'il montre l'illustration ESPÈCES, transparente ; `pay-wave.png` et `pay-orange.png` sont des tuiles carrées à fond plein, elles seraient des carrés nets à 0 |
+
+## L'annonce des frais d'attente, retirée
+
+La variante `Configure` a 19 textes et **aucun** ne mentionne les frais d'attente.
+Le code, lui, affichait un bandeau au-dessus du CTA.
+
+Décision de l'utilisatrice, confirmée : **le bloc est retiré** — il n'apprend rien
+au Client au moment où il commande, puisqu'il n'attend encore personne, et il
+coûtait une rangée entière juste avant la confirmation.
+
+Ce n'était pas un simple élément d'UI : `CONTEXT.md` en faisait une **règle de
+domaine** — « le montant potentiel est annoncé au client dès la commande (message
+clair avant confirmation) ». La règle est donc **amendée de façon datée** plutôt
+que contournée en silence. Ce qui subsiste, et qui suffit : les frais **se disent
+quand ils courent**, dans le bandeau d'attente de `transport/course-active`, à
+l'arrivée du Prestataire. La seconde moitié de la règle — « jamais révélé
+seulement en fin de course » — tient toujours ; c'est le moment de l'annonce qui
+change, pas le principe de transparence.
+
+Le commentaire de `constants/data.ts` est corrigé lui aussi : il annonçait
+« Annoncés au client dès la commande ». `WAIT_GRACE_MINUTES` n'est plus affiché
+nulle part et reste la valeur de référence de la règle ; `WAIT_FEE_PER_MIN` sert
+toujours au bandeau de la course active.
+
+`ListRow` n'est plus employé du tout dans `transport/configure` — import retiré.
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LI — Les trois niveaux de feuille, et le voile qui va avec (27 août 2026)
+
+**Décision de l'utilisatrice : une feuille n'a que trois niveaux — 25 %, 50 % et
+85 % de l'écran — 85 % est un plafond dur, et le cran bas ne porte aucun voile.**
+
+## L'erreur d'axe, d'abord
+
+J'ai lu « les niveaux 25, 50 et 85 » comme des **opacités de voile** et écrit une
+première passe entière là-dessus : voile à 25 % au cran replié, 50 % à
+mi-hauteur, 85 % en haut. C'était le mauvais axe — ce sont des **hauteurs de
+feuille**. L'utilisatrice l'a vu tout de suite : « le 25 % a un fond, il ne
+devrait pas ».
+
+Le relevé qui tranche est le composant **`Scrim state` (836:615)**, page
+`03 — Patterns`, que l'utilisatrice avait justement construit pour ça. Écran
+375×844, trois variantes :
+
+| Feuille | Hauteur | % écran | Voile |
+|---|---|---|---|
+| `State=Full` | 220 px | **26 %** | rectangle **sans peinture** |
+| `State=Peek` | 430 px | **51 %** | noir **30 %** |
+| `State=Half` | 717 px | **85 %** | noir **50 %** |
+
+Deux échelles distinctes, donc, et leurs nombres ne se correspondent pas :
+`SHEET_LEVELS` = 25 / 50 / 85 (hauteurs), `ScrimLevels` = 0 / 30 / 50
+(opacités). C'est écrit en avertissement dans les deux fichiers, parce que c'est
+exactement la confusion qui a coûté une passe.
+
+⚠️ **Les libellés de variante de `Scrim state` ne suivent pas les hauteurs** :
+`Full` est la variante de 26 %, `Peek` celle de 51 %, `Half` celle de 85 %. La
+géométrie est sans ambiguïté, les noms sont inversés. À reprendre côté maquette.
+
+## Ce qui est écrit dans le code
+
+Deux fonctions dans `components/Sheet.tsx`, plus l'échelle du voile dans
+`components/Scrim.tsx` :
+
+```ts
+SHEET_LEVELS              // { collapsed: 0.25, half: 0.5, full: 0.85 }
+sheetMaxH(screenH)        // le plafond : 85 % de l'écran
+sheetSnaps(screenH, sheetH)   // les trois translateY, ordre croissant
+ScrimLevels               // { collapsed: 0, half: 0.3, full: 0.5 }
+sheetScrimOpacity(ty, snaps, offscreen)
+```
+
+Un cran, c'est « la feuille montre tel pourcentage de l'écran » : elle est donc
+décalée de ce qui dépasse, `sheetH − screenH × niveau`. Sur un écran de 844, une
+feuille pleine hauteur donne **[127, 422, 633]** — soit 717 / 422 / 211 px de
+visible. La maquette dit 717 / 430 / 220. Les crans du code tombent sur ceux du
+relevé, ce qui est la vraie vérification de la formule.
+
+Une feuille plus courte qu'un niveau ne peut pas l'atteindre : le cran vaut alors
+0 et deux crans se confondent. C'est correct — une petite feuille n'a pas trois
+hauteurs à offrir — et `sheetScrimOpacity` écarte les abscisses confondues, que
+`interpolate` refuse.
+
+## Ce qui a changé, écran par écran
+
+| Site | Crans | Voile |
+|---|---|---|
+| `home` | 8 / 40 / (H−140) % → **`sheetSnaps`** : 15 / 50 / 75 de translateY | 0,58 / 0,38 / 0 → **0,5 / 0,3 / 0** |
+| `CountryPicker` | 8 / 45 / 78 % → **`sheetSnaps`** | 0,5 / 0,4 / 0 → idem |
+| `transport/course-active` · `livraison/suivi` · `livraison/configure` | crans **mesurés sur le contenu** (`[0, mid, peek]`) → **`sheetSnaps`** ; corps borné par `sheetMaxH` au lieu de `SCREEN_H − insets.top − headerH − 12` | **aucun voile** → les trois niveaux |
+| `transport/configure` — feuille figée | inchangé (62 % dans la maquette, sous le plafond) | **aucun voile** → `full` |
+| `BottomSheet` — modale | — | 0,50 en dur → `half` (les modales mesurent 44–47 % dans la maquette) |
+| `MenuDrawer` — tiroir | — | 0,48 en dur → `full` (il couvre 82 % de la largeur), et **via le composant `Scrim`** |
+| Les deux `searching` | inchangés | voile carto `Colors.scrim` — **exception écrite** |
+
+`#000` ne vit plus que dans `Scrim` : `BottomSheet` et `MenuDrawer` cessaient
+chacun de repeindre leur propre voile. `Colors.scrim` (encre 22 %) ne bouge pas —
+il assombrit la **carto elle-même** (recherche, ombre du pin), pas l'écran
+derrière une feuille.
+
+Le `SHEET_MID_H` des deux écrans de suivi (marge basse du cadrage carte) passe de
+`0,44 × H` à `SHEET_LEVELS.half` : il estimait le cran milieu, il le nomme.
+
+## Ce que le relevé des 32 variantes apprend
+
+Hauteurs des variantes de `BottomSheet` (486:1447) rapportées à 844 :
+
+- **Quatre variantes dépassent le plafond** — `Livraison / En cours` et
+  `Livraison / Remise` à **915 px, soit 108 %** de l'écran, `Livraison / Arrivé`
+  93 %, `Livraison / En route` 91 %. C'est exactement ce que la règle vise : ces
+  quatre-là sont les états de `livraison/suivi`, désormais bornés à 85 % avec
+  scroll interne. **La maquette est à corriger de ce côté aussi** — elle dessine
+  des feuilles plus hautes que l'écran.
+- **Transport tient déjà** : `Arrivé` et `Arrivé · frais` à 84 %, `En cours`
+  82 %, `Configure` 62 %. Le plafond ne mord pas sur `course-active`.
+- **`Accueil / Services` mesure 559 px, soit 66 %** — entre `half` et `full`. Le
+  cran de repos de l'accueil est maintenant à 50 %, donc **les deux tuiles de
+  service seront rognées au repos** et demanderont un glissé ou un scroll. C'est
+  le point à regarder en premier : soit l'accueil se repose à `full`, soit les
+  tuiles rapetissent. Je ne l'ai pas tranché.
+
+## Ce qui reste ouvert
+
+- **Rien n'a été vu tourner.** Ce sont des hauteurs, des opacités et des ordres
+  de rendu ; `npx tsc --noEmit` n'en dit rien.
+- **Le cran replié ne montre plus « juste l'en-tête ».** Sur les trois feuilles à
+  crans mesurés, le cran bas valait `sheetH − headerH` : il cadrait exactement la
+  première carte. Il vaut maintenant 25 % de l'écran (211 px sur 844), donc il
+  peut couper cette carte ou en laisser dépasser plus. Même remarque pour
+  l'accueil, dont le `PEEK_VISIBLE = 140` « façon Waze » disparaît.
+- **`transport/configure` est à 62 %**, entre deux niveaux. Sa feuille est figée
+  et le style guide la veut `full` : à trancher côté maquette.
+- **Les voiles se superposent.** Une modale (30 %) ouverte par-dessus un écran
+  qui porte son propre voile (50 %) donne ~65 % au total.
+- **Les libellés de variante de `Scrim state`** sont inversés (cf. plus haut).
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LII — Android, deux repères et un clavier (27 août 2026)
+
+**Signalement de l'utilisatrice, sur appareil Android : le bouton flottant de
+recentrage n'est pas au bon endroit, et le décalage clavier ne suit pas le
+comportement naturel du système.** Les deux se sont vérifiés dans le code.
+
+## Ce qui était déjà Android-conscient
+
+À dire, parce que la réponse honnête à « est-ce que tu prends Android en compte »
+n'est pas *non* mais *pas systématiquement* :
+
+- `Shadows` porte un `elevation` sur ses cinq tokens (l'`elevation` d'Android
+  ignore l'offset négatif : l'ombre montante de la feuille y est symétrique — une
+  approximation assumée, pas un défaut) ;
+- `LayoutAnimation` est activé par `setLayoutAnimationEnabledExperimental` dans
+  les quatre écrans qui s'en servent ;
+- `inputTypo()` retire volontairement le `lineHeight` des champs d'une ligne,
+  parce qu'il décale le texte verticalement sur Android ;
+- les écouteurs clavier sont les `did` et non les `will`, qui n'existent que sur
+  iOS.
+
+Ce qui ne l'était pas : **la géométrie des feuilles et le clavier**, tous deux
+dessinés sur une maquette iPhone.
+
+## Le bouton flottant : deux repères pour une seule mesure
+
+- feuille : `bottom: 0`, `height: SCREEN_H`, décalée de `ty` → son arête se
+  mesure depuis le **bas** du conteneur ;
+- bouton : `top: 0`, `translateY = ty − 60` → depuis le **haut**.
+
+Les deux ne s'alignent que si la hauteur réelle de la vue vaut exactement
+`Dimensions.get('window').height`. Vrai sur iOS ; pas garanti sur Android. Le
+bouton se décalait d'exactement cet écart.
+
+Corrigé **sans branche `Platform`** : le bouton est posé dans un cadre
+(`recenterFrame`) qui rejoue la géométrie de la feuille, donc son `top` et le `ty`
+de la feuille partent du même bord. La valeur 60 est inchangée.
+
+C'était le seul des six contrôles flottants du produit à mélanger les repères —
+les autres sont soit en `bottom: sheetH + 12` (même espace que la mesure), soit
+enfants de la feuille.
+
+## La hauteur d'écran, lue au mauvais endroit
+
+`SCREEN_H = Dimensions.get('window').height` était lu **une fois, au niveau
+module, dans six fichiers** — et tous les niveaux écrits en Partie LI (25 / 50 /
+85 %) en sont des fractions. Sur Android, le plafond de 85 % cessait donc d'être
+85 % de ce que l'utilisatrice voit.
+
+Remplacé par **`useScreenHeight()`** (`hooks/`), qui lit `useSafeAreaFrame()` — le
+cadre mesuré. Conséquences mécaniques : `SNAPS`, `SHEET_MID_H`, `SEARCH_H`,
+`SHEET_H` descendent du module dans le composant, et les deux `height: SCREEN_H`
+des `StyleSheet` se posent à l'exécution.
+
+Le repli sur `Dimensions` dans le hook n'est pas décoratif : la position initiale
+d'une feuille est lue **une seule fois** (`useSnapSheet` garde son
+`Animated.Value` dans une ref), donc un cadre encore à zéro au premier rendu la
+figerait pour de bon.
+
+Restent deux `Dimensions.get('window')`, tous deux des **largeurs** — `DRAWER_W`
+du tiroir et la taille du logo de `BrandSplash`. Une largeur n'est pas affectée
+par les barres système en portrait ; laissés tels quels, sciemment.
+
+## Le clavier : trois stratégies, dont une qui ne faisait plus rien
+
+| Écran | Avant |
+|---|---|
+| `index` | `behavior='height'` |
+| `chat` · `retrait-numero` · `retrait-methode` | `behavior={undefined}` |
+| `home` · `livraison/configure` | pas de `KeyboardAvoidingView`, `paddingBottom: kbHeight` à la main |
+
+Et `app.json` ne déclarait **aucun** `android.softwareKeyboardLayoutMode`.
+
+Le point dur, vérifié en ligne plutôt qu'affirmé de mémoire : **depuis Android 15
+(API 35) et l'edge-to-edge, `adjustResize` ne redimensionne plus la fenêtre.**
+Donc `behavior={undefined}`, qui comptait précisément sur ce redimensionnement, ne
+fait plus rien du tout : le champ reste sous le clavier. Ce n'était pas une
+incohérence de style, c'était un champ caché sur trois écrans.
+
+Mais les deux comportements coexistent dans le parc — un Android 14 redimensionne
+encore. D'où la mesure qui les couvre tous : **le recouvrement, pas la hauteur**.
+
+```
+recouvrement = max(0, (frame.y + frame.height) − clavier.screenY)
+```
+
+Si la fenêtre a rétréci, son bord bas rejoint le haut du clavier et le
+recouvrement tombe à zéro **tout seul**. C'est exactement ce que fait
+`_relativeKeyboardHeight` dans le `KeyboardAvoidingView` de RN — ce qui explique
+au passage pourquoi `behavior="padding"` est sûr sur toutes les versions
+d'Android, et pourquoi le `paddingBottom: kbHeight` manuel, lui, ne l'était pas.
+
+Ce qui a été écrit :
+
+- **`hooks/useKeyboardOverlap.ts`** — le recouvrement, dérivé au rendu (le haut du
+  clavier est gardé en état, pas le recouvrement : si le cadre change après
+  l'ouverture, le résultat se corrige sans nouvel événement) ;
+- **`behavior="padding"` sur les deux OS** dans les quatre écrans à
+  `KeyboardAvoidingView` ; les imports `Platform` devenus inutiles sont retirés ;
+- **le décalage clavier des modales remonte dans `BottomSheet`** : les trois
+  `paddingBottom: kbHeight` de `livraison/configure` disparaissent, et toute
+  modale du produit devient consciente du clavier sans rien demander ;
+- **le recouvrement REMPLACE la zone sûre** au lieu de s'y ajouter :
+  `home.tsx` faisait `kbHeight + insets.bottom + 16`, soit la barre système
+  comptée deux fois — le clavier la couvre déjà ;
+- **`app.json`** déclare `"softwareKeyboardLayoutMode": "resize"`. C'est le défaut
+  d'Expo, mais rien ne disait ce qu'Android était censé faire, et c'est ce silence
+  qui avait laissé trois stratégies coexister.
+
+Les règles générales sont écrites dans `docs/style-guide.md`, nouvelle section
+**« Les deux OS »**, avec leur pourquoi.
+
+## Ce qui reste ouvert
+
+- **Rien n'a été vu tourner, ni sur Android ni sur iOS.** `npx tsc --noEmit` ne
+  dit rien d'un repère ni d'un clavier. Les trois points à regarder sur Android :
+  le bouton de recentrage de l'accueil, un champ dans une modale (`Décrire le
+  colis`), et la recherche de l'accueil clavier ouvert.
+- **Le choix de ne pas prendre `react-native-keyboard-controller`** est celui de
+  l'utilisatrice : pas de dépendance, pas de dev client. Le `KeyboardAvoidingView`
+  de RN reste approximatif — son décalage n'est pas synchronisé avec l'animation
+  du clavier (les événements `did` ne se déclenchent qu'une fois le clavier
+  posé). Si le saut se voit trop, c'est cette porte-là qu'il faudra ouvrir.
+- **iOS perd la synchro fine** pour la même raison : `keyboardWillShow` existe
+  là-bas et permettrait d'animer en même temps que le clavier. Non fait, pour
+  garder un seul chemin de code.
+- Les points de la Partie LI restent tous ouverts, en particulier
+  **`Accueil / Services` à 66 %** contre un cran de repos à 50 %.
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LIII — Le clavier en synchro (27 août 2026)
+
+**Le décalage clavier de la Partie LII était juste mais pas synchrone. Confirmé à
+l'écran par l'utilisatrice — « t'as raison c'est pas synchro » — d'où le passage à
+`react-native-keyboard-controller`.** Cette partie **remplace la section Clavier
+de la Partie LII** ; le reste de LII (bouton flottant, hauteur d'écran) tient.
+
+## Pourquoi la première passe ne pouvait pas être synchrone
+
+Elle reposait sur `keyboardDidShow` / `keyboardDidHide`. Le nom dit le défaut :
+`did`, pas `will`. L'événement arrive **une fois le clavier posé**, donc la mise
+en page rattrape son retard d'un coup — un saut, sur les deux OS. iOS a bien des
+`will*`, mais Android n'en a pas : bâtir la synchro dessus aurait voulu dire deux
+chemins de code pour un seul comportement.
+
+`react-native-keyboard-controller` publie la position du clavier **image par
+image** sur les deux OS. C'est la seule façon d'être en synchro sans brancher sur
+la plateforme.
+
+## Ce qui a rendu l'intégration simple
+
+`useKeyboardAnimation()` rend des **`Animated.Value` de React Native**, en native
+driver — et non des `SharedValue` de Reanimated (`useReanimatedKeyboardAnimation`
+existe pour ça). Or tout ce produit est écrit en RN `Animated`. La hauteur du
+clavier se compose donc directement avec les `translateY` existants, **sans
+convertir un seul composant à Reanimated**.
+
+D'où la mécanique retenue pour la feuille modale :
+
+```tsx
+const { height: kbHeight } = useKeyboardAnimation();
+transform: [{ translateY: Animated.subtract(ty, kbHeight) }]
+```
+
+La feuille monte s'asseoir sur le clavier en synchro, et le glissé-pour-fermer
+continue d'écrire dans `ty` sans rien savoir du clavier. Le voile, interpolé sur
+`ty`, est inchangé.
+
+**Le décalage passe par la transformation et non par `paddingBottom`** : une
+valeur en native driver ne peut pas animer une propriété de mise en page. Ce
+n'est pas un contournement, c'est le bon geste — `paddingBottom` reste statique à
+`insets.bottom + 16`.
+
+_Effet de bord assumé : la feuille garde ce padding une fois posée sur le
+clavier, donc le contenu s'arrête `insets.bottom + 16` au-dessus de lui — une
+trentaine de points d'air en trop sur iOS. Le corriger demanderait de changer le
+padding pendant que la feuille glisse, c'est-à-dire un saut au milieu d'une
+animation. L'air vaut mieux que le saut._
+
+## Ce qui a changé
+
+| Site | Avant (Partie LII) | Maintenant |
+|---|---|---|
+| `app/_layout.tsx` | — | `KeyboardProvider` monté, `statusBarTranslucent` + `navigationBarTranslucent` |
+| `index` · `chat` · `retrait-numero` · `retrait-methode` | `KeyboardAvoidingView` de RN, `behavior="padding"` | **même prop, composant de la bibliothèque** |
+| `components/BottomSheet` | `paddingBottom: (kbOverlap \|\| insets.bottom) + 16` | `translateY: Animated.subtract(ty, kbHeight)`, padding statique |
+| `app/home` — mou de défilement de la liste | `useKeyboardOverlap()` | `useKeyboardState((s) => s.height)` |
+| `hooks/useKeyboardOverlap.ts` | écrit en Partie LII | **supprimé** |
+
+`useKeyboardOverlap` calculait le recouvrement pour se protéger d'un Android qui
+redimensionne la fenêtre. Il n'a plus lieu d'être : le provider prend la main sur
+le mode de saisie, la fenêtre ne se redimensionne plus, et la hauteur du clavier
+**est** ce qu'il recouvre. Deux mécanismes pour une même géométrie, c'était un de
+trop — la bibliothèque est désormais la seule source.
+
+`useScreenHeight` reste : il répond à une autre question (la hauteur de la vue),
+et son commentaire ne renvoie plus au hook supprimé.
+
+## Ce qui reste ouvert
+
+- ⚠️ **L'app ne tourne plus dans Expo Go.** `react-native-keyboard-controller`
+  est un module natif : il faut un dev client — `npx expo run:android` ou
+  `npx expo run:ios`, ou un build EAS. C'est le prix de la synchro, et il était
+  connu au moment de la décision.
+- **Rien n'a été vu tourner.** À regarder dans cet ordre : une modale à champ
+  (`Décrire le colis` en Livraison) pour la synchro de la feuille, l'onboarding
+  (`index`) pour le `KeyboardAvoidingView`, la recherche de l'accueil pour le mou
+  de défilement.
+- **`statusBarTranslucent` / `navigationBarTranslucent` sont à surveiller.** S'il
+  apparaît sur Android un décalage vertical valant exactement la hauteur de la
+  barre de navigation, ce sont ces deux drapeaux qu'il faut interroger d'abord —
+  ils disent à la bibliothèque de ne pas compter ces hauteurs deux fois.
+- Les points des Parties LI et LII restent ouverts, en particulier
+  **`Accueil / Services` à 66 %** contre un cran de repos à 50 %.
+
+## État
+
+`npx tsc --noEmit` propre. `react-native-keyboard-controller@1.18.5`, installé via
+`npx expo install` (donc la version compatible SDK 54).
+
+---
+
+# Partie LIV — La dernière carte prend la place (27 août 2026)
+
+**Signalement à l'écran : la feuille d'accueil au repos laisse une bande grise
+sous la carte des lieux récents.** Deux rangées de contenu dans une feuille à
+hauteur fixe, et le fond `track` apparaît en dessous — la feuille se lit comme une
+carte posée dans un vide gris plutôt que comme une surface.
+
+C'est le défaut annoncé en Partie LI (« le fond `track` transparaîtrait si le
+contenu était court »), constaté cette fois.
+
+## Le mécanisme, relevé et non deviné
+
+`Scrim state` / `State=Half` (836:611), l'écran que l'utilisatrice a construit :
+
+| Nœud | Sizing vertical | Hauteur |
+|---|---|---|
+| `BottomSheet` (le cadre) | **FIXED** | 717 = 85 % |
+| `Frame 3` (services) | **AUTO** — elle épouse | 388 |
+| `Récemment` (dernière carte) | **`layoutGrow: 1`** — elle remplit | 323 |
+| `Lignes` (dans la dernière carte) | **AUTO** — elles épousent | 117 |
+
+388 + 6 + 323 = 717 : la dernière carte va exactement au bord du cadre. Et le
+détail qui compte : **`Lignes` reste en `AUTO`**. C'est la *carte* qui s'étire,
+pas son contenu — les rangées restent collées en haut, le blanc gagné est sous
+elles.
+
+## Ce qui est écrit
+
+`lastCardFill` dans `components/Sheet.tsx`, à côté de `firstCardEdge` — même
+forme : un style minuscule qui porte une règle, avec son pourquoi.
+
+Appliqué à la carte des récents de l'accueil, avec le conteneur de défilement en
+`flexGrow: 1` sur son `contentContainerStyle`. Cette paire est le cœur du motif :
+`flexGrow: 1` sur le conteneur fait qu'il mesure **au moins** la hauteur du cadre,
+donc la carte peut s'y étirer quand le contenu est court **et** défiler quand il
+est long. Sans lui, il faudrait choisir.
+
+Le motif préexistait à un endroit sans être nommé : `resultsCard: { flex: 1 }`,
+la carte de résultats du mode recherche de l'accueil, avec déjà le commentaire
+« elle prend la hauteur restante ». Deux occurrences de la même idée, donc un
+nom — c'est la règle du design system, pas du zèle.
+
+## Portée
+
+La règle ne vaut que pour une feuille à hauteur **fixe** : l'accueil (pleine
+hauteur) et toute feuille verrouillée sur un cran. Les feuilles qui **épousent**
+leur contenu — `GroupedSheet` par défaut, donc les deux `searching` et
+`transport/configure` — n'ont pas d'espace restant : elles s'arrêtent exactement
+où leur dernière carte s'arrête, il n'y a rien à remplir. Vérifié avant d'y
+toucher, pour ne pas poser un `flex: 1` sans effet.
+
+## Ce qui reste ouvert
+
+- **Rien n'a été vu tourner.** C'est une règle de mise en page ; `npx tsc --noEmit`
+  n'en dit rien. L'écran à ouvrir : l'accueil au repos, puis en glissant la
+  feuille aux trois crans — le blanc doit tenir jusqu'au bord à chacun.
+- **Le domino suivant.** `course-active`, `livraison/suivi` et
+  `livraison/configure` épousent encore leur contenu : leurs crans sont calculés
+  sur *leur* hauteur, donc leur cran haut ne montre pas forcément 85 % de
+  l'écran. Les figer à 85 % avec la dernière carte qui remplit les alignerait sur
+  la maquette (dont le cadre `BottomSheet` est en `FIXED`) et sur la règle des
+  trois niveaux. Non fait : ce n'est pas ce qui a été demandé, et ça change la
+  hauteur de repos de trois écrans.
+- Les points des Parties LI à LIII restent ouverts, en particulier
+  **`Accueil / Services` à 66 %** contre un cran de repos à 50 %.
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LV — Le shift Android résiduel : deux causes, dont une de mon fait (27 août 2026)
+
+**Signalement : « il y a encore un shift de layout sur Android, en particulier sur
+l'apparition du clavier ».** La Partie LIII avait mis le décalage en synchro avec
+le clavier ; il restait un saut. Deux causes s'additionnaient.
+
+## Cause 1 — Android redimensionnait encore la fenêtre
+
+`adjustResize` était toujours en vigueur (déclaré dans `app.json` en Partie LII).
+Le clavier monte → Android rétrécit la fenêtre → **le système repositionne
+instantanément tout ce qui est ancré en bas**, y compris la feuille modale. Et
+par-dessus, notre `Animated.subtract(ty, kbHeight)` la décale une seconde fois.
+
+Deux mouvements pour un événement : un saut de mise en page, puis une animation.
+C'est exactement le motif qu'on croyait avoir supprimé.
+
+`KeyboardController.setInputMode(SOFT_INPUT_ADJUST_NOTHING)` au démarrage rend la
+main : le système ne touche plus à rien, le seul mouvement est celui qu'on anime.
+C'est le mode pour lequel la bibliothèque est faite. Appelé **sans branche
+`Platform`** — la méthode existe côté iOS, où elle ne fait rien (vérifié dans
+`ios/KeyboardControllerModule.mm`).
+
+## Cause 2 — mon passage au cadre mesuré, en Partie LII
+
+`useScreenHeight` lisait `useSafeAreaFrame()` et rendait la **dernière** valeur.
+Or ce cadre rétrécit quand la fenêtre se redimensionne. Conséquence en chaîne :
+
+1. le clavier monte, le cadre perd la hauteur du clavier ;
+2. `SCREEN_H` change → `SNAPS` se recalculent, et `height: SCREEN_H` de la feuille
+   change ;
+3. mais `ty` est un `Animated.Value` qui porte une valeur **absolue**, calculée
+   dans l'ancien repère ;
+4. → la feuille entière saute.
+
+Sur iOS, invisible : le cadre ne bouge pas au clavier. Un défaut introduit et
+révélé le même jour, et le typecheck n'en dit évidemment rien.
+
+`useScreenHeight` garde désormais la **plus grande hauteur observée**. Le clavier
+ne peut que rétrécir le cadre, jamais l'agrandir, et l'app est verrouillée en
+portrait : le maximum suffit à immuniser la géométrie. `Math.max` étant idempotent,
+la ref se met à jour en phase de rendu sans risque.
+
+Les deux correctifs sont gardés : `adjustNothing` traite la cause, le maximum rend
+la géométrie juste **quel que soit** le mode de saisie.
+
+## Le prix de `adjustNothing`, payé
+
+Plus aucun écran ne peut compter sur le système pour dégager un champ. J'ai croisé
+les écrans à saisie avec ceux qui gèrent le clavier : **six n'avaient rien du
+tout** — et ils n'avaient rien sur iOS non plus, où le système ne fait jamais
+rien. Le défaut était donc déjà là, masqué sur Android par le redimensionnement.
+
+| Écran | Traitement |
+|---|---|
+| `compte/profil` · `compte/numero` (ses **deux** étapes) · `compte/lieu` (étape détails) · `livraison/cloture` · `transport/cloture` | `KeyboardAvoidingView behavior="padding"` de la bibliothèque, autour de la racine |
+| `otp` | **exclu, vérifié** — tout son contenu est en haut (champ masqué, cellules et CTA sous le titre), le clavier ne l'atteint pas |
+| `compte/lieu`, étape **carte** | **exclu, vérifié** — sa `SearchBar` flotte en haut d'une carto plein écran ; un `padding` rétrécirait la carte |
+| `CountryPicker` | sa liste prend `paddingBottom: (kbHeight \|\| insets.bottom) + 24`. La feuille monte déjà au cran haut au focus, donc sa barre de recherche est en haut : c'est la LISTE qui devait se dégager, et seul le redimensionnement Android le faisait jusqu'ici |
+
+Ce dernier point est le genre d'effet de bord qu'un changement de mode global
+provoque et qu'il faut aller chercher : rien ne le signale, ni le typecheck, ni
+l'écran tant qu'on ne fait pas défiler la liste des pays clavier ouvert.
+
+## Ce qui reste ouvert
+
+- **Rien n'a été vu tourner.** À ouvrir sur Android, dans cet ordre : une modale à
+  champ (`Décrire le colis`) — plus aucun saut attendu ; `compte/profil` et les
+  deux `cloture`, qui gagnent une gestion qu'ils n'avaient jamais eue ; la liste
+  des pays du `CountryPicker`, clavier ouvert, défilée jusqu'en bas.
+- **`statusBarTranslucent` / `navigationBarTranslucent`** restent les suspects
+  d'un décalage vertical **constant** (par opposition à un saut) valant la hauteur
+  d'une barre.
+- Les points des Parties LI à LIV restent ouverts, en particulier
+  **`Accueil / Services` à 66 %** contre un cran de repos à 50 %, et les trois
+  feuilles qui épousent encore leur contenu.
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LVI — Seule la tuile touchée sort (27 août 2026)
+
+**Signalement : sur l'accueil, taper une tuile de service déclenche l'animation de
+sortie sur les DEUX. « This is not logical. »** C'est juste, et le défaut venait
+d'une lecture trop littérale de la maquette.
+
+## Ce qui l'avait décidé
+
+Le commentaire de `onService` disait : « La maquette fait sortir les DEUX tuiles
+ensemble : la timeline vit sur la feuille, pas sur une tuile. » La piste Motion de
+`357:1685` est effectivement rangée au niveau de la feuille — mais **ça ne dit pas
+que tous ses enfants la jouent**, ça dit seulement où l'auteur l'a rangée. Le code
+en avait tiré `Animated.parallel(cardAnims.map(cardExit))`, donc les deux tuiles.
+
+À l'écran, deux tuiles qui se transforment en même temps se lisent comme si on
+avait ouvert Course **et** Livraison. La tuile touchée est celle qui devient
+l'écran suivant : c'est la seule qui doit se transformer.
+
+Rien n'était journalisé — la décision ne vivait que dans ce commentaire, donc la
+corriger ne contredit aucun document. La règle générale, elle, est maintenant
+écrite dans `docs/style-guide.md` § Transitions intra-page.
+
+## Ce qui a changé
+
+`cardExit(anim).start()` sur la seule tuile pressée, et **l'animation est passée
+par la tuile** plutôt que retrouvée par index :
+
+```tsx
+onService(s: Service, anim: CardAnim)
+<ServiceCard onPress={() => onService(course, cardAnims[0])} anim={cardAnims[0]} />
+```
+
+La tuile pressée tend sa propre `CardAnim`. Il n'y a donc plus d'appariement à
+maintenir entre l'ordre de `SERVICES` et celui de `cardAnims` — un
+`findIndex(s.id)` aurait marché mais aurait laissé un couplage implicite, et un
+index hors bornes plante à l'exécution là où le passage direct ne peut pas.
+
+Le reste est inchangé : le garde-fou `exiting` contre le double tap, le
+court-circuit « Réduire les animations », et l'ordre (jouer la sortie **puis**
+basculer en mode recherche — l'inverse démonterait la tuile avant qu'elle ait
+bougé).
+
+## Ce qui reste ouvert
+
+- **Rien n'a été vu tourner.** À regarder : la tuile **non** touchée reste
+  entièrement dessinée pendant la sortie, puis disparaît d'un coup au changement
+  de mode. Le mouvement simultané de la feuille (qui monte au cran haut) le masque
+  en grande partie, mais si ce pop se voit, la réponse serait un simple fondu de
+  la voisine — à ne faire que s'il se voit, puisque animer la voisine est
+  précisément ce qui était en cause.
+- Les points des Parties LI à LV restent ouverts.
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LVII — L'identité de mouvement entre dans le système (27 août 2026)
+
+**L'utilisatrice a affiné la marque sur le plan du mouvement et en a décliné une
+identité : la planche `motion-identity-system` (`842:2727`, page
+`03 — Patterns`). Demande : l'intégrer au design system, en documenter tout le
+contexte, et l'appliquer immédiatement.** Relevé exhaustif de la planche — les
+noms de calques en portent le texte, les cinq sections ont été lues entièrement.
+
+## Ce que la planche pose
+
+Cinq sections : **1.** trois courbes · **2.** six constantes de temps ·
+**3.** trois principes de chorégraphie · **4.** un plan de séquence de 0 à 600 ms ·
+**5.** quatre recettes d'implémentation. Le détail est repris dans
+`docs/style-guide.md` § Motion plutôt que dupliqué ici.
+
+## La découverte qui a rendu l'application indolore
+
+⚠️ **Les durées de la planche sont des FENÊTRES, pas des durées d'animation.**
+« Container morph · 50–500 ms » veut dire *commence à 50, fini à 500* — donc 450 ms
+d'animation. C'est la sémantique de la timeline Figma Motion dont l'identité est
+tirée, et la lire comme une durée aurait faussé chaque valeur.
+
+Une fois cette lecture faite, la sortie de tuile de l'accueil — transcrite en
+Partie XLII d'une piste Motion de 2 000 ms — **tombe exactement sur les jetons** :
+
+| Piste | Avant | Après (fenêtre) |
+|---|---|---|
+| `leaf` | `{0, 200}` | `decoration-exit` → `{0, 200}` |
+| `headOpacity` | `{0, 250}` | `text-exit` bas → `{0, 250}` |
+| `headShift` | `{0, 300}` | `text-exit` haut → `{0, 300}` |
+| `footOpacity` | `{50, 250}` | `text-exit` haut après maintien → `{50, 250}` |
+| `footShift` | `{50, 300}` | `support-exit` après maintien → `{50, 300}` |
+| `groupOpacity` | `{50, 300}` | `support-exit` après maintien → `{50, 300}` |
+| `groupDrift` | `{0, 350}` | `support-exit` → `{0, 350}` |
+| `panelGrow` | `{50, 450}` | `container-morph` après maintien → `{50, 450}` |
+| `panelFlat` | `{250, 250}` | seconde moitié du morph → `{250, 250}` |
+
+**Les neuf identiques, et `EXIT_MS` toujours à 500.** Vérifié par calcul, pas à
+l'œil. La planche **généralise** cette sortie, elle ne la corrige pas — et
+`EASE_STD`, la courbe standard exportée par Motion, **est** la `Primary Ease`. Ce
+qui veut dire que l'identité était déjà dans le produit, sans nom.
+
+## Ce qui est écrit
+
+- **`apps/fiw/constants/motion.ts`** — `Motion.easing` (2 courbes),
+  `Motion.spring.gentle`, `Motion.duration` (6 fenêtres, la bande texte éclatée en
+  `Fade` 250 / `Shift` 300), `Motion.stagger` (40), et `Motion.window(fin, début)`
+  qui convertit une fenêtre en `{ delay, dur }`. Exporté par le barrel
+  `constants/tokens.ts`.
+- **`docs/style-guide.md` § Motion** — les cinq sections, l'avertissement sur les
+  fenêtres, la conversion du ressort, **ce que l'identité laisse hors d'elle et
+  pourquoi**, et le manque connu de la planche.
+- **`scripts/gen-style-guide-tokens.py`** — famille `motion` ajoutée, donc
+  `docs/style-guide.tokens.json` la porte désormais (7 durées).
+- **Amendement daté** de § BottomSheet : la « physique du snap » se scinde en deux
+  régimes, et le ressort annoncé pour l'entrée disparaît.
+
+## Conversion du ressort — une dérivation, pas un relevé
+
+`spring(bounce: 0.25, mass: 1)` ne dit rien de la raideur, dont `Animated.spring`
+a besoin. Le `bounce` est un taux d'amortissement déguisé : `ζ = 1 − 0,25 = 0,75`,
+donc `damping = 2 ζ √(k·m) ≈ 25` pour `k = 280`. **280 est reprise de la valeur que
+le produit portait déjà** (`SHEET_SPRING`), pour que seul le rebond change et pas
+la vitesse. Signalé comme dérivation dans le fichier et dans le style guide.
+
+Effet : l'amortissement des feuilles passe de 22 à 25 — `bounce` de 0,34 à 0,25.
+Elles rebondissent un peu moins.
+
+## Appliqué
+
+| Site | Changement |
+|---|---|
+| `home` — sortie de tuile | 9 pistes aux jetons, **valeurs identiques** |
+| `home` — entrée d'écran | ressort → fenêtre `container-morph` + `Hold / Anchor` ; les deux fondus (360 / 480+120) deviennent `support-exit` et `container-morph` décalés du `stagger` de 40 |
+| `useSnapSheet` | **deux régimes** : lâcher de geste → `Spring Gentle` ; snap programmatique → `container-morph` + `Hold / Anchor` |
+| `BottomSheet` | entrée : ressort → recette « Modals / Sheets » mot pour mot · sortie : 240 ms → `support-exit` |
+| `MenuDrawer` | ressort → même recette (un tiroir est un conteneur, pas un héros) ; le ressort ne survit que pour le lâcher du swipe |
+| Les deux `searching` | entrée de feuille → recette Modals/Sheets · voile carto → `Hold / Anchor` (« background shift »), fenêtres 450 et 600 déjà justes · `progress` → `support-exit` · bascule de contenu 260 → `text-exit` bas · anneaux du radar → `Hold / Anchor` (« utility loop ») |
+| `searching` ×2 · `course-active` · `suivi` | `SHEET_LAYOUT` : 280 et 300 pour la même chose → `text-exit` haut partout |
+| `transport/configure` | entrée de feuille figée → recette Modals/Sheets · bascule Course ↔ Covoiturage : ressort → courbe primaire sur la fenêtre de texte (un changement de contenu n'est pas un moment de signature) |
+| `GammeCard` | ressort de sélection → `Spring Gentle`. C'est le seul cas de micro-interaction où la planche AUTORISE le rebond : « Positive validation triggers gentle spring bounces » |
+| `BrandSplash` | ressort du monogramme → `Spring Gentle`. L'actif de marque est précisément ce que « Spring for Hero Only » vise |
+
+## Les trois arbitrages, écrits plutôt que tranchés en silence
+
+1. **Le ressort du lâcher de geste survit à « Spring for Hero Only ».** Aucune
+   courbe de timing n'accepte une vélocité initiale : la remplacer produirait un
+   micro-arrêt au lâcher et casserait la continuité de vélocité, qui est une
+   qualité documentée du produit. Le ressort y est de la **physique**, pas un
+   rebond décoratif. Il prend le `Spring Gentle` et reste cantonné au geste.
+2. **La timeline d'ENTRÉE des tuiles garde ses trois courbes hors identité**
+   (`EASE_QUART`, `EASE_BACK` à 1,56 de dépassement, `EASE_QUINT`). Elle est
+   transcrite d'une piste Motion authored à la main sur `357:1685` : la maquette
+   fait autorité sur son propre mouvement, et le dépassement sur l'illustration
+   relève du « brand-signature » que la planche autorise aux héros. La remplacer
+   par les défauts du système effacerait une animation dessinée.
+3. **La sortie de conteneur n'a pas de jeton.** Le code emploie `support-exit`
+   (350 ms), dont la description colle au rôle (« une mise en page principale qui
+   cède la place »). ⚠️ **Seul endroit où l'identité ralentit quelque chose** : la
+   fermeture de modale passe de 240 à 350 ms.
+
+## Ce qui reste ouvert
+
+- **Rien n'a été vu tourner.** Les trois choses à sentir, dans cet ordre :
+  l'**ouverture et la fermeture d'une modale** (le plus gros changement : ressort →
+  courbe, et fermeture ralentie) ; le **glissé de la feuille d'accueil** entre
+  crans (le snap programmatique du tap sur l'en-tête passe à 450 ms après un
+  maintien de 50, contre un ressort avant) ; le **tiroir latéral**.
+- **`container-exit` à ajouter à la planche** si la fermeture de modale traîne. À
+  décider côté maquette, pas dans `BottomSheet`.
+- **Trois durées sans rôle** restent en dur, faute de jeton honnête : le fondu du
+  splash de marque 420, `Toast` 180/280, clignotement de `CodeField` 480.
+  Candidates à un futur jeton, pas à un forçage dans un jeton voisin.
+- **Les durées de `LeafletMap`** (900 à 1600 ms) sont des mouvements de caméra
+  Mapbox joués DANS la webview, pas des animations RN : hors de portée de
+  l'identité, et à ne pas y forcer.
+- **La recette « Transitions de page »** (300 ms de `Primary Ease`) n'est pas
+  appliquée : les transitions de pile sont natives (`slide_from_right`) et leur
+  courbe n'est pas exposée par expo-router. À traiter le jour où une transition de
+  page devient une animation locale.
+- Les points des Parties LI à LVI restent ouverts.
+
+## État
+
+`npx tsc --noEmit` propre. `docs/style-guide.tokens.json` régénéré.
+
+---
+
+# Partie LVIII — `container-exit`, le jeton qui manquait (27 août 2026)
+
+**La Partie LVII signalait un manque de la planche : aucun jeton de sortie de
+conteneur, `BottomSheet` empruntant `support-exit` faute de mieux. Décision de
+l'utilisatrice : ajouter le jeton — valeur 200 ms, et l'inscrire dans la
+maquette.**
+
+## Pourquoi 200 et non 350
+
+Les deux lectures étaient défendables et se contredisaient, d'où la question
+plutôt qu'un choix en silence :
+
+- **350** — les trois jetons de sortie dessinent un dégradé `decoration 200 →
+  text 250–300 → support 350`, et un conteneur est la plus grande chose de la
+  composition, donc la dernière à partir.
+- **200** — le principe *Asymmetric Timing* dit mot pour mot « clean up and clear
+  space **instantly** when dismissed to maintain high perceived application
+  speed ». Une modale qu'on renvoie est le cas canonique de *dismissed*.
+
+Le 200 l'emporte, et la contradiction se dissout en distinguant **deux
+événements** :
+
+| Événement | Jeton | Ce qui se passe |
+|---|---|---|
+| Sortie **échelonnée** dans une composition | `decoration-exit` → `text-exit` → `support-exit` | Le conteneur part en **dernier**, il attend que son contenu ait dégagé |
+| **Renvoi en bloc** | `container-exit` | Rien n'attend, donc rien ne retarde |
+
+D'où deux jetons à **200 ms** qui ne sont pas un doublon : c'est le nom qui dit
+lequel on écrit. La règle est dans `docs/style-guide.md` § Motion.
+
+## Écrit dans les quatre endroits du système
+
+1. **La planche** (`842:2727`) — une `Table-Row` ajoutée à « 2. Timing
+   Constants », **clonée** de la ligne `hero-reveal` pour hériter styles,
+   auto-layout et gabarit de colonnes, puis insérée à l'**index 3** pour tenir
+   l'ordre croissant des durées (juste après `decoration-exit`, 200 aussi). La
+   table étant en auto-layout hug, la carte est passée de 381 à 423 toute seule —
+   aucune géométrie à reprendre à la main. Contexte rédigé dans le registre des
+   autres lignes : « Dismissed containers clearing space ». Nœuds créés :
+   `884:12` à `884:16`.
+2. **`constants/motion.ts`** — `containerExit: 200`, avec l'avertissement de ne
+   pas le confondre avec le dégradé échelonné.
+3. **`docs/style-guide.md` § Motion** — la ligne dans la table, et la section
+   « Manque connu de la planche » **remplacée** par « Les deux 200 ms, et pourquoi
+   ce n'est pas un doublon ».
+4. **`docs/style-guide.tokens.json`** — régénéré, 8 durées de motion.
+
+## Appliqué, et l'asymétrie devient visible
+
+| Site | Avant | Après |
+|---|---|---|
+| `BottomSheet` — fermeture | `support-exit` 350 | **`container-exit` 200** |
+| `MenuDrawer` — fermeture | fenêtre d'ouverture jouée à l'envers (500) | **`container-exit` 200** |
+| `useSnapSheet` — snap programmatique | `container-morph` dans les deux sens | **la direction tranche** : monte → `container-morph` (50 → 500), descend → `container-exit` (200) |
+
+Ce troisième point est le plus utile et corrigeait un défaut de la Partie LVII :
+la fermeture programmatique d'une feuille — `CountryPicker` qu'on referme, mode
+`mappick` de l'accueil, retour de la recherche vers les services — prenait 500 ms
+avec un maintien de 50. Elle en prend 200. Le sens du mouvement suffit à décider,
+donc aucun appelant n'a de paramètre à penser.
+
+`MenuDrawer` n'était pas juste non plus : ouverture et fermeture partageaient la
+même fenêtre, ce qui est exactement ce que *Asymmetric Timing* interdit.
+
+## Ce qui reste ouvert
+
+- **Rien n'a été vu tourner.** À sentir : fermer une modale (350 → 200), refermer
+  le tiroir (500 → 200), fermer le sélecteur de pays et quitter la recherche de
+  l'accueil (500 → 200). L'ensemble devrait rendre l'app nettement plus vive au
+  retour, sans rien accélérer à l'aller.
+- Les points des Parties LI à LVII restent ouverts, en particulier les trois
+  durées sans rôle (splash 420, `Toast` 180/280, `CodeField` 480) et
+  **`Accueil / Services` à 66 %** contre un cran de repos à 50 %.
+
+## État
+
+`npx tsc --noEmit` propre. `docs/style-guide.tokens.json` régénéré (8 durées).
+Planche à jour.
+
+---
+
+# Partie LIX — Le bégaiement des véhicules : deux horloges et un masque (27 août 2026)
+
+**Signalement : au clic sur une tuile de service, Course comme Livraison, la
+disparition des moyens de déplacement n'est pas fluide — « une sorte de
+bégaiement visuel » et « un flash bizarre », sur Android ET sur iOS.** Deux causes
+distinctes dans le même bloc de code.
+
+## Cause 1 — deux horloges pour un seul mouvement
+
+`cardExit` animait :
+
+| Piste | Driver | Pourquoi |
+|---|---|---|
+| `panelGrow` (hauteur du panneau) | **JS** | `height` est une propriété de mise en page, elle ne PEUT pas être native |
+| `panelFlat` (rayon + fond) | **JS** | idem pour `backgroundColor` |
+| `groupOpacity`, `groupDrift` (les véhicules) | **natif** | opacité et transformation, natives par défaut |
+
+Le groupe véhicule est un **enfant** du panneau. Le conteneur avançait donc par
+saccades du thread JS pendant que son contenu glissait à 60 im/s sur le thread UI.
+L'œil ne voit pas l'animation, il voit le **décalage entre les deux** — d'où le
+bégaiement, identique sur les deux OS puisque la cause est dans le moteur, pas
+dans la plateforme.
+
+**Correctif : une seule horloge.** `groupOpacity` et `groupDrift` passent sur le
+driver JS, celui du panneau qui les contient. Une horloge imparfaite est fluide ;
+deux horloges ne le sont jamais.
+
+⚠️ **Les autres pistes ne pouvaient pas suivre**, et c'est une contrainte à
+connaître : `headOp`, `headY`, `footOp`, `footY` et `leaf` sont combinées aux
+valeurs d'**entrée** par `Animated.multiply` / `Animated.add` (dans `ServiceCard`
+et sur la feuille décorative). Un même nœud animé ne peut pas vivre sur les deux
+drivers — les descendre en JS lèverait une erreur à l'exécution. Elles restent
+natives, et c'est sans conséquence : elles sont figées pendant la sortie du
+groupe. Seules `groupOp` et `groupDrift` étaient autonomes, donc déplaçables.
+
+## Cause 2 — le masque de clip reconstruit à chaque image
+
+`styles.illoPanel` porte `overflow: 'hidden'`. Sur une vue qui rogne, le
+`borderRadius` **définit le masque de clip** — et il s'animait de `Radii.lg` à 0.
+Chaque image reconstruisait le masque, sur une vue contenant des PNG. C'est de là
+que venait le flash.
+
+Le `backgroundColor` s'animait aussi, de `surface` à `rgba(255,255,255,0)` : une
+interpolation couleur par couleur sur le thread JS, qui invalide le fond à chaque
+image.
+
+**Correctif : le blanc devient un calque.** Un `absoluteFill` blanc dont on fait
+fondre l'**opacité**, et le panneau garde un rayon **fixe**. Le rendu est
+identique — quand le blanc a disparu, il n'y a plus de coin à arrondir — mais le
+masque est stable et il n'y a plus d'interpolation de couleur.
+
+## Cause 3 (mineure) — une mesure à chaque image
+
+`onLayout` restait posé sur le panneau et son `setBaseH((prev) => prev ?? h)`
+était rappelé à **chaque image** pendant que la hauteur s'animait. React sortait
+bien sans re-rendu, mais l'appel coûtait du temps JS par image — sur le thread qui
+portait justement l'animation. Le gestionnaire est maintenant retiré dès la
+première mesure (`onLayout={baseH == null ? … : undefined}`).
+
+## Ce qui est écrit
+
+Les trois règles sont générales, donc dans `docs/style-guide.md` § Motion, sous
+**« Trois règles de rendu, payées par des défauts visibles »** : une horloge et
+pas deux (avec la contrainte des nœuds combinés) · ne jamais animer le
+`borderRadius` d'une vue qui rogne · faire fondre un calque plutôt qu'interpoler
+un `backgroundColor`.
+
+Aucune valeur de l'identité de mouvement n'a bougé : les neuf fenêtres et les
+courbes sont intactes. **Ce n'était pas un problème de chorégraphie mais de
+moteur** — l'animation était juste sur le papier et mal rendue à l'écran.
+
+## Ce qui reste ouvert
+
+- **Rien n'a été vu tourner.** L'écran à ouvrir est celui du signalement : taper
+  une tuile de service, sur les deux, et regarder les véhicules disparaître.
+- **Le même piège existe peut-être ailleurs.** Partout où une `height` ou un
+  `backgroundColor` s'anime à côté d'une opacité ou d'une transformation, il faut
+  vérifier le driver. Non audité : ce serait une passe à part, et la règle est
+  maintenant écrite pour la porter.
+- Les points des Parties LI à LVIII restent ouverts.
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LX — La bannière Affilié arrive après tout le monde (27 août 2026)
+
+**Demande de l'utilisatrice : la bannière « Gagnez de l'argent avec Fiw ! » porte
+un enjeu business important, donc la mettre en avant par le mouvement. Elle
+n'apparaît pas avec les autres éléments : après une latence, elle vient à sa
+position en usant de l'identité de mouvement. Motion aussi à la fermeture. Et
+l'intro ne joue qu'une fois — à l'ouverture de l'app, pas à chaque retour sur
+l'écran.**
+
+## Les trois valeurs, déduites plutôt que choisies
+
+C'était le risque de cette passe : trois nombres neufs à inventer (latence,
+décalage d'arrivée, échelle). Aucun ne l'a été.
+
+| Quoi | Valeur | D'où elle vient |
+|---|---|---|
+| Latence | **940 ms** | `ENTER_MS` (fin de l'atterrissage de la tuile, **calculée** : 900) + `Motion.stagger` (40) |
+| Monter de | **10** | la magnitude des `CHROME.*Shift`, relevée sur la maquette |
+| Arriver à | **0,88** | l'échelle d'arrivée des calques véhicule (`enter.scale`) |
+| Se retirer à | **0,92** | l'échelle de recul de `EXIT.groupDrift` |
+| Sortie | **200 ms** | `container-exit`, le jeton ajouté en Partie LVIII |
+
+`ENTER_MS` est calculée sur le même principe que `EXIT_MS` — le maximum des
+`delay + dur` de la timeline d'entrée. La latence suit donc d'elle-même si cette
+timeline change, au lieu de dériver silencieusement.
+
+## Elle arrive EN PLACE, et c'est une décision
+
+Deux façons de faire arriver un bloc :
+
+- **réserver sa place** dès le premier rendu (bloc rendu, invisible et
+  transformé) — rien ne reflue, mais une bande vide reste visible ~1 s ;
+- **ouvrir l'espace** en arrivant (hauteur de 0 à h) — pas de bande vide, mais la
+  mise en page de l'écran reflue au moment le plus visible.
+
+Tranché par le système et non au goût : dans le plan de séquence de l'identité,
+**toutes les couches partent de 0 ou 50 et se distinguent par leur durée**, pas en
+se poussant les unes les autres. La recette « Dévoilements de contenu » parle
+d'éléments qui apparaissent échelonnés, pas d'espace qui s'ouvre. Donc arrivée en
+place. ⚠️ **Point à valider à l'écran** : si la bande vide d'une seconde se lit
+comme un trou plutôt que comme « quelque chose arrive encore », c'est l'autre
+option qu'il faudra prendre.
+
+## Le ressort, et pourquoi il est justifié ici
+
+`Spring Gentle`, alors que l'identité le réserve aux composants héros. La raison
+est écrite : un bloc qui arrive **seul**, après tout le monde, avec un enjeu de
+conversion, est un « brand-signature interactive moment ». Et surtout — **sans le
+dépassement, la latence ne servirait à rien** : c'est lui qui fait remarquer
+l'arrivée. Une courbe ferait arriver le bloc sans qu'on le voie arriver.
+
+## Une horloge, pas deux — la règle de la Partie LIX appliquée
+
+Tout est sur le driver **JS**, ressort d'arrivée compris. Deux raisons qui se
+cumulent :
+
+1. la fermeture anime une `height`, qui ne peut pas être native ;
+2. `intro` et `exit` se combinent dans la **même** opacité, et un nœud de style ne
+   peut pas mélanger les deux drivers.
+
+Le coût est nul : la bannière arrive quand le reste s'est posé, le thread JS est
+libre. C'est même le cas idéal pour une animation JS.
+
+## Deux détails qui auraient laissé un saut
+
+- **La gouttière de la carte.** Repliée à 0, la bannière laissait quand même les
+  12 px de gouttière de `SheetCard`, et le contenu suivant sautait de 12 au
+  démontage. D'où un `marginBottom` animé vers `-CARD_CONTENT_GAP` — valeur
+  désormais **exportée** par `components/Sheet.tsx` plutôt qu'un 12 en dur dans
+  l'écran.
+- **Pas d'`overflow: hidden`** sur le cadre animé : la pastille de fermeture
+  déborde volontairement de 10 px (elle est posée à côté de la carte, pas dedans,
+  parce qu'un enfant qui dépasse d'une vue à coins arrondis se fait rogner sur
+  Android — cf. le commentaire d'origine). Le recadrage la rognerait. Le fondu
+  couvre le débord pendant le repli.
+
+## La portée « une fois par lancement »
+
+Drapeau au niveau **module** (`promoIntroPlayed`), pas un `useState`. Un état React
+repart à zéro à chaque remontage de l'écran — et l'écran REMONTE, puisque la vue
+services est démontée dès qu'on passe en mode recherche. L'intro se rejouerait donc
+à chaque aller-retour. Un module vit aussi longtemps que le bundle JS, donc jusqu'au
+prochain (re)démarrage : exactement la portée demandée.
+
+## Ce qui reste ouvert
+
+- **Rien n'a été vu tourner.** À regarder : ouvrir l'app sur l'accueil (la
+  bannière doit arriver seule, ~1 s après le reste, avec un léger dépassement) ·
+  aller en recherche et revenir (elle doit être là **sans** rejouer) · fermer la
+  bannière (fondu + repli en 200 ms, et les tuiles reprennent la place sans saut).
+- **La bande vide d'une seconde** (cf. plus haut) est le seul point de goût que je
+  n'ai pas tranché seul.
+- Les points des Parties LI à LIX restent ouverts.
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LXI — Le shift fait naître la bannière (27 août 2026)
+
+**Retour de l'utilisatrice sur la Partie LX : le principe est bon, mais voir à
+l'avance un emplacement laissé pour la bannière ne va pas. La mise en page doit se
+comporter comme si le bloc n'existait pas, puis après la latence un SHIFT — avec
+l'identité, « exploitée au maximum » — doit donner sa place au bloc.**
+
+C'est le point de goût que la Partie LX signalait sans le trancher : la bande vide
+d'une seconde se lisait comme un trou. Elle avait raison, et l'arbitrage « arrivée
+en place » que j'avais tiré du plan de séquence était un argument de système appliqué
+au mauvais endroit — le plan dit comment les couches d'un bloc s'échelonnent, pas
+si le bloc doit préempter sa place.
+
+## Ce que ça change dans la mécanique
+
+Ouvrir l'espace au lieu de le réserver n'est pas un réglage, c'est une autre
+mécanique :
+
+| | Partie LX | Maintenant |
+|---|---|---|
+| Cadre au repos | hauteur naturelle, contenu invisible | **hauteur 0** — la mise en page ignore le bloc |
+| Arrivée | fondu + montée + échelle, en place | **la hauteur s'ouvre** (`container-morph`), le reste cède la place |
+| Recadrage | aucun | **actif pendant l'ouverture et le repli**, retiré au repos |
+| Mesure de la hauteur | sur le cadre | sur le **contenu** |
+
+Trois pièges sont venus avec, et chacun aurait laissé un défaut visible :
+
+1. **Mesurer sans montrer.** La hauteur cible ne peut pas se mesurer sur un cadre
+   replié à 0. Elle se mesure sur la **carte**, qui reste en flux à l'intérieur :
+   Yoga lui donne sa hauteur de contenu, le cadre la rogne, et `onLayout` la
+   rapporte — sans jamais afficher le bloc déplié.
+2. **Recadrer, mais pas au repos.** Sans recadrage, la carte déborde sur les
+   tuiles pendant que le cadre s'ouvre. Avec un recadrage permanent, la pastille
+   de fermeture — qui déborde volontairement de 10 px — se fait rogner. D'où un
+   `overflow` **basculé par état** : actif pendant l'ouverture et le repli, retiré
+   ensuite.
+3. **Ne pas clignoter au remontage.** La vue services est démontée à chaque
+   passage en mode recherche. Si le cadre partait à 0 avant sa mesure à *chaque*
+   montage, la bannière clignoterait à chaque retour. Le repli initial est donc
+   conditionné au drapeau d'intro : hauteur 0 seulement si l'intro reste à jouer,
+   hauteur naturelle sinon.
+
+## L'identité, exploitée au maximum
+
+Le plan de séquence (§ Motion section 4) est appliqué à **un seul bloc**, ses cinq
+couches réparties sur les éléments réels — c'est sa première mise en œuvre :
+
+| Couche | Fenêtre | Élément |
+|---|---|---|
+| Décoration | rang 0, **ressort** | l'illustration `HandWithCash` |
+| Ancre de titre | 0 → 250 | « Gagnez de l'argent avec Fiw ! » |
+| Corps de texte | 0 → 300 | « Et si vous deveniez un affilié réseau ? » |
+| Supports | 50 → 350 | chevron + pastille de fermeture |
+| **Conteneur** | 50 → 500 | la place qui s'ouvre |
+
+Les couches finissent l'une après l'autre au lieu de démarrer l'une après
+l'autre : c'est le modèle de la planche, et il donne un mouvement d'un seul tenant
+plutôt qu'une cascade. L'ordre est celui de *Hierarchy Staging*, conteneur en
+dernier.
+
+⚠️ **Une honnêteté à noter dans le code** : la couche décoration porte le
+`Spring Gentle`, donc **sa durée n'est pas celle de sa fenêtre** — un ressort n'a
+pas de durée. Sa fenêtre ne dit plus que son rang. C'est la seule des cinq dans ce
+cas, et c'est écrit à côté plutôt que laissé croire à une application littérale.
+
+## Une garde contre un piège de développement
+
+Le drapeau de module est posé au **démarrage** de l'animation et non à sa
+programmation, et la garde passe par une ref. Sans ça, un double appel de l'effet
+(StrictMode en développement) annulerait le premier minuteur puis ressortirait
+aussitôt sur le drapeau : l'intro ne jouerait **jamais** — et le bug n'existerait
+qu'en développement, donc invisible en production et incompréhensible en local.
+
+## Ce qui reste ouvert
+
+- **Rien n'a été vu tourner.** À regarder : ouvrir l'app (aucune place réservée,
+  puis à ~940 ms la place s'ouvre et les couches arrivent) · aller en recherche et
+  revenir (la bannière est là, à sa hauteur, **sans** rejouer et **sans**
+  clignoter) · fermer (fondu + repli + léger recul, les tuiles reprennent la place
+  sans saut).
+- **Le recul de 0,92 à la fermeture** est porté par le cadre entier, donc la
+  pastille recule avec. Voulu — tout part ensemble — mais à confirmer à l'œil.
+- Les points des Parties LI à LX restent ouverts.
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LXII — La hauteur se déduit, elle ne se mesure pas (27 août 2026)
+
+**Capture d'écran de l'utilisatrice : la bannière à moitié dessinée, les tuiles
+par-dessus. « C'est du n'importe quoi. »** Elle avait raison, et la faute est
+exactement celle que le handoff met en garde contre : **j'ai affirmé un
+comportement de rendu au lieu de le vérifier.**
+
+## L'hypothèse fausse
+
+Écrit en Partie LXI, dans le code comme dans le style guide :
+
+> « La hauteur naturelle de la carte est mesurable même quand le cadre est replié
+> à 0 : la carte reste en flux, donc Yoga lui donne sa hauteur de contenu et c'est
+> le cadre qui la rogne. »
+
+C'est faux. La hauteur remontée par `onLayout` était trop petite, le cadre restait
+court, et la carte — dessinée à sa taille réelle une fois le recadrage retiré —
+débordait sous les tuiles, qui se dessinent après elle donc par-dessus. Je ne sais
+pas exactement ce que Yoga a renvoyé, et ça n'a plus d'importance : **dépendre de
+cette mesure était l'erreur**, pas la valeur qu'elle rendait.
+
+## Le correctif : supprimer la mesure
+
+La hauteur de la bannière est **déterministe**. Sa vignette d'illustration fait
+64 fixe ; son texte — deux lignes de 20 plus une gouttière de 3, soit 43 — est plus
+court. Plus le padding vertical de 6 de la carte : **76**.
+
+Elle est donc écrite **en pièces** (`PROMO_TILE`, `PROMO_PAD_V`, `PROMO_H`),
+partagées entre la constante et les styles pour qu'elles ne puissent pas dériver.
+Et la carte porte désormais une hauteur **explicite** égale à celle vers laquelle
+le cadre s'ouvre : les deux ne peuvent plus se contredire, donc le débordement de
+la capture est impossible par construction.
+
+Disparaissent au passage : un `useState`, un `onLayout`, deux branches de rendu et
+un style. Le correctif est plus **simple** que le défaut — bon signe.
+
+## Un second défaut trouvé en corrigeant le premier
+
+Un enfant de hauteur 0 **consomme quand même la gouttière de son parent**. Le bloc
+replié laissait donc une bande vide de 12 px — précisément ce que l'utilisatrice ne
+voulait pas. Hauteur et gouttière se dérivent maintenant de la **même** valeur
+d'ouverture :
+
+| Ouverture | Hauteur | Gouttière | Place occupée |
+|---|---|---|---|
+| 0 (inexistant) | 0 | −12 | 0 + 12 − 12 = **0** |
+| 1 (en place) | 76 | 0 | **76** + 12 |
+
+Une seule valeur pour les deux, donc elles ne peuvent pas se contredire — le même
+principe qui a réglé le désaccord carte/cadre.
+
+## Ce que j'en retiens, et qui est écrit dans le style guide
+
+Deux règles ajoutées à « Faire remarquer un bloc » : **la hauteur cible se déduit
+des styles, elle ne se mesure pas dans un cadre replié** · **un enfant de hauteur
+zéro consomme quand même la gouttière de son parent**. La première remplace
+l'affirmation fausse de la Partie LXI, elle ne s'y ajoute pas.
+
+## Ce qui reste ouvert
+
+- **Rien n'a été vu tourner** — et c'est la deuxième fois sur ce bloc. Le débordement
+  est maintenant impossible par construction (les deux hauteurs sont la même
+  constante), mais la chorégraphie elle-même reste à voir.
+- Les points des Parties LI à LXI restent ouverts.
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LXIII — La latence allongée (27 août 2026)
+
+**Retour de l'utilisatrice après essai : la hauteur est bonne, mais la latence
+doit durer un peu plus.** Le défaut de la Partie LXII est donc réglé à l'écran —
+c'est la première validation de ce bloc.
+
+Une seule valeur bouge : **940 → 1 400 ms**.
+
+Elle reste **déduite** et non choisie : la fin de l'atterrissage (`ENTER_MS`, 900,
+calculée depuis la timeline) plus un **temps de silence égal à la durée de
+l'arrivée** qu'il annonce (`container-morph`, 500). La planche n'a pas de jeton de
+pause, mais donner au silence la durée du mouvement qu'il précède rend le rapport
+explicable et le garde dérivé d'une fenêtre plutôt que d'un nombre.
+
+Le commentaire du code donne les paliers voisins pour la prochaine itération —
+`heroReveal` (600) pour allonger d'un cran, `supportExit` (350) puis `stagger` (40,
+la valeur d'origine) pour raccourcir — afin qu'un prochain réglage soit un
+changement de jeton et non un nombre inventé.
+
+Règle mise à jour dans `docs/style-guide.md` § Motion : **le silence fait partie de
+l'accroche**. Trop court, le bloc se confond avec l'atterrissage et la latence ne
+sert à rien.
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LXIV — La latence au plafond de l'échelle (28 août 2026)
+
+**Second retour d'essai sur la même valeur : encore un peu plus, passer à
+`heroReveal`.** La latence passe de **1 400 à 1 500 ms** — `ENTER_MS` (900) plus un
+silence de `hero-reveal` (600).
+
+Le silence prend donc la **plus longue fenêtre du système**, celle d'une séquence
+de contenu complexe qui se déploie : on laisse passer le temps qu'aurait pris un
+dévoilement entier avant que la bannière se manifeste. C'est un rapport
+explicable, pas un nombre.
+
+⚠️ **`hero-reveal` est le plafond de l'échelle** — il n'y a pas de palier au-dessus.
+C'est écrit dans le code comme dans le style guide : allonger encore ne serait plus
+un changement de jeton mais une **décision de design system**, un jeton de pause à
+poser dans la planche. Pas un nombre à écrire dans un écran.
+
+Les trois valeurs successives sont datées à l'endroit où elles se lisent (940 au
+premier jet, 1 400 le 27 août, 1 500 le 28 août), pour que la prochaine personne
+voie que ce réglage s'est fait à l'œil et en deux passes.
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LXV — Deux lignes et une ellipse, et une copie qui avait changé (28 août 2026)
+
+**Signalement de l'utilisatrice : le texte de la bannière a un nouveau détail de
+troncature — deux lignes maximum, en ellipse.** Relevé exhaustif de la troncature
+sur **tout** le sous-arbre de `853:12` plutôt que sur le seul nœud annoncé, et
+c'est ce qui a fait remonter une seconde divergence.
+
+## Le relevé : sept textes, trois bornés
+
+| Texte | `maxLines` | `textTruncation` | État du code |
+|---|---|---|---|
+| « De quoi avez-vous besoin ? » | — | DISABLED | conforme |
+| « Gagnez de l'argent avec Fiw ! » | — | DISABLED | conforme |
+| « Et si vous deveniez un affilié réseau ? » | **2** | **ENDING** | ❌ **rien** → corrigé |
+| « Course » · « Livraison » | — | DISABLED | code plus strict (cf. plus bas) |
+| « Déplacez-vous en toute sécurité. » | **2** | **ENDING** | déjà conforme |
+| « Faites-vous livrer rapidement. » | **2** | **ENDING** | déjà conforme, mais **la copie avait changé** |
+
+## Ce que le relevé large a attrapé en plus
+
+**La copie Livraison n'est plus la même dans la maquette** : `Faites-vous livrer
+rapidement.` là où le code portait encore `Faites-vous livrer, aussi vite que
+possible.` — d'où le « aussi vite que possi… » tronqué visible sur la dernière
+capture. La maquette a **raccourci la phrase** pour qu'elle ne se tronque plus ;
+le code, lui, se contentait de la couper. Corrigé.
+
+C'est exactement l'intérêt de relever tout le sous-arbre : le signalement portait
+sur la troncature, et le vrai défaut visible était une copie périmée.
+
+## L'ellipse n'est pas déclarée, et c'est volontaire
+
+`ellipsizeMode="tail"` est le **défaut** de React Native, et c'est exactement le
+`textTruncation: ENDING` de Figma. L'écrire serait du bruit — le projet ne le pose
+nulle part, la convention est de s'appuyer sur le défaut.
+
+## Le plafond de lignes garantit la hauteur du bloc
+
+Conséquence heureuse, et elle mérite d'être notée : le `numberOfLines={2}` du corps
+de la bannière n'est pas décoratif. Titre 20 + gouttière 3 + corps **borné** à 40
+= 63, sous les 64 de la vignette d'illustration. Donc `PROMO_H = 76` (Partie LXII)
+n'est plus juste « pour la copie actuelle » mais **par construction**, quelle que
+soit la copie. Sans ce plafond, une phrase plus longue passerait à trois lignes et
+la carte déborderait de son cadre — le défaut même de la Partie LXII, par une
+autre porte.
+
+## Une divergence assumée, signalée
+
+Le code met `numberOfLines={1}` sur « Course » / « Livraison » alors que la
+maquette les laisse en `DISABLED`. **Le code est plus strict que la maquette**, et
+je le garde : la tuile a une géométrie fixe (`CARD_HEAD_H = 39`) qu'un libellé qui
+passerait à la ligne casserait. À trancher côté maquette si elle veut l'inverse.
+
+## Règle écrite
+
+`docs/style-guide.md` § Typographie, nouvelle section **« Troncature : deux lignes
+pour un descriptif, jamais pour un titre »**. Le partage est net : un descriptif
+peut se faire couper sans qu'on perde l'essentiel et le borner protège la
+géométrie de son conteneur ; un titre porte le sens, on ne le coupe pas — on
+**raccourcit la copie**. Avec le corollaire : quand une hauteur est déduite,
+vérifier que le texte qu'elle contient est borné.
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LXVI — Le padding de police d'Android (28 août 2026)
+
+**Signalement de l'utilisatrice : un écart de spacing / padding visible sur la
+version Android. « Pourquoi il y a des divergences ? »** ⚠️ Sa capture n'est pas
+arrivée — envoyée en HEIC, seul l'icône générique du type de fichier a été reçue.
+Le diagnostic ci-dessous vient donc d'un **audit du code**, pas de l'image ; il
+reste à confirmer que c'est bien l'écart qu'elle voyait.
+
+## La cause, et elle touchait tout le produit
+
+`includeFontPadding` n'apparaissait **nulle part** dans le projet. Or Android
+réserve par défaut un espace au-dessus de l'ascendante et sous la descendante de la
+police ; iOS non. Chaque texte était donc plus haut sur Android de quelques points
+en haut **et** en bas.
+
+Ce n'est pas un défaut cosmétique isolé : la hauteur d'un texte participe à la mise
+en page — rangées, cartes, gouttières, alignements sur la ligne de base. L'écart se
+propageait donc partout, et se lisait comme du **padding en trop autour du texte**
+alors qu'aucun style ne le demandait. L'effet est d'autant plus net avec **Outfit**,
+dont les métriques déclarées sont généreuses.
+
+## Corrigé aux deux sources, plus les cinq contournements
+
+| Site | Ce qu'il porte |
+|---|---|
+| `components/Text.tsx` — style `base` | `includeFontPadding: false` pour **tout** texte passant par l'atome |
+| `constants/typography.ts` — `inputTypo` | idem + `textAlignVertical: 'center'`, son compagnon obligé |
+| `Field` — `inputZone` (multiligne) | `includeFontPadding` seul : un champ multiligne veut son texte en haut |
+| `PlateChip` · `FlagChip` | hors échelle typographique, donc hors de l'atome |
+| `affilie/retrait-numero` · `affilie/retrait-methode` | deux saisies de montant à `fontSize` brut |
+
+Les cinq derniers sont **exactement** ceux que le style guide liste déjà comme
+« hors échelle, et pourquoi » (§ Typographie). C'est un argument de plus pour
+l'atome : un texte qui passe par lui n'a jamais ce problème. Le cas le plus net est
+`FlagChip` — un code ISO de 10 px de haut, où ce padding pèse proportionnellement
+le plus lourd de tout le produit ; et `amountInput`, aligné sur la **ligne de base**
+avec le « F » voisin, que le padding désalignait.
+
+Aucune branche `Platform` : la propriété est ignorée sur iOS. C'est la troisième
+fois de suite que le correctif juste sur les deux OS est le même code — la règle
+« une branche `Platform` est le dernier recours » tient.
+
+## L'écart visé, et l'arithmétique qui le confirme
+
+L'utilisatrice a précisé après coup : la capture montrait **la bannière Affilié de
+l'accueil**, dont le padding vu sur Android ne correspondait pas à celui déclaré
+dans le code. Les chiffres du bloc expliquent pourquoi c'est **là** que l'écart
+s'est vu en premier :
+
+| | Hauteur |
+|---|---|
+| Titre, 1 ligne à 16/20 | 20 |
+| Corps, 2 lignes à 16/20 | 40 |
+| Gouttière de `promoText` | 3 |
+| **Bloc de texte déclaré** | **63** |
+| Boîte de contenu de la carte (76 − 6 − 6) | **64** |
+
+**Il y a exactement 1 px de jeu.** Donc n'importe quel supplément de hauteur —
+et Android en ajoute, quelques points par nœud de texte via le padding de police —
+mange immédiatement le padding vertical de 6, au lieu de simplement rendre le bloc
+plus haut. Avec `alignItems: 'center'`, le débord se répartit en haut et en bas :
+le padding déclaré à 6 s'affiche crushé, et l'`overflow: hidden` de `promoText`
+rogne les extrémités du texte. C'est précisément « le padding n'est pas celui du
+code ».
+
+Ce bloc était donc le plus exposé du produit : ailleurs, le supplément d'Android
+gonfle une hauteur qui a du mou, ici il n'y en avait pas. Le correctif ramène le
+bloc de texte à 63 sur les deux OS.
+
+⚠️ **Ne pas « corriger » en ajoutant du jeu** : le 76 et le 64 viennent de la
+maquette. C'est le supplément d'Android qu'on retire, pas la géométrie qu'on
+relâche.
+
+## Ce qui reste ouvert
+
+- **La capture n'a jamais été vue** (HEIC, non décodé) : le diagnostic tient par
+  l'arithmétique et par la précision de l'utilisatrice, pas par l'image. Si l'écart
+  persiste, la capture en **PNG ou JPEG**.
+- **Rien n'a été vu tourner.** Le correctif change les métriques de texte de
+  **tout** le produit sur Android : c'est une passe à regarder largement, pas sur
+  un seul écran. Sur iOS, rien ne doit bouger — la propriété y est ignorée.
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LXVII — La bannière sur Android : mesurer avant de deviner (28 août 2026)
+
+**L'écart de spacing signalé sur la bannière Affilié persiste après le correctif du
+padding de police (Partie LXVI). Deux hypothèses, deux échecs.** Cette partie ne
+corrige rien : elle établit ce qui est prouvé et pose un instrument, parce qu'une
+troisième hypothèse à l'aveugle serait pire que l'aveu.
+
+## Ce qui est prouvé : le code est fidèle à la maquette
+
+Relevé complet de `Gagner de l'argent` dans `853:12`, comparé mesure par mesure :
+
+| Nœud | Maquette | Code |
+|---|---|---|
+| Carte | h 76 · pad `6/14/6/6` · gap 12 · rayon 20 · align `MIN/CENTER` | identique |
+| Vignette | x 6 y 6 · 64×64 · rayon 12 · clips | identique |
+| Bloc texte | x 82 y 6,5 · 217×63 · gap 3 · `grow: 1` | identique |
+| Chevron | x 311 y 29 · 18×18 | identique |
+| Pastille | x 315 y −10 · 38×38 · rayon 999 · liseré 2 | identique (`−10/−10`) |
+
+Les coordonnées se recoupent d'ailleurs entre elles : 6 + 64 + 12 = 82 (le bloc
+texte), 343 − 14 − 18 = 311 (le chevron), 6 + (64 − 63)/2 = 6,5 (le bloc texte
+centré), 6 + (64 − 18)/2 = 29 (le chevron centré). La géométrie du code n'a pas de
+dette ici.
+
+**Donc l'écart n'est pas code ↔ maquette : c'est un écart de RENDU sur Android.**
+
+Une seule divergence apparente, et elle est documentée : l'illustration est posée à
+`(−0,48 ; 8,71)` dans le code contre `(19 ; 0)` dans la maquette. Ce n'est pas une
+erreur mais la conversion du piège de rotation — Figma donne l'origine **non
+transformée**, RN pivote autour du **centre**, et la valeur du code est back-solvée
+depuis le centre rendu `(25,52 ; 40,71)`. Cf. le commentaire de `promoIllo`.
+
+## L'instrument, inactif par défaut
+
+`DEBUG_PROMO` dans `app/home.tsx` — à `false`. Passé à `true`, il consigne la
+géométrie **réellement rendue** de cinq parties du bloc (carte, vignette, bloc
+texte, titre, corps) avec l'attendu en face, via `onLayout`. Un écart qui ne se voit
+que sur un appareil se lit là, pas dans les styles.
+
+C'est le bon outil pour ce cas précis : les mesures voyagent en texte, une capture
+non.
+
+## Ce qui reste ouvert
+
+- **Aucune capture n'a jamais été vue** : les deux envois étaient en HEIC, dont
+  seule l'icône générique du type de fichier arrive. Il faut du **PNG ou du JPEG**.
+- **Deux hypothèses écartées** : la mesure dans un cadre replié (Partie LXII) et le
+  padding de police d'Android (Partie LXVI). La seconde était une vraie cause
+  générale — elle reste juste — mais elle n'était pas *celle-là*.
+- **Ce qu'il manque pour trancher** : soit la sortie de `DEBUG_PROMO` collée en
+  texte, soit une phrase disant **où** l'espace est faux — padding interne de la
+  carte, gouttière entre l'illustration et le texte, ou distance du bloc au titre
+  et aux tuiles.
+
+## État
+
+`npx tsc --noEmit` propre. Aucun changement de rendu : l'instrument est inerte.
+
+---
+
+# Partie LXVIII — La capture vue enfin : le titre passe à deux lignes (28 août 2026)
+
+**La capture a fini par être lue** — retrouvée sur le disque
+(`~/Downloads/Capture d'écran 2026-08-28 à 15.12.53.png`) après deux envois arrivés
+sous forme d'icône de type de fichier. C'est une photo d'un Android, et le défaut y
+est immédiat.
+
+## Ce que la capture montre
+
+**Le titre « Gagnez de l'argent avec Fiw ! » passe à DEUX lignes.** Le bloc de
+texte fait alors 40 + 3 + 40 = **83**, contre 63 à la largeur de la maquette. Il
+crève la boîte de contenu de 64 de la carte, et le padding vertical de 6 **est
+absorbé** : le texte touche les bords. C'est exactement « un souci de spacing de
+padding », et ce n'était ni une divergence de rendu ni un problème de police.
+
+## La vraie cause : une hypothèse, pas un bug de plateforme
+
+Le bloc **supposait que le titre tenait sur une ligne**. C'est vrai à 375 pt — la
+largeur de la maquette, où le titre occupe 217 px pour ~218 disponibles, soit
+**zéro marge**. Sur un écran plus étroit (beaucoup d'Android sont à 360 dp), ou avec
+un réglage de police système plus grand, il passe à deux lignes.
+
+Une mise en page qui repose sur une chaîne tenant à un pixel près n'est pas fausse
+sur un appareil : elle est fragile sur tous.
+
+## Deux hypothèses écartées avant celle-là, et pourquoi elles ont échoué
+
+1. **La mesure dans un cadre replié** (Partie LXII) — vraie cause d'un débordement,
+   pas de celui-ci.
+2. **Le padding de police d'Android** (Partie LXVI) — vraie cause **générale**, qui
+   reste juste et qu'on garde, mais qui ne produisait pas cet écart-là.
+
+Les deux avaient un point commun : **elles supposaient un mécanisme au lieu de
+regarder l'image.** La leçon du handoff, retenue une troisième fois.
+
+## Le correctif : rendre le bloc tolérant
+
+| Avant | Après |
+|---|---|
+| `promoCard` : `height: PROMO_H` (76 fixe) | **`minHeight: PROMO_MIN_H`** — plancher, la carte grandit avec son texte |
+| Cadre : ouverture vers une hauteur **déduite** | ouverture vers la hauteur **mesurée** |
+| Mesure : dans un cadre replié à 0 (fausse) ou déduite (fragile) | **hors flux** (`position: absolute`, invisible), donc juste dans tous les cas |
+| — | mesure **gardée au niveau module**, pour ne pas refaire la phase à chaque remontage |
+
+Le padding de 6 est donc respecté sur **toutes** les largeurs d'écran et toutes les
+échelles de police. Le plafond de 2 lignes du corps (Partie LXV) reste ce qui borne
+la croissance : sans lui, rien ne l'arrêterait.
+
+## L'instrument, enrichi
+
+`DEBUG_PROMO` consigne maintenant **la largeur d'écran et l'échelle de police en
+tête de chaque ligne**. Ce sont elles qui décident si le titre tient sur une ligne,
+donc toute la hauteur du bloc — les avoir dès la première ligne du journal aurait
+tranché du premier coup.
+
+## Ce qui reste ouvert
+
+- **Rien n'a été vu tourner.** Le bloc doit désormais montrer son padding de 6 même
+  quand le titre passe à deux lignes.
+- **Une question de contenu, qui appartient à la maquette** : à 375 pt le titre tient
+  à un pixel près. Si on veut qu'il tienne sur une ligne partout, c'est la **copie**
+  qu'il faut raccourcir côté maquette — la règle du style guide le dit déjà (« un
+  titre porte le sens : on ne le coupe pas, on raccourcit la copie »). Le correctif
+  ci-dessus rend le bloc correct dans les deux cas.
+- ⚠️ **Les envois d'images arrivent en icône de type de fichier**, HEIC comme PNG.
+  Le contournement qui a marché : chercher le fichier sur le disque et le lire.
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LXIX — Le titre de la bannière tient sur une ligne (28 août 2026)
+
+**Décision de l'utilisatrice après la Partie LXVIII : l'espace alloué au bloc sur
+Android n'est toujours pas satisfaisant, et la cause est bien le retour à la ligne
+du titre. Il doit tenir sur UNE ligne, et passer en ellipse s'il y a trop de
+texte.**
+
+La tolérance de la Partie LXVIII rendait le bloc *correct* — le padding survivait —
+mais au prix d'un bloc plus haut sur Android que sur la maquette. Elle réglait la
+conséquence ; cette décision règle la cause.
+
+## Appliqué des deux côtés
+
+- **Code** : `numberOfLines={1}` sur le titre. L'ellipse n'est pas déclarée — `tail`
+  est le défaut de RN et c'est le `ENDING` de Figma.
+- **Maquette** : le nœud `853:41` porte désormais `maxLines: 1` / `textTruncation:
+  ENDING`. Vérifié après écriture : le texte reste à 20, le bloc `Texte` à 63, la
+  carte à 76 — **rien n'a bougé visuellement**, la maquette enregistre l'intention.
+
+La hauteur du bloc redevient donc déterministe sur **toutes** les largeurs :
+20 + 3 + 40 = 63, sous les 64 de la vignette.
+
+## Ce qu'on garde quand même de la Partie LXVIII
+
+⚠️ **Le plancher de la carte et la mesure hors flux restent.** Ce n'est pas de la
+prudence gratuite : un réglage de police système à ×2 donne une ligne de 40, et
+20 + 3 + 40 devient 123 — le bloc doit alors grandir plutôt qu'écraser son padding.
+La ligne unique retire le **cas courant** ; la tolérance reste le filet pour le cas
+extrême.
+
+## La règle du style guide, amendée de façon datée
+
+Elle disait « un titre ne se tronque jamais », écrit d'après l'état de la maquette
+de la veille. Elle se scinde :
+
+| Rôle | Traitement |
+|---|---|
+| Descriptif | 2 lignes + ellipse |
+| **Titre dans un bloc à hauteur contrainte** | **1 ligne + ellipse** |
+| Titre libre | aucune troncature |
+
+Avec le pourquoi : là où la mise en page peut céder, on ne coupe pas un titre — on
+raccourcit la copie. Là où elle ne peut pas céder, il tient sur une ligne et
+s'ellipse. **Entre un titre tronqué et un padding détruit, c'est la troncature qui
+coûte le moins.**
+
+## Ce qui reste ouvert
+
+- **Rien n'a été vu tourner.** Sur Android, le titre doit maintenant tenir sur une
+  ligne — avec une ellipse s'il déborde — et la carte retrouver ses 76 avec son
+  padding de 6.
+- Si l'ellipse tombe sur « …avec Fiw » et mange le nom de marque, c'est la **copie**
+  qu'il faut raccourcir côté maquette. Le code n'a plus rien à y faire.
+
+## État
+
+`npx tsc --noEmit` propre. Maquette à jour.
+
+---
+
+# Partie LXX — Les modales sont des feuilles groupées (29 août 2026)
+
+**Trois références Figma données par l'utilisatrice — `Modale · Annuler`
+(499:582), `Modale · SOS` (500:596), `Modale · Paiement` (674:3375) — après
+qu'elle a constaté que « le bloc du bas » de ces feuilles ne respectait pas la
+maquette.**
+
+## Ce que le relevé montre
+
+Les trois partagent une structure que le code n'avait pas : `Contenu` VERTICAL
+**gap 6** → **deux `SheetCard`** (pad 16, gap 12) sur fond `track`, plus la
+poignée.
+
+| Modale | Carte 1 (contenu) | Carte 2 (actions) |
+|---|---|---|
+| Annuler (370) | 208 — `SheetHeader` « Annuler la course ? » + `Corps` gap 8 : `AlertBadge` alerte + texte | 156 — `Button` primary « Garder ma course » + `Button` destructive « Annuler la course » |
+| SOS (302) | 208 — en-tête « Alerte SOS envoyée » + badge + texte | 88 — `Button` primary « J'ai compris » |
+| Paiement (396) | 302 — en-tête « Modes de paiement » + 3 `ListRow` (Leading 56, `Radio`, filets, gap 0) | 88 — `Button` primary « **Confirmer** » |
+
+Le code, lui, mettait **tout dans une seule surface blanche** à padding 20 : les
+boutons vivaient au bout du contenu.
+
+**Ce n'est pas décoratif.** Le contenu explique, les actions engagent ; l'interstice
+gris de 6 dit que ce sont deux natures différentes. C'est la même grammaire que
+toutes les autres feuilles du produit, qui étaient déjà groupées.
+
+## Vérifié avant d'étendre
+
+Les deux modales que l'utilisatrice n'a PAS citées ont-elles la même structure ?
+Relevé : oui, **les cinq sans exception** — `Décrire le colis` (180 + 88),
+`Destinataire (saisie)` (256 + 156), `Destinataire (contacts)` (451 + 88). Étendre
+n'était donc pas une extrapolation.
+
+## Ce qui a été écrit
+
+- **`BottomSheet`** devient une feuille groupée : `groupedSheetSurface`, gouttière
+  de 6, poignée hors flux, première carte qui suit l'arc (`firstCardEdge`), dernière
+  carte à coins bas carrés absorbant la zone sûre en blanc. Nouvel emplacement
+  **`actions`** à côté de `children` — sans lui, la feuille n'a qu'une carte.
+- **La zone de glissement s'arrête à la carte de contenu.** Un doigt posé sur un
+  bouton ne doit pas commencer à traîner la feuille.
+- **`SheetHeader` en `marginBottom: 0`** dans une modale : c'est la gouttière de 12
+  de la carte qui l'espace du corps. Les cumuler donnait 28 contre 12 dans la
+  maquette — divergence trouvée en implémentant, pas cherchée.
+- **`PaymentSheetContent` ne porte plus que la liste.** Son CTA part dans la carte
+  d'actions, et son libellé passe de « Terminer » à « **Confirmer** », relevé sur la
+  maquette.
+- **Corps des modales d'alerte** : un seul style `modalBody` (badge et texte
+  centrés, gouttière 8) remplace six styles ad hoc — `cancelSheet`, `cancelText`,
+  `cancelBtn`, `sosSheet`, `sosText`, `sosCta` — qui portaient des gouttières de 10
+  et 14 et des largeurs maximales que la maquette n'a pas.
+
+Appliqué aux six modales des quatre écrans : `course-active` (Annuler, SOS),
+`livraison/suivi` (Annuler, SOS), `transport/configure` et `livraison/configure`
+(Paiement), plus `Décrire le colis`.
+
+## Ce qui reste ouvert
+
+- **`Destinataire (saisie)` n'est pas converti.** Sa carte d'actions porte **deux
+  `Button`** dans la maquette, là où le code a un bouton plus un lien texte
+  « Choisir dans mes contacts ». C'est un choix de variante qui demande son propre
+  relevé — je ne l'ai pas deviné.
+- **Rien n'a été vu tourner.** À regarder : une modale d'annulation (deux cartes,
+  gouttière grise entre le texte et les boutons), la modale de paiement (CTA dans
+  sa propre carte), et le glissé-pour-fermer depuis l'en-tête — il ne doit plus
+  partir depuis un bouton.
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LXXI — Les champs de saisie reviennent au composant (29 août 2026)
+
+**Signalement : les champs de saisie de cette feuille ne viennent pas du design
+system, ils ne ressemblent pas à ceux de la maquette.** Référence donnée :
+`486:361`, l'écran `Livraison / Configure`.
+
+C'était exact partout où l'écran saisit quelque chose.
+
+## Ce que la maquette met, et ce que le code mettait
+
+| Emplacement | Maquette | Code |
+|---|---|---|
+| Carte « Destinataire et description » | **2 × `Field`** (343×56, `Type=texte`, icône de tête, libellé masqué) | deux rangées faites main : `Icon` + `Text` + chevron, fond `surfaceAlt`, rayon `lg` |
+| Modale `Destinataire (saisie)` | **2 × `Field`** (343×80, libellé AFFICHÉ « Nom » / « Téléphone ») | deux `TextInput` bruts dans un `inputWrap` local |
+| Modale `Décrire le colis` | `Field` (96) | `TextInput` brut multiligne |
+
+Aucun de ces sept réglages — liseré, fond, rayon, hauteur, typo, icône, croix
+d'effacement — ne venait du composant. Le `Field` du système existe pourtant depuis
+le 25 août, avec ses 24 variantes ; c'est le point d'entrée unique de toute saisie
+et il était contourné à trois endroits du même écran.
+
+## Une question tranchée par l'utilisatrice
+
+La maquette montre un champ « Ajouter un destinataire » avec une valeur de nom,
+mais le domaine exige aussi son **numéro** — le CTA reste désactivé sans lui.
+Décision : **la description se saisit directement dans son champ**, tandis que le
+champ destinataire reste une **porte** vers la modale, où le nom et le numéro se
+saisissent avec l'accès au répertoire.
+
+Conséquences :
+- le champ destinataire est un vrai `Field` rendu **inerte au toucher**
+  (`pointerEvents="none"`), enveloppé d'un `Pressable` qui ouvre la modale — sans
+  ça le clavier s'ouvrirait sur un champ qu'on ne remplit pas là ;
+- la modale `Décrire le colis` **disparaît** : son état, son ouverture et ses deux
+  styles avec elle.
+
+## Ce que le relevé a donné en prime
+
+La carte d'actions de `Destinataire (saisie)` porte **deux boutons** :
+« Terminer » en `primary` et « **Choisir dans mes contacts** » en `secondary` **avec
+icône** — le code en faisait un lien texte discret. Ça ferme le point laissé ouvert
+en Partie LXX, qui attendait précisément ce relevé.
+
+## Ménage
+
+Six styles locaux supprimés — `fieldRow`, `descInput`, `descCount`, `inputWrap`,
+`input`, `backToContacts`, `sheetCta` — et deux imports devenus morts (`TextInput`,
+`inputTypo`). Un écran qui n'importe plus `TextInput` est un bon signe : il ne
+réimplémente plus de champ.
+
+## Ce qui reste ouvert
+
+- ⚠️ **Une coquille dans la maquette** : le champ TÉLÉPHONE de
+  `Destinataire (saisie)` porte « Nom du destinataire » en placeholder — un reste de
+  duplication du premier champ. Le code garde « 77 123 45 67 », qui dit ce qu'on
+  attend. À corriger côté Figma.
+- **Le mode `contacts` de la modale n'a pas de carte d'actions** : la maquette lui
+  en donne une avec un bouton, dont je n'ai pas relevé le libellé. Une seule carte
+  en attendant.
+- **Rien n'a été vu tourner.** À regarder : la carte « Destinataire et description »
+  (deux vrais champs de 56), la saisie de description directement dans son champ, et
+  la modale destinataire avec ses deux boutons.
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LXXII — Les trois modales de saisie de la Livraison (29 août 2026)
+
+**Correction de l'utilisatrice sur la Partie LXXI : la modale s'ouvre pour le
+destinataire ET pour la description.** Trois références données —
+`Destinataire (contacts)` 504:653, `Destinataire (saisie)` 503:657,
+`Décrire le colis` 503:636.
+
+La saisie directe de la description, décidée la veille, est donc annulée : les deux
+champs de la carte « Destinataire et description » sont des **portes**, et la
+saisie se fait dans la feuille. Ce qui reste acquis de la Partie LXXI, c'est
+l'essentiel : ce sont désormais de vrais `Field` du design system, pas des rangées
+faites à la main.
+
+## Les trois relevés
+
+| Modale | Carte 1 | Carte 2 |
+|---|---|---|
+| **Contacts** (545) | en-tête « Destinataire » + `SearchBar` variante `sheet` + 4 `ListRow` (Avatar 48, titre + sous-titre, filets) | « **Saisir un autre destinataire** » `secondary` avec icône |
+| **Saisie** (418) | en-tête + `Field` « Nom » (requis) + `Field` « Téléphone » | « Terminer » `primary` + « Choisir dans mes contacts » `secondary` avec icône |
+| **Décrire le colis** (274) | en-tête + `Field` **`Type=zone`**, libellé masqué | « Terminer » `primary` |
+
+## Ce que ça déplace dans le code
+
+- **La description retrouve sa modale**, mais avec un `Field type="zone"` là où
+  il y avait un `TextInput` brut. Son champ dans la carte est une porte, comme le
+  destinataire — même mécanique : `Field` inerte au toucher, `Pressable` autour.
+- **Le mode contacts gagne sa carte d'actions.** La rangée « Saisir un autre
+  destinataire » faite à la main — pastille bleue de 44, chevron, marge de 10 —
+  devient le `Button secondary` de la seconde carte. C'est le libellé qui me
+  manquait en Partie LXX, et il ferme le dernier point ouvert des modales.
+- **Deux styles locaux de plus disparaissent** (`manualRow`, `manualIcon`), après
+  les sept de la veille.
+
+## Une coquille de plus dans la maquette
+
+Le `Field` de `Décrire le colis` porte « **Nom du destinataire** » en `Placeholder`
+— la même duplication que le champ téléphone signalée en Partie LXXI. Sa valeur
+d'exemple, « Ex. Dossier A4 sous enveloppe… », dit la vraie intention et c'est elle
+que le code emploie. Deux champs sur trois ont hérité du placeholder du premier :
+à reprendre côté Figma d'un coup.
+
+## Ce qui reste ouvert
+
+- **Le compteur de caractères disparaît** (`120/120` sous la zone de description) :
+  la maquette ne le montre pas et son `Afficher aide` est à `false`. `maxLength`
+  reste, il borne sans se montrer. Si le compteur comptait, c'est un `aide` à
+  activer côté maquette.
+- **Rien n'a été vu tourner.** À regarder : les deux champs de la carte qui ouvrent
+  chacun leur feuille, la zone de description dans sa modale, et le bouton
+  secondaire des deux modes du destinataire.
+
+## État
+
+`npx tsc --noEmit` propre.

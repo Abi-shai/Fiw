@@ -1,14 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, StyleSheet, TouchableOpacity, Animated, ScrollView, Image,
-  Share, LayoutAnimation, Platform, UIManager, Dimensions, Easing,
+  Share, LayoutAnimation, Platform, UIManager, Easing,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useScreenHeight } from '@/hooks/useScreenHeight';
 import { router, useLocalSearchParams } from 'expo-router';
 import LeafletMap, { LeafletMapHandle } from '@/components/LeafletMap';
-import { CARD_GAP, Handle, SHEET_RADIUS, SheetCard, groupedSheetSurface } from '@/components/Sheet';
+import { CARD_GAP, Handle, SHEET_LEVELS, SHEET_RADIUS, SheetCard, firstCardEdge, groupedSheetSurface, sheetMaxH, sheetSnaps } from '@/components/Sheet';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
+import Scrim, { sheetScrimOpacity } from '@/components/Scrim';
 import Button from '@/components/Button';
 import BottomSheet from '@/components/BottomSheet';
 import StepProgress, { type Step } from '@/components/StepProgress';
@@ -22,7 +24,7 @@ import InfoRow from '@/components/InfoRow';
 import RouteCard from '@/components/RouteCard';
 import VehicleGroup from '@/components/VehicleGroup';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
-import { Colors, Radii, Outfit } from '@/constants/tokens';
+import { Motion, Colors, Radii, Outfit } from '@/constants/tokens';
 import { VELO_LIVREUR, MOTO_LIVREUR, DAKAR_CENTER, livraisonGamme } from '@/constants/data';
 import { payIllustration, topviewSprite } from '@/constants/illustrations';
 
@@ -31,7 +33,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 const SHEET_LAYOUT = {
-  duration: 300,
+  duration: Motion.duration.textExitShift,
   update: { type: LayoutAnimation.Types.easeInEaseOut },
   create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
   delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
@@ -84,11 +86,9 @@ const SEG_PLAN: Record<StepKey, { from: number; to: number } | null> = {
 };
 
 const PRESTATAIRE_START = { lat: 14.7100, lng: -17.4500 };
-const SCREEN_H = Dimensions.get('window').height;
 // Hauteur que la feuille occupe à son cran milieu — marge basse du cadrage
 // carte (le trajet doit tenir dans la zone visible, au-dessus de la feuille).
 // Estimée : la carte ne recharge plus, son cadrage est figé au montage.
-const SHEET_MID_H = Math.round(SCREEN_H * 0.44);
 
 const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/[\s  ]/g, '.');
 
@@ -156,6 +156,9 @@ export default function LivraisonSuiviScreen() {
   const destLng = parseFloat(params.destLng || String(DAKAR_CENTER.lng));
 
   const insets = useSafeAreaInsets();
+  const SCREEN_H = useScreenHeight();
+  // Marge basse du cadrage carte : la hauteur de la feuille à son cran milieu.
+  const SHEET_MID_H = Math.round(SCREEN_H * SHEET_LEVELS.half);
   const [stepIndex, setStepIndex] = useState(0);
   const [etaSeconds, setEtaSeconds] = useState(Math.round(STEPS[0].duration / 1000));
   const [sosOpen, setSosOpen] = useState(false);
@@ -183,17 +186,23 @@ export default function LivraisonSuiviScreen() {
   const [sheetH, setSheetH] = useState(0);
   const [headerH, setHeaderH] = useState(0);
   const [bodyContentH, setBodyContentH] = useState(0);
-  const bodyMaxH = Math.max(160, SCREEN_H - insets.top - headerH - 12);
+  // Plafond de 85 % : le corps est borné pour que la feuille ENTIÈRE, en-tête
+  // compris, ne dépasse jamais le niveau haut du système. Ce qui ne tient pas
+  // scrolle DANS la feuille — on ne gagne pas de hauteur en rognant la carte.
+  const bodyMaxH = Math.max(160, sheetMaxH(SCREEN_H) - headerH);
+  // Le corps épouse son contenu (borné au plafond) — un ScrollView ne se
+  // dimensionne pas seul dans un parent hug, on lui fixe donc min(contenu, max).
   const bodyH = Math.min(bodyContentH, bodyMaxH);
-  const snaps = useMemo(() => {
-    if (!sheetH || !headerH) return [0, 0, 0];
-    const peek = Math.max(1, Math.round(sheetH - headerH));
-    const mid = Math.min(peek - 1, Math.round(sheetH * 0.44));
-    return [0, Math.max(1, mid), peek];
-  }, [sheetH, headerH]);
+  // Les trois crans du système : la feuille montre 85 / 50 / 25 % de l'écran.
+  const snaps = useMemo(() => sheetSnaps(SCREEN_H, sheetH), [sheetH]);
 
   const { ty, snapTo, panHandlers } = useSnapSheet({ snaps, initial: SCREEN_H });
-  const expand = () => snapTo(0);
+  const expand = () => snapTo(snaps[0]);
+
+  // Voile : la carte s'assombrit à mesure que la feuille monte — `ScrimLevels`,
+  // une opacité par cran (0 au repli, 30 % à mi-hauteur, 50 % en haut), et zéro
+  // tant que la feuille n'est pas entrée.
+  const scrimOpacity = sheetScrimOpacity(ty, snaps, SCREEN_H);
 
   const didEnter = useRef(false);
   useEffect(() => {
@@ -289,6 +298,9 @@ export default function LivraisonSuiviScreen() {
         style={StyleSheet.absoluteFillObject}
       />
 
+      {/* Voile — posé entre la carte et la feuille. */}
+      <Scrim opacity={scrimOpacity} />
+
       <Animated.View
         style={[groupedSheetSurface, styles.snapSheet, { transform: [{ translateY: ty }] }]}
         onLayout={(e) => setSheetH(e.nativeEvent.layout.height)}
@@ -307,7 +319,7 @@ export default function LivraisonSuiviScreen() {
 
               Elle vit dans la zone d'en-tête : au cran replié, le Client voit
               donc son étape ET son prestataire d'un coup. */}
-          <SheetCard>
+          <SheetCard style={firstCardEdge}>
             {step.key === 'collecte' && (
               <InfoBanner icon="package">
                 Remettez le colis au prestataire — il enregistre le n° de suivi.
@@ -408,37 +420,46 @@ export default function LivraisonSuiviScreen() {
 
       {/* Confirmation d'annulation — gratuite avant la collecte. */}
       {cancelOpen && (
-        <BottomSheet title="Annuler la livraison ?" onClose={() => setCancelOpen(false)}>
-          {(close) => (
-            <View style={styles.cancelSheet}>
-              <AlertBadge icon="package" weight="fill" />
-              <Text variant="body" color={Colors.textSecondary} align="center" style={styles.cancelText}>
-                Votre prestataire est en route vers le point de collecte. L'annulation est gratuite tant que le colis n'a pas été collecté.
-              </Text>
-              <Button label="Garder ma livraison" onPress={close} style={styles.cancelBtn} />
+        <BottomSheet
+          title="Annuler la livraison ?"
+          onClose={() => setCancelOpen(false)}
+          actions={(close) => (
+            <>
+              <Button label="Garder ma livraison" onPress={close} />
               <Button
                 label="Annuler la livraison"
                 variant="destructive"
                 onPress={() => { close(); router.replace('/home'); }}
-                style={styles.cancelBtn}
               />
-            </View>
+            </>
           )}
+        >
+            {/* Corps de la maquette : badge et texte CENTRÉS, gouttière de 8.
+                Les actions ne sont plus ici — elles ont leur propre carte. */}
+          <View style={styles.modalBody}>
+            <AlertBadge icon="package" weight="fill" />
+            <Text variant="body" color={Colors.textSecondary} align="center">
+              Votre prestataire est en route vers le point de collecte. L'annulation est gratuite tant que le colis n'a pas été collecté.
+            </Text>
+          </View>
         </BottomSheet>
       )}
 
       {/* Confirmation SOS. */}
       {sosOpen && (
-        <BottomSheet title="Alerte SOS envoyée" onClose={() => setSosOpen(false)}>
-          {(close) => (
-            <View style={styles.sosSheet}>
-              <AlertBadge icon="sos" weight="fill" />
-              <Text variant="body" color={Colors.textSecondary} align="center" style={styles.sosText}>
-                Votre position a été partagée avec vos contacts de confiance et le service de sécurité Fiw. Un agent vous contacte immédiatement.
-              </Text>
-              <Button label="J'ai compris" onPress={close} style={styles.sosCta} />
-            </View>
-          )}
+        <BottomSheet
+          title="Alerte SOS envoyée"
+          onClose={() => setSosOpen(false)}
+          actions={(close) => <Button label="J'ai compris" onPress={close} />}
+        >
+          {/* Corps de la maquette : badge et texte CENTRÉS, gouttière de 8.
+              Les actions ne sont plus ici — elles ont leur propre carte. */}
+          <View style={styles.modalBody}>
+            <AlertBadge icon="sos" weight="fill" />
+            <Text variant="body" color={Colors.textSecondary} align="center">
+              Votre position a été partagée avec vos contacts de confiance et le service de sécurité Fiw. Un agent vous contacte immédiatement.
+            </Text>
+          </View>
         </BottomSheet>
       )}
     </View>
@@ -478,11 +499,9 @@ const styles = StyleSheet.create({
   // carte pleine, montant à droite (maquette 311:664 · InfosCourse).
 
 
-  cancelSheet: { alignItems: 'center', gap: 10, paddingTop: 4, paddingBottom: 8 },
-  cancelText: { maxWidth: 320, marginBottom: 6 },
-  cancelBtn: { alignSelf: 'stretch' },
+  /** Corps d'une modale : badge et texte centrés, gouttière de 8 — le `Corps`
+   *  de la maquette. Aucun padding propre : celui de la `SheetCard` suffit. */
+  modalBody: { alignItems: 'center', gap: 8 },
 
-  sosSheet: { alignItems: 'center', gap: 14, paddingTop: 4, paddingBottom: 8 },
-  sosText: { maxWidth: 300 },
-  sosCta: { alignSelf: 'stretch', marginTop: 4 },
+
 });

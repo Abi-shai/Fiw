@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
 import {
-  View, StyleSheet, ScrollView, TextInput, KeyboardAvoidingView, Platform,
+  View, StyleSheet, ScrollView, TextInput,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useLocalSearchParams } from 'expo-router';
 import { Colors, Radii, inputTypo, Strokes } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
@@ -42,7 +43,11 @@ export default function ChatScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      // `padding` sur les deux OS. Le `KeyboardAvoidingView` vient de
+      // `react-native-keyboard-controller` et non de React Native : même prop,
+      // mais le décalage suit le clavier image par image au lieu d'attendre
+      // qu'il soit posé. Cf. `docs/style-guide.md` § Les deux OS.
+      behavior="padding"
     >
       <ScreenHeader title={name || 'Prestataire'} />
 

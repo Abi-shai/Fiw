@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { router } from 'expo-router';
 import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
@@ -37,7 +38,11 @@ export default function RetraitMethode() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      // `padding` sur les deux OS. Le `KeyboardAvoidingView` vient de
+      // `react-native-keyboard-controller` et non de React Native : même prop,
+      // mais le décalage suit le clavier image par image au lieu d'attendre
+      // qu'il soit posé. Cf. `docs/style-guide.md` § Les deux OS.
+      behavior="padding"
     >
       <ScreenHeader title="Retirer" />
 
@@ -119,6 +124,10 @@ const styles = StyleSheet.create({
   kicker: { ...SectionLabel },
   amountRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing[2] },
   amountInput: {
+    // Saisie de montant alignée sur la LIGNE DE BASE avec le « F » voisin
+    // (`amountRow`). Le padding de police d'Android décale cette base : les deux
+    // ne s'alignent plus. Cf. `components/Text.tsx`.
+    includeFontPadding: false,
     fontFamily: Outfit.semibold,
     fontSize: 48,
     color: Colors.textPrimary,

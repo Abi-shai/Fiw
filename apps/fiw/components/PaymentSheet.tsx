@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Image } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import Button from '@/components/Button';
 import Radio from '@/components/Radio';
 import List from '@/components/List';
 import ListRow from '@/components/ListRow';
@@ -27,15 +26,20 @@ function PayLogo({ method }: { method: typeof PAYMENT_METHODS[number] }) {
  * Contenu de la feuille paiement (sélection validée à la fermeture, façon
  * Yango). Partagé entre les flux Transport et Livraison.
  *
+ * ⚠️ **Il ne porte QUE la liste.** Le bouton de confirmation vit dans la carte
+ * d'actions de la `BottomSheet` — dans la maquette (`Modale · Paiement`,
+ * 674:3375) le contenu et les actions sont deux `SheetCard` séparées par la
+ * gouttière de 6.
+ *
  * Les rangées passent par `ListRow` — la maquette a absorbé `PaymentMethodRow`
  * dedans. C'est le `Radio` qui dit l'élu, pas la couleur du libellé : une rangée
  * sélectionnée n'a pas à changer de ton, sinon deux signaux disent la même chose.
  */
-export default function PaymentSheetContent({ value, onChange, onDone }: {
-  value: string; onChange: (id: string) => void; onDone: () => void;
+export default function PaymentSheetContent({ value, onChange }: {
+  value: string; onChange: (id: string) => void;
 }) {
   return (
-    <View style={styles.wrap}>
+    <>
       {/* Filet pleine largeur : en feuille, il file d'un bord à l'autre du
           contenu — cf. la règle « Le filet d'une liste en feuille » du style
           guide. Le retrait est réservé aux listes d'écran. */}
@@ -50,13 +54,11 @@ export default function PaymentSheetContent({ value, onChange, onDone }: {
           />
         ))}
       </List>
-      <Button label="Terminer" onPress={onDone} />
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingBottom: 4, gap: 16 },
   list: { marginBottom: 0 },
   logoWrap: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
   illo: { width: 52, height: 52, borderRadius: 14 },

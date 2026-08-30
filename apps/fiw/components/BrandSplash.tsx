@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
 import Logo from '@/components/Logo';
-import { Colors } from '@/constants/tokens';
+import { Colors, Motion } from '@/constants/tokens';
 
 const { width } = Dimensions.get('window');
 
@@ -14,7 +14,9 @@ export default function BrandSplash() {
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(scale, { toValue: 1, stiffness: 150, damping: 18, mass: 1, useNativeDriver: true }),
+      // Le monogramme de marque est LE cas que « Spring for Hero Only » vise :
+      // un actif de marque à forte valeur. Il prend donc le `Spring Gentle`.
+      Animated.spring(scale, { toValue: 1, ...Motion.spring.gentle, useNativeDriver: true }),
       Animated.timing(opacity, { toValue: 1, duration: 420, useNativeDriver: true }),
     ]).start();
   }, []);

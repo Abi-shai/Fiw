@@ -105,6 +105,17 @@ export const Typography: Record<TextVariant, {
 export const inputTypo = (variant: TextVariant) => ({
   fontFamily: Typography[variant].fontFamily,
   fontSize: Typography[variant].fontSize,
+  // Même correctif que l'atome `Text` : Android réserve un espace au-dessus de
+  // l'ascendante et sous la descendante de la police, iOS non. Sur un champ, cet
+  // espace se voit deux fois — il grandit la boîte de saisie ET décentre le texte
+  // dedans.
+  includeFontPadding: false,
+  // Son compagnon obligé : sans le padding de police, le texte d'un champ d'une
+  // seule ligne se cale en haut de sa boîte sur Android. `center` le remet où iOS
+  // le met naturellement. Réservé aux champs d'UNE ligne — c'est le seul cas que
+  // `inputTypo` sert, les champs multilignes reprennent la variante entière et
+  // veulent leur texte en haut.
+  textAlignVertical: 'center' as const,
 });
 
 // Libellé de section en capitales : le titre qui coiffe une liste ou une carte

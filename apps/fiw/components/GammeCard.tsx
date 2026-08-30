@@ -5,11 +5,15 @@ import {
 } from 'react-native';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
-import { Colors, Radii, Strokes } from '@/constants/tokens';
+import { Colors, Motion, Radii, Strokes } from '@/constants/tokens';
 import { gammeIllustration, illoSize, type IlluKey } from '@/constants/illustrations';
 
 const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/[\s  ]/g, '.');
-const SPRING = { stiffness: 220, damping: 22, mass: 1 };
+/** Sélection d'une gamme = **validation positive**, le seul cas de
+ *  micro-interaction où la recette de l'identité autorise le rebond
+ *  (« Positive validation triggers gentle spring bounces »). D'où le
+ *  `Spring Gentle` plutôt qu'un ressort réglé à la main. */
+const SPRING = Motion.spring.gentle;
 
 /** Largeur Figma de la carte — rangée scrollable Transport. Les rangées à deux
  *  gammes (Livraison) passent `flex: 1` via `style`. */

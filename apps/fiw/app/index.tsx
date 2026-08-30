@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
-  View, StyleSheet, KeyboardAvoidingView,
-  Platform, TouchableOpacity, ScrollView
+  View, StyleSheet,
+  TouchableOpacity, ScrollView,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/tokens';
 import Button from '@/components/Button';
@@ -20,7 +21,11 @@ export default function OnboardingScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      // `padding` sur les deux OS. Le `KeyboardAvoidingView` vient de
+      // `react-native-keyboard-controller` et non de React Native : même prop,
+      // mais le décalage suit le clavier image par image au lieu d'attendre
+      // qu'il soit posé. Cf. `docs/style-guide.md` § Les deux OS.
+      behavior="padding"
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>

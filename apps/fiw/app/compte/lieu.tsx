@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import {
   View, StyleSheet, TouchableOpacity, ScrollView, Keyboard, Alert,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Radii, SectionLabel, Shadows, Strokes } from '@/constants/tokens';
@@ -241,7 +242,11 @@ export default function LieuScreen() {
 
   // --- 2. Les détails : ce qui se tape au clavier ---
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior="padding">
+      {/* `adjustNothing` côté Android : plus rien ne dégage un champ tout seul, donc
+          l'écran porte son propre décalage. `padding` sur les deux OS, composant de
+          `react-native-keyboard-controller` — il suit le clavier image par image.
+          Cf. `docs/style-guide.md` § Les deux OS. */}
       <ScreenHeader
         title={existing ? 'Modifier le lieu' : 'Nouveau lieu'}
         onBack={() => (existing ? router.back() : setStep('map'))}
@@ -324,7 +329,7 @@ export default function LieuScreen() {
           />
         ))}
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

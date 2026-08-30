@@ -30,5 +30,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  code: { fontFamily: Outfit.semibold, fontSize: 10, letterSpacing: 0.3 },
+  // Idem : code ISO hors échelle, dans une boîte de 10 px de haut. Le padding de
+  // police d'Android y pèse proportionnellement le plus lourd de tout le produit.
+  code: { fontFamily: Outfit.semibold, fontSize: 10, letterSpacing: 0.3, includeFontPadding: false },
 });

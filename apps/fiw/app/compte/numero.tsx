@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/tokens';
@@ -54,7 +55,11 @@ export default function NumeroScreen() {
 
   if (step === 'number') {
     return (
-      <View style={styles.container}>
+      <KeyboardAvoidingView style={styles.container} behavior="padding">
+        {/* `adjustNothing` côté Android : plus rien ne dégage un champ tout seul, donc
+            l'écran porte son propre décalage. `padding` sur les deux OS, composant de
+            `react-native-keyboard-controller` — il suit le clavier image par image.
+            Cf. `docs/style-guide.md` § Les deux OS. */}
         <ScreenHeader title="Modifier le numéro" />
         <ScrollView
           contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
@@ -90,12 +95,16 @@ export default function NumeroScreen() {
           onSelect={(c) => { setCountry(c); setDigits(''); setPickerOpen(false); }}
           onClose={() => setPickerOpen(false)}
         />
-      </View>
+      </KeyboardAvoidingView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior="padding">
+      {/* `adjustNothing` côté Android : plus rien ne dégage un champ tout seul, donc
+          l'écran porte son propre décalage. `padding` sur les deux OS, composant de
+          `react-native-keyboard-controller` — il suit le clavier image par image.
+          Cf. `docs/style-guide.md` § Les deux OS. */}
       <ScreenHeader title="Vérification" onBack={() => setStep('number')} />
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
@@ -124,7 +133,7 @@ export default function NumeroScreen() {
         <Button label="Vérifier" onPress={() => verify()} loading={loading} disabled={code.length < 4} style={styles.cta} />
         <Button label="Renvoyer le code" variant="link" size="sm" onPress={() => setCode('')} style={styles.resend} />
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

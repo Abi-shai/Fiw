@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Colors, Radii, Shadows, Typography } from '@/constants/tokens';
@@ -74,7 +75,11 @@ export default function LivraisonClotureScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior="padding">
+      {/* `adjustNothing` côté Android : plus rien ne dégage un champ tout seul, donc
+          l'écran porte son propre décalage. `padding` sur les deux OS, composant de
+          `react-native-keyboard-controller` — il suit le clavier image par image.
+          Cf. `docs/style-guide.md` § Les deux OS. */}
       {/* L'échappatoire d'un écran d'avis est le ✕ de l'en-tête, pas un lien
           gris sous le CTA — c'est ce que font Shopee, Grab, Grubhub, Gojek,
           Tesla et Walmart. Un lien gris jumeau du CTA lui dispute l'attention
@@ -186,7 +191,7 @@ export default function LivraisonClotureScreen() {
       <ScreenFooter rule>
         <Button label="Envoyer mon avis" onPress={handleSubmit} />
       </ScreenFooter>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

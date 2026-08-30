@@ -1,11 +1,17 @@
 import { useEffect, useRef } from 'react';
 import { Animated, PanResponder, type PanResponderGestureState } from 'react-native';
+import { Motion } from '@/constants/tokens';
 
 export type SheetSpring = { stiffness: number; damping: number; mass: number };
 
-// Ressort partagé (snap + entrée) : vif et légèrement sous-amorti (ratio ≈ 0,66)
-// → settle rapide + petit dépassement qu'on PERÇOIT. Repris tel quel de l'accueil.
-export const SHEET_SPRING: SheetSpring = { stiffness: 280, damping: 22, mass: 1 };
+/**
+ * Ressort du LÂCHER DE GESTE — le `Spring Gentle` de l'identité de mouvement.
+ *
+ * Il valait `damping: 22` (ratio ≈ 0,66, soit un `bounce` ≈ 0,34) ; il prend
+ * maintenant le 0,25 de la planche, donc `damping: 25`. La raideur ne change pas :
+ * la feuille rebondit un peu moins, elle ne va pas plus lentement.
+ */
+export const SHEET_SPRING: SheetSpring = Motion.spring.gentle;
 
 export type SnapReleaseCtx = {
   gesture: PanResponderGestureState;
@@ -62,7 +68,44 @@ export function useSnapSheet(opts: Opts) {
     return () => ty.removeListener(id);
   }, [ty]);
 
+  /**
+   * Deux régimes, et c'est l'identité de mouvement qui les sépare.
+   *
+   * • **Lâcher de geste** (`vy` ≠ 0) → **ressort**. Une courbe de timing ne sait
+   *   pas accepter une vélocité initiale : il y aurait un micro-arrêt au lâcher,
+   *   et c'est précisément la continuité de vélocité qui fait qu'une feuille
+   *   *suit le doigt*. Le ressort est ici de la **physique**, pas un rebond
+   *   décoratif — c'est ce qui le fait survivre à la règle « Spring for Hero
+   *   Only », et il prend le `Spring Gentle` de la planche.
+   *
+   * • **Snap programmatique** (`vy` = 0 : entrée, ouverture, fermeture, retour à
+   *   un cran) → courbe `Hold / Anchor`, et une durée qui dépend du **sens**,
+   *   parce que c'est tout le principe *Asymmetric Timing* :
+   *
+   *   - la feuille **monte** → elle s'installe : recette « Modals / Sheets »,
+   *     fenêtre `container-morph` (50 → 500). Le maintien de 50 laisse la mise en
+   *     page parente se terminer avant qu'elle bouge.
+   *   - la feuille **descend** → elle rend la place : `container-exit` (200), sans
+   *     maintien. Rien n'attend qu'elle s'en aille.
+   *
+   *   Le sens suffit à trancher, et c'est ce qui évite d'ajouter un paramètre que
+   *   chaque appelant devrait penser à passer.
+   */
   const snapTo = (target: number, vy = 0) => {
+    if (vy === 0) {
+      const retreating = target > tyValue.current;
+      const { delay, dur } = retreating
+        ? { delay: 0, dur: Motion.duration.containerExit }
+        : Motion.window(Motion.duration.containerMorph, Motion.duration.anticipationHold);
+      Animated.timing(ty, {
+        toValue: target,
+        delay,
+        duration: dur,
+        easing: Motion.easing.hold,
+        useNativeDriver: false,
+      }).start();
+      return;
+    }
     Animated.spring(ty, {
       toValue: target,
       velocity: vy * 1000, // geste px/ms → Animated px/s

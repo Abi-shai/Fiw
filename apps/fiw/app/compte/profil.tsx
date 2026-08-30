@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Radii, Strokes } from '@/constants/tokens';
@@ -33,7 +34,11 @@ export default function ProfilScreen() {
   const dirty = name.trim().length > 0 && name.trim() !== CLIENT.name;
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior="padding">
+      {/* `adjustNothing` côté Android : plus rien ne dégage un champ tout seul, donc
+          l'écran porte son propre décalage. `padding` sur les deux OS, composant de
+          `react-native-keyboard-controller` — il suit le clavier image par image.
+          Cf. `docs/style-guide.md` § Les deux OS. */}
       <ScreenHeader title="Profil" />
 
       <ScrollView
@@ -87,7 +92,7 @@ export default function ProfilScreen() {
 
         <Button label="Enregistrer" onPress={save} disabled={!dirty} style={styles.save} />
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

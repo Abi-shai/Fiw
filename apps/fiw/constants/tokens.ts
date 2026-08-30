@@ -5,4 +5,5 @@ export { Typography, Outfit, SectionLabel, inputTypo, type TextVariant } from '.
 export { Radii } from './radii';
 export { Spacing } from './spacing';
 export { Shadows } from './shadows';
+export { Motion } from './motion';
 export { Strokes } from './strokes';

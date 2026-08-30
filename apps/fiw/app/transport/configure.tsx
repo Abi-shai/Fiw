@@ -8,18 +8,24 @@ import * as Haptics from 'expo-haptics';
 import LeafletMap, { LeafletMapHandle } from '@/components/LeafletMap';
 import BottomSheet from '@/components/BottomSheet';
 import IconButton from '@/components/IconButton';
+import Scrim, { ScrimLevels } from '@/components/Scrim';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import Button from '@/components/Button';
-import ListRow from '@/components/ListRow';
 import SegmentedControl from '@/components/SegmentedControl';
 import GammeCard from '@/components/GammeCard';
 import { GroupedSheet, SheetCard } from '@/components/Sheet';
 import RouteCard from '@/components/RouteCard';
 import PaymentSheetContent from '@/components/PaymentSheet';
-import { Colors, Radii, Shadows, Strokes } from '@/constants/tokens';
-import { GAMMES, COVOITURAGE, COVOITURAGE_NODETOUR_PRICE, DAKAR_CENTER, PAYMENT_METHODS, WAIT_GRACE_MINUTES, WAIT_FEE_PER_MIN } from '@/constants/data';
+import { Colors, Motion, Radii, Shadows, Spacing, Strokes } from '@/constants/tokens';
+import { GAMMES, COVOITURAGE, COVOITURAGE_NODETOUR_PRICE, DAKAR_CENTER, PAYMENT_METHODS } from '@/constants/data';
 import { topviewSprite } from '@/constants/illustrations';
+
+// Position de départ de la feuille, hors écran : elle y remonte à la mesure, et
+// le voile s'y annule (pas de feuille, pas de voile).
+const SHEET_OFFSCREEN = 700;
+// Fenêtre d'entrée de la feuille — recette « Modals / Sheets » de l'identité.
+const SHEET_IN = Motion.window(Motion.duration.containerMorph, Motion.duration.anticipationHold);
 
 // Carte gamme : composant partagé avec la Livraison (`components/GammeCard`).
 // Les gammes Transport n'ont pas de ligne secondaire — libellé, pastille de
@@ -76,8 +82,12 @@ export default function ConfigureScreen() {
     switchDir.current = cat === 'covoit' ? 1 : -1;
     select(() => setCategory(cat));
     switchAnim.setValue(0);
-    Animated.spring(switchAnim, {
-      toValue: 1, useNativeDriver: true, damping: 18, stiffness: 170, mass: 1,
+    // Bascule Course ↔ Covoiturage : un changement de CONTENU, pas un moment de
+    // signature — donc une courbe et pas un ressort (« Spring for Hero Only »),
+    // sur la fenêtre de texte.
+    Animated.timing(switchAnim, {
+      toValue: 1, duration: Motion.duration.textExitShift,
+      easing: Motion.easing.primary, useNativeDriver: true,
     }).start();
   };
 
@@ -100,14 +110,29 @@ export default function ConfigureScreen() {
 
   // Entrée de la feuille par le bas + mesure de hauteur (pour les contrôles carte).
   const [sheetH, setSheetH] = useState(0);
-  const ty = useRef(new Animated.Value(700)).current;
+  const ty = useRef(new Animated.Value(SHEET_OFFSCREEN)).current;
   const didEnter = useRef(false);
   useEffect(() => {
     if (sheetH > 0 && !didEnter.current) {
       didEnter.current = true;
-      Animated.spring(ty, { toValue: 0, tension: 60, friction: 12, useNativeDriver: true }).start();
+      // Entrée de feuille → recette « Modals / Sheets », comme partout ailleurs.
+      Animated.timing(ty, {
+        toValue: 0,
+        delay: SHEET_IN.delay, duration: SHEET_IN.dur,
+        easing: Motion.easing.hold, useNativeDriver: true,
+      }).start();
     }
   }, [sheetH]);
+
+  // Voile : feuille FIGÉE à un seul cran, et un cran haut — donc le niveau
+  // `full`, atteint par l'entrée de la feuille et plus jamais quitté. Pas de
+  // crans à suivre ici, d'où l'interpolation écrite en clair plutôt que
+  // `sheetScrimOpacity`.
+  const scrimOpacity = ty.interpolate({
+    inputRange: [0, SHEET_OFFSCREEN],
+    outputRange: [ScrimLevels.full, 0],
+    extrapolate: 'clamp',
+  });
 
   // Change de gamme → échange le sprite des prestataires (sans recharger).
   useEffect(() => { mapRef.current?.setProviderSprite(providerSprite); }, [providerSprite]);
@@ -163,6 +188,10 @@ export default function ConfigureScreen() {
         fitPadding={{ top: insets.top + 64, bottom: (sheetH || 420) + 24, left: 56, right: 56 }}
         style={StyleSheet.absoluteFillObject}
       />
+
+      {/* Voile — posé entre la carte et les contrôles flottants : la carte
+          s'assombrit, les boutons restent nets. */}
+      <Scrim opacity={scrimOpacity} />
 
       {/* Contrôles flottants (retour + recentrage) juste au-dessus de la feuille. */}
       {sheetH > 0 && (
@@ -253,23 +282,23 @@ export default function ConfigureScreen() {
 
           {/* Carte 3 : annonce frais d'attente + paiement + confirmation. */}
           <SheetCard style={styles.confirmCard}>
-            {/* Frais d'attente annoncés dès la commande (cf. CONTEXT.md). */}
-            <View style={styles.waitNote}>
-              <Icon name="timer" size={15} weight="bold" color={Colors.textSecondary} />
-              <Text variant="caption" color={Colors.textSecondary} style={styles.flex1}>
-                {WAIT_GRACE_MINUTES} min d'attente offertes à l'arrivée, puis {WAIT_FEE_PER_MIN} F/min
-              </Text>
+            {/* Pastille de paiement et CTA CÔTE À CÔTE, comme la maquette
+                (530:1037) : la barre de confirmation tient sur une seule rangée
+                de 56, gouttière 10, le bouton prenant la place restante.
+                La rangée pleine largeur qu'on avait mise à la place — au nom d'un
+                benchmark Uber/Grab — nommait le moyen de paiement mais coûtait
+                une rangée entière ; la maquette a tranché pour la pastille. */}
+            <View style={styles.payRow}>
+              <TouchableOpacity
+                style={styles.payThumb}
+                onPress={openPay}
+                activeOpacity={0.8}
+                accessibilityLabel={`Moyen de paiement : ${payLabel}. Modifier`}
+              >
+                <Image source={payImg} style={styles.payLogo} />
+              </TouchableOpacity>
+              <Button label="Confirmer la course" onPress={confirm} style={styles.flex1} />
             </View>
-            {/* Le moyen de paiement se lit en rangée pleine largeur au-dessus du
-                CTA — Uber, Careem, Gojek, Waymo et Grab le posent tous là. La
-                pastille carrée d'avant ne disait ni lequel ni qu'on pouvait en
-                changer. */}
-            <ListRow
-              leading={<Image source={payImg} style={styles.payLogo} />}
-              title={payLabel}
-              onPress={openPay}
-            />
-            <Button label="Confirmer la course" onPress={confirm} />
           </SheetCard>
       </GroupedSheet>
 
@@ -278,14 +307,9 @@ export default function ConfigureScreen() {
         <BottomSheet
           title="Modes de paiement"
           onClose={() => { setSelectedPayment(pendingPayment); setPayOpen(false); }}
+          actions={(close) => <Button label="Confirmer" onPress={close} />}
         >
-          {(close) => (
-            <PaymentSheetContent
-              value={pendingPayment}
-              onChange={setPendingPayment}
-              onDone={close}
-            />
-          )}
+          <PaymentSheetContent value={pendingPayment} onChange={setPendingPayment} />
         </BottomSheet>
       )}
     </View>
@@ -330,7 +354,14 @@ const styles = StyleSheet.create({
 
   // Carte confirmation.
   confirmCard: { gap: 12 },
-  waitNote: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  // Rangée de confirmation : pastille + CTA, gouttière 10 (`Spacing[2.5]`).
+  payRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing[2.5] },
+  // Boîte de 56 : elle ne peint rien, elle donne à la pastille une cible
+  // tactile correcte autour de son image de 40.
+  payThumb: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
+  // Rayon 11 conservé : la maquette Transport montre l'illustration ESPÈCES,
+  // transparente, donc sans rayon visible — mais Wave et Orange Money sont des
+  // tuiles carrées à fond plein, et la maquette Livraison leur met bien 11.
   payLogo: { width: 40, height: 40, borderRadius: 11 },
 
   radio: {

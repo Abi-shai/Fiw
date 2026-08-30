@@ -1,14 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  View, StyleSheet, TouchableOpacity, TextInput, Animated, Keyboard,
-  ScrollView, Dimensions, Image,
+  View, StyleSheet, TouchableOpacity, Animated, Keyboard,
+  ScrollView, Image, Pressable,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useScreenHeight } from '@/hooks/useScreenHeight';
 import * as Haptics from 'expo-haptics';
 import LeafletMap, { LeafletMapHandle } from '@/components/LeafletMap';
 import BottomSheet from '@/components/BottomSheet';
 import IconButton from '@/components/IconButton';
+import Field from '@/components/Field';
+import Scrim, { sheetScrimOpacity } from '@/components/Scrim';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import SearchBar from '@/components/SearchBar';
@@ -18,17 +21,16 @@ import List from '@/components/List';
 import ListRow from '@/components/ListRow';
 import PaymentSheetContent from '@/components/PaymentSheet';
 import GammeCard from '@/components/GammeCard';
-import { CARD_GAP, Handle, SHEET_RADIUS, SheetCard, groupedSheetSurface } from '@/components/Sheet';
+import { CARD_GAP, Handle, SHEET_LEVELS, SHEET_RADIUS, SheetCard, firstCardEdge, groupedSheetSurface, sheetMaxH, sheetSnaps } from '@/components/Sheet';
 import RouteCard from '@/components/RouteCard';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
-import { Colors, Radii, inputTypo, Typography, Strokes } from '@/constants/tokens';
+import { Colors, Radii, Spacing, Strokes, Typography } from '@/constants/tokens';
 import {
   CONTACTS, DAKAR_CENTER, LIVRAISON_GAMMES, livraisonGamme, makeTrackingNumber, makeCodeRemise,
   PAYMENT_METHODS,
 } from '@/constants/data';
 import { payIllustration } from '@/constants/illustrations';
 
-const SCREEN_H = Dimensions.get('window').height;
 const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/[\s  ]/g, '.');
 
 /**
@@ -52,6 +54,8 @@ const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/[\s  ]/g, '.');
  */
 export default function LivraisonConfigureScreen() {
   const insets = useSafeAreaInsets();
+  const SCREEN_H = useScreenHeight();
+
   const params = useLocalSearchParams<{
     departureName: string;
     destName: string; destDetail: string; destLat: string; destLng: string;
@@ -80,21 +84,15 @@ export default function LivraisonConfigureScreen() {
   const [contactQuery, setContactQuery] = useState('');
   const [nameDraft, setNameDraft] = useState('');
   const [phoneDraft, setPhoneDraft] = useState('');
+  /** Le brouillon est complet — remonté au niveau de l'écran parce que la carte
+   *  d'actions de la modale en a besoin, et qu'elle n'est plus dans le corps. */
+  const destDraftOk = nameDraft.trim().length > 0 && phoneDraft.trim().length >= 9;
 
   // Paiement : dernier réglage avant confirmation (feuille partagée Transport).
   const [selectedPayment, setSelectedPayment] = useState('cash');
   const [pendingPayment, setPendingPayment] = useState('cash');
   const [payOpen, setPayOpen] = useState(false);
   const payLabel = (PAYMENT_METHODS.find((p) => p.id === selectedPayment) ?? PAYMENT_METHODS[0]).label;
-
-  // Les feuilles modales contiennent des champs : on remonte leur contenu au
-  // clavier (même pattern que la recherche de l'accueil).
-  const [kbHeight, setKbHeight] = useState(0);
-  useEffect(() => {
-    const show = Keyboard.addListener('keyboardDidShow', (e) => setKbHeight(e.endCoordinates.height));
-    const hide = Keyboard.addListener('keyboardDidHide', () => setKbHeight(0));
-    return () => { show.remove(); hide.remove(); };
-  }, []);
 
   const mapRef = useRef<LeafletMapHandle>(null);
 
@@ -103,16 +101,22 @@ export default function LivraisonConfigureScreen() {
   const [sheetH, setSheetH] = useState(0);
   const [headerH, setHeaderH] = useState(0);
   const [bodyContentH, setBodyContentH] = useState(0);
-  const bodyMaxH = Math.max(160, SCREEN_H - insets.top - headerH - 12);
+  // Plafond de 85 % : le corps est borné pour que la feuille ENTIÈRE, en-tête
+  // compris, ne dépasse jamais le niveau haut du système. Ce qui ne tient pas
+  // scrolle DANS la feuille — on ne gagne pas de hauteur en rognant la carte.
+  const bodyMaxH = Math.max(160, sheetMaxH(SCREEN_H) - headerH);
+  // Le corps épouse son contenu (borné au plafond) — un ScrollView ne se
+  // dimensionne pas seul dans un parent hug, on lui fixe donc min(contenu, max).
   const bodyH = Math.min(bodyContentH, bodyMaxH);
-  const snaps = useMemo(() => {
-    if (!sheetH || !headerH) return [0, 0, 0];
-    const peek = Math.max(1, Math.round(sheetH - headerH));
-    const mid = Math.min(peek - 1, Math.round(sheetH * 0.44));
-    return [0, Math.max(1, mid), peek];
-  }, [sheetH, headerH]);
+  // Les trois crans du système : la feuille montre 85 / 50 / 25 % de l'écran.
+  const snaps = useMemo(() => sheetSnaps(SCREEN_H, sheetH), [sheetH]);
 
   const { ty, snapTo, panHandlers } = useSnapSheet({ snaps, initial: SCREEN_H });
+
+  // Voile : la carte s'assombrit à mesure que la feuille monte — `ScrimLevels`,
+  // une opacité par cran (0 au repli, 30 % à mi-hauteur, 50 % en haut), et zéro
+  // tant que la feuille n'est pas entrée.
+  const scrimOpacity = sheetScrimOpacity(ty, snaps, SCREEN_H);
 
   // Entrée : formulaire d'abord — la feuille monte au cran étendu ; l'utilisateur
   // peut la rétracter pour revoir l'itinéraire sur la carte.
@@ -206,9 +210,13 @@ export default function LivraisonConfigureScreen() {
         mapStyle="mapbox://styles/mapbox/light-v11"
         tintWater
         declutter
-        fitPadding={{ top: insets.top + 64, bottom: Math.round(SCREEN_H * 0.5), left: 56, right: 56 }}
+        fitPadding={{ top: insets.top + 64, bottom: Math.round(SCREEN_H * SHEET_LEVELS.half), left: 56, right: 56 }}
         style={StyleSheet.absoluteFillObject}
       />
+
+      {/* Voile — posé entre la carte et la feuille : la carte s'assombrit, les
+          contrôles flottants (portés par la feuille) restent nets. */}
+      <Scrim opacity={scrimOpacity} />
 
       <Animated.View
         style={[groupedSheetSurface, styles.snapSheet, { transform: [{ translateY: ty }] }]}
@@ -227,7 +235,7 @@ export default function LivraisonConfigureScreen() {
           onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)}
         >
           <View style={styles.handleFloat} pointerEvents="none"><Handle /></View>
-          <SheetCard>
+          <SheetCard style={firstCardEdge}>
             <View style={styles.headerRow}>
               <Text variant="heading1" style={styles.flex1} numberOfLines={1}>Planifier la livraison</Text>
               <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()} activeOpacity={0.85}>
@@ -278,79 +286,88 @@ export default function LivraisonConfigureScreen() {
           <SheetCard>
             <Text variant="heading2">Destinataire et description</Text>
 
-            <TouchableOpacity style={styles.fieldRow} onPress={openDest} activeOpacity={0.85}>
-              <Icon name="user" size={18} color={Colors.textSecondary} />
-              {destinataireOk ? (
-                <View style={styles.flex1}>
-                  <Text variant="label" numberOfLines={1}>{destinataireName}</Text>
-                  <Text variant="caption" color={Colors.textSecondary}>{destinatairePhone}</Text>
-                </View>
-              ) : (
-                <Text variant="body" color={Colors.textSecondary} style={styles.flex1}>
-                  Ajouter le destinataire <Text variant="body" color={Colors.error}>*</Text>
-                </Text>
-              )}
-              <Icon name="chevronRight" size={16} color={Colors.textTertiary} />
-            </TouchableOpacity>
+            {/* DESTINATAIRE — `Field` du design system (relevé sur `486:361` :
+                `Type=texte`, icône de tête `user`, placeholder « Ajouter un
+                destinataire », 56 de haut, libellé masqué).
 
-            <TouchableOpacity style={styles.fieldRow} onPress={openDesc} activeOpacity={0.85}>
-              <Icon name="edit" size={18} color={Colors.textSecondary} />
-              {description ? (
-                <>
-                  <Text variant="label" style={styles.flex1} numberOfLines={1}>{description}</Text>
-                  <Icon name="chevronRight" size={16} color={Colors.textTertiary} />
-                </>
-              ) : (
-                <Text variant="body" color={Colors.textSecondary} style={styles.flex1}>
-                  Ajouter une description (facultatif)
-                </Text>
-              )}
-            </TouchableOpacity>
+                Il reste une PORTE vers la modale : c'est là que se saisissent le
+                nom ET le numéro, avec l'accès au répertoire. Le champ est donc
+                inerte au toucher — `pointerEvents="none"` — et c'est le
+                `Pressable` qui ouvre. Sans ça le clavier s'ouvrirait sur un champ
+                qu'on ne remplit pas ici. */}
+            <Pressable onPress={openDest}>
+              <View pointerEvents="none">
+                <Field
+                  icon="user"
+                  placeholder="Ajouter un destinataire"
+                  value={destinataireName}
+                />
+              </View>
+            </Pressable>
+
+            {/* DESCRIPTION — même composant et même mécanique que le
+                destinataire : le champ est une PORTE, la saisie se fait dans la
+                modale `Décrire le colis` (503:636). */}
+            <Pressable onPress={openDesc}>
+              <View pointerEvents="none">
+                <Field
+                  icon="edit"
+                  placeholder="Ajouter une description"
+                  value={description}
+                />
+              </View>
+            </Pressable>
           </SheetCard>
 
           {/* Paiement + confirmation — dernière étape avant la mise en relation. */}
           <SheetCard style={[styles.lastCard, { paddingBottom: 16 + insets.bottom }]}>
-            {/* Rangée pleine largeur au-dessus du CTA — cf. `transport/configure` :
-                le moyen de paiement se nomme, il ne se devine pas à un logo. */}
-            <ListRow
-              leading={<Image source={payIllustration(selectedPayment)} style={styles.payLogo} />}
-              title={payLabel}
-              onPress={openPay}
-            />
-            <Button
-              label="Confirmer la livraison"
-              onPress={confirmer}
-              disabled={!destinataireOk}
-            />
+            {/* Pastille de paiement et CTA côte à côte — maquette 531:1227,
+                même motif que `transport/configure`. */}
+            <View style={styles.payRow}>
+              <TouchableOpacity
+                style={styles.payThumb}
+                onPress={openPay}
+                activeOpacity={0.8}
+                accessibilityLabel={`Moyen de paiement : ${payLabel}. Modifier`}
+              >
+                <Image source={payIllustration(selectedPayment)} style={styles.payLogo} />
+              </TouchableOpacity>
+              <Button
+                label="Confirmer la livraison"
+                onPress={confirmer}
+                disabled={!destinataireOk}
+                style={styles.flex1}
+              />
+            </View>
           </SheetCard>
         </ScrollView>
       </Animated.View>
 
       {/* Description du colis — feuille modale (clavier). */}
+      {/* Décrire le colis (503:636) — un `Field` de type `zone`, libellé masqué,
+          et la carte d'actions avec « Terminer ».
+
+          ⚠️ La maquette n'a pas de compteur de caractères ; celui qui était là
+          (`120/120`) disparaît. `maxLength` reste, il borne sans se montrer. */}
       {descOpen && (
-        <BottomSheet title="Décrire le colis" onClose={() => setDescOpen(false)}>
-          {(close) => (
-            <View style={{ paddingBottom: kbHeight }}>
-              <TextInput
-                style={styles.descInput}
-                value={descDraft}
-                onChangeText={setDescDraft}
-                placeholder="Ex. Dossier A4 sous enveloppe…"
-                placeholderTextColor={Colors.textTertiary}
-                multiline
-                textAlignVertical="top"
-                autoFocus
-                maxLength={120}
-              />
-              <Text variant="caption" color={Colors.textTertiary} align="right" style={styles.descCount}>
-                {descDraft.length}/120
-              </Text>
-              <Button
-                label="Terminer"
-                onPress={() => { setDescription(descDraft.trim()); close(); }}
-              />
-            </View>
+        <BottomSheet
+          title="Décrire le colis"
+          onClose={() => setDescOpen(false)}
+          actions={(close) => (
+            <Button
+              label="Terminer"
+              onPress={() => { setDescription(descDraft.trim()); close(); }}
+            />
           )}
+        >
+          <Field
+            type="zone"
+            value={descDraft}
+            onChangeText={setDescDraft}
+            placeholder="Ex. Dossier A4 sous enveloppe…"
+            maxLength={120}
+            autoFocus
+          />
         </BottomSheet>
       )}
 
@@ -359,18 +376,53 @@ export default function LivraisonConfigureScreen() {
         <BottomSheet
           title="Modes de paiement"
           onClose={() => { setSelectedPayment(pendingPayment); setPayOpen(false); }}
+          actions={(close) => <Button label="Confirmer" onPress={close} />}
         >
-          {(close) => (
-            <PaymentSheetContent value={pendingPayment} onChange={setPendingPayment} onDone={close} />
-          )}
+          <PaymentSheetContent value={pendingPayment} onChange={setPendingPayment} />
         </BottomSheet>
       )}
 
       {/* Destinataire — d'abord les contacts, la saisie manuelle en repli. */}
       {destOpen && (
-        <BottomSheet title="Destinataire" onClose={() => setDestOpen(false)}>
+        <BottomSheet
+          title="Destinataire"
+          onClose={() => setDestOpen(false)}
+          /* Carte d'actions, relevée sur les deux variantes de la maquette :
+             — saisie (503:657)   : « Terminer » primary + « Choisir dans mes
+                                     contacts » secondary avec icône ;
+             — contacts (504:653) : « Saisir un autre destinataire » secondary
+                                     avec icône.
+             Dans les deux cas le bouton secondaire est ce qui était un lien texte
+             ou une rangée faite main dans le corps de la feuille. */
+          actions={destMode === 'contacts' ? () => (
+            <Button
+              label="Saisir un autre destinataire"
+              variant="secondary"
+              icon="edit"
+              onPress={() => { Haptics.selectionAsync(); setDestMode('manual'); }}
+            />
+          ) : (close) => (
+            <>
+              <Button
+                label="Terminer"
+                disabled={!destDraftOk}
+                onPress={() => {
+                  setDestinataireName(nameDraft);
+                  setDestinatairePhone(phoneDraft);
+                  close();
+                }}
+              />
+              <Button
+                label="Choisir dans mes contacts"
+                variant="secondary"
+                icon="contacts"
+                onPress={() => { Keyboard.dismiss(); setDestMode('contacts'); }}
+              />
+            </>
+          )}
+        >
           {(close) => destMode === 'contacts' ? (
-            <View style={{ paddingBottom: kbHeight }}>
+            <View>
               {/* Recherche dans le répertoire (réf. Careem). */}
               <SearchBar
                 value={contactQuery}
@@ -401,68 +453,36 @@ export default function LivraisonConfigureScreen() {
                   Aucun contact ne correspond.
                 </Text>
               )}
-              <TouchableOpacity
-                style={styles.manualRow}
-                activeOpacity={0.85}
-                onPress={() => { Haptics.selectionAsync(); setDestMode('manual'); }}
-              >
-                <View style={styles.manualIcon}>
-                  <Icon name="edit" size={18} weight="bold" color={Colors.primary} />
-                </View>
-                <Text variant="label" color={Colors.primary} style={styles.flex1}>
-                  Saisir un autre destinataire
-                </Text>
-                <Icon name="chevronRight" size={16} color={Colors.textTertiary} />
-              </TouchableOpacity>
             </View>
           ) : (
-            (() => {
-              const draftOk = nameDraft.trim().length > 0 && phoneDraft.trim().length >= 9;
-              return (
-                <View style={{ paddingBottom: kbHeight }}>
-                  <View style={styles.inputWrap}>
-                    <Icon name="user" size={18} color={Colors.textSecondary} />
-                    <TextInput
-                      style={styles.input}
-                      value={nameDraft}
-                      onChangeText={setNameDraft}
-                      placeholder="Nom du destinataire"
-                      placeholderTextColor={Colors.textTertiary}
-                      autoFocus
-                    />
-                  </View>
-                  <View style={styles.inputWrap}>
-                    <Icon name="phone" size={18} color={Colors.textSecondary} />
-                    <TextInput
-                      style={styles.input}
-                      value={phoneDraft}
-                      onChangeText={setPhoneDraft}
-                      placeholder="77 123 45 67"
-                      placeholderTextColor={Colors.textTertiary}
-                      keyboardType="phone-pad"
-                    />
-                  </View>
-                  <Button
-                    label="Terminer"
-                    disabled={!draftOk}
-                    onPress={() => {
-                      setDestinataireName(nameDraft);
-                      setDestinatairePhone(phoneDraft);
-                      close();
-                    }}
-                    style={styles.sheetCta}
-                  />
-                  <TouchableOpacity
-                    style={styles.backToContacts}
-                    activeOpacity={0.7}
-                    onPress={() => { Keyboard.dismiss(); setDestMode('contacts'); }}
-                  >
-                    <Icon name="contacts" size={16} color={Colors.textSecondary} />
-                    <Text variant="label" color={Colors.textSecondary}>Choisir dans mes contacts</Text>
-                  </TouchableOpacity>
-                </View>
-              );
-            })()
+            /* Saisie manuelle — deux `Field` du design system, relevés sur
+               `Modale · Destinataire (saisie)` : libellé AFFICHÉ (« Nom »,
+               « Téléphone »), icône de tête, 80 de haut chacun. Les `TextInput`
+               bruts qui étaient là ne venaient d'aucun composant : ni le liseré,
+               ni le fond, ni le rayon, ni la hauteur n'étaient ceux du système.
+
+               ⚠️ La maquette met « Nom du destinataire » en placeholder du champ
+               TÉLÉPHONE — un reste de duplication du premier champ. On garde
+               « 77 123 45 67 », qui dit ce qu'on attend. À corriger côté Figma. */
+            <View style={styles.destForm}>
+              <Field
+                label="Nom"
+                requis
+                icon="user"
+                value={nameDraft}
+                onChangeText={setNameDraft}
+                placeholder="Nom du destinataire"
+                autoFocus
+              />
+              <Field
+                label="Téléphone"
+                icon="phone"
+                value={phoneDraft}
+                onChangeText={setPhoneDraft}
+                placeholder="77 123 45 67"
+                keyboardType="phone-pad"
+              />
+            </View>
           )}
         </BottomSheet>
       )}
@@ -516,59 +536,18 @@ const styles = StyleSheet.create({
   // Rangée de gammes — largeur naturelle des cartes (138), alignée à gauche.
   gRow: { flexDirection: 'row', gap: 10, paddingTop: 2 },
 
-  fieldRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: Colors.surfaceAlt,
-    borderRadius: Radii.lg,
-    borderWidth: Strokes.thin, borderColor: Colors.borderSubtle,
-    paddingHorizontal: 14, paddingVertical: 13,
-  },
-
   // Feuille destinataire — contacts.
   // Géométrie du champ dans `SearchBar` — ici seule la marge de l'emplacement.
   searchWrap: { marginBottom: 8 },
+  /** Les deux champs de saisie du destinataire : gouttière de 12, celle de la
+   *  carte de feuille. */
+  destForm: { gap: 12 },
   noContact: { paddingVertical: 18 },
-  manualRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    marginTop: 10,
-    paddingVertical: 10,
-  },
-  manualIcon: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: Colors.primarySubtle,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  backToContacts: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    paddingVertical: 14,
-  },
-
-  // Feuilles modales de saisie.
-  descInput: {
-    backgroundColor: Colors.bg,
-    borderRadius: Radii.md,
-    padding: 14,
-    ...Typography.body,
-    color: Colors.textPrimary,
-    minHeight: 84,
-  },
-  descCount: { marginTop: 6, marginBottom: 10 },
-  inputWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: Colors.bg,
-    borderRadius: Radii.lg,
-    paddingHorizontal: 16,
-    minHeight: 56,
-    marginBottom: 12,
-  },
-  input: {
-    flex: 1,
-    ...inputTypo('bodyMedium'),
-    color: Colors.textPrimary,
-    paddingVertical: 16,
-  },
-  sheetCta: { marginTop: 4 },
-
   // Pied : moyen de paiement + confirmation (même gabarit que Transport).
+  payRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing[2.5] },
+  // 56 et non les 48 de la maquette Livraison : la boîte est invisible, seule sa
+  // cible tactile compte, et Transport dit 56. La maquette diverge d'elle-même
+  // sur ce point (56/pad8 contre 48/pad4) — signalé.
+  payThumb: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
   payLogo: { width: 40, height: 40, borderRadius: 11 },
 });

@@ -8,6 +8,41 @@ import IconButton from '@/components/IconButton';
 export const SHEET_RADIUS = Radii.xl;
 
 /**
+ * Les trois niveaux d'une feuille — sa hauteur VISIBLE en fraction d'écran.
+ * Il n'y en a que trois, et **85 % est un plafond dur** : une feuille ne
+ * grandit jamais au-delà, quel que soit son contenu. Du contenu qui ne tient
+ * pas **scrolle dans la feuille** ; on ne gagne pas de hauteur en rognant la
+ * carte, qui est ce que le Client garde sous les yeux.
+ *
+ * Miroir de `Scrim state` (836:615) : sur l'écran de 375×844 de la maquette, la
+ * feuille mesure 220 (26 %), 430 (51 %) et 717 px (85 %).
+ *
+ * À ne pas confondre avec `ScrimLevels`, qui donne l'opacité du voile à chacun
+ * de ces crans (0 / 30 / 50 %).
+ */
+export const SHEET_LEVELS = { collapsed: 0.25, half: 0.5, full: 0.85 } as const;
+
+/** Hauteur maximale d'une feuille — le plafond de 85 %. Sert à borner le corps
+ *  scrollable, pas à fixer la hauteur : une feuille plus courte que son plafond
+ *  épouse toujours son contenu. */
+export const sheetMaxH = (screenH: number) => Math.round(screenH * SHEET_LEVELS.full);
+
+/**
+ * `translateY` des trois crans d'une feuille de hauteur `sheetH` ancrée en bas,
+ * dans l'ordre CROISSANT (haut → bas) attendu par `useSnapSheet`.
+ *
+ * Un cran, c'est « la feuille montre tel pourcentage de l'écran » : la feuille
+ * est donc décalée de ce qui dépasse, `sheetH - screenH × niveau`. Une feuille
+ * plus courte qu'un niveau ne peut pas l'atteindre — le cran vaut alors 0 (elle
+ * est déjà entièrement visible), et deux crans peuvent se confondre. C'est
+ * correct : une petite feuille n'a pas trois hauteurs à offrir.
+ */
+export function sheetSnaps(screenH: number, sheetH: number): number[] {
+  return [SHEET_LEVELS.full, SHEET_LEVELS.half, SHEET_LEVELS.collapsed]
+    .map((level) => Math.max(0, Math.round(sheetH - screenH * level)));
+}
+
+/**
  * Habillage visuel commun à toutes les feuilles (bottom sheets) de l'app :
  * coins arrondis en haut, fond surface, ombre portée vers le haut.
  * Source unique de vérité — à appliquer aussi sur les `Animated.View`
@@ -20,18 +55,52 @@ export const sheetSurface: ViewStyle = {
   // Liseré fin sur l'arête haute : détache la feuille du fond carto.
   borderTopWidth: Strokes.hairline,
   borderColor: Colors.hairline,
-  // **La feuille recadre son contenu.** Les 32 variantes de `BottomSheet` sont
-  // en `clipsContent`, et c'est ce qui donne son arête au motif : la première
-  // carte, pleine largeur, est coupée par l'arc de 28 du conteneur au lieu de
-  // déborder de son coin arrondi. Sans ça, un angle blanc dépasse de la feuille.
-  //
-  // L'ombre n'en souffre pas : `overflow` ne rogne que les ENFANTS, la vue peint
-  // la sienne au-delà de ses bornes (`shadow*` sur iOS, `elevation` sur Android).
-  // En revanche tout enfant volontairement hors bornes se fait couper — c'est
-  // pour ça que le bouton de recentrage de l'accueil vit désormais hors feuille.
-  overflow: 'hidden',
   ...Shadows.sheet,
 };
+
+/**
+ * Coins hauts de la PREMIÈRE carte d'une feuille groupée.
+ *
+ * La maquette obtient son arête autrement : ses 32 variantes sont en
+ * `clipsContent`, et la première carte — pleine largeur, rayon 16 — est **coupée**
+ * par l'arc de 28 du conteneur. Le rendu montre donc une carte qui suit l'arc de
+ * la feuille.
+ *
+ * ⚠️ On ne peut pas reproduire ce mécanisme tel quel en React Native : sur iOS,
+ * `overflow: 'hidden'` pose `clipsToBounds` sur la couche, et **une couche qui se
+ * recadre rogne aussi sa propre ombre**. Recadrer la feuille fait donc disparaître
+ * `Shadows.sheet` — c'est arrivé, et ça se voit tout de suite.
+ *
+ * D'où ce style : au lieu de couper la carte, on lui fait **suivre l'arc**. Mêmes
+ * pixels, mécanisme différent, et l'ombre survit. À poser sur la première carte
+ * de chaque feuille groupée ; `GroupedSheet` le fait pour vous.
+ */
+export const firstCardEdge: ViewStyle = {
+  borderTopLeftRadius: SHEET_RADIUS,
+  borderTopRightRadius: SHEET_RADIUS,
+};
+
+/**
+ * Dernière carte d'une feuille à hauteur FIXE : elle **prend la hauteur restante**
+ * au lieu d'épouser son contenu.
+ *
+ * Une feuille dont la hauteur est un cran (25 / 50 / 85 %) ne rétrécit pas quand
+ * son contenu est court : le fond `track` gris apparaît alors sous la dernière
+ * carte, et la feuille se lit comme une carte posée dans un vide gris plutôt que
+ * comme une surface. C'est ce que la maquette corrige en donnant `layoutGrow: 1`
+ * à sa dernière carte (`Scrim state`, `State=Half` → `Récemment`, 836:611) :
+ * blanc jusqu'au bord, quelle que soit la quantité de contenu.
+ *
+ * ⚠️ Les rangées à l'intérieur, elles, continuent d'épouser leur contenu et
+ * restent en haut de la carte — c'est la carte qui s'étire, pas ce qu'elle
+ * contient (`Lignes` est en `AUTO` dans la maquette).
+ *
+ * À poser avec un conteneur de défilement en `flexGrow: 1` sur son
+ * `contentContainerStyle`, pour que la carte puisse s'étirer quand le contenu est
+ * court ET défiler quand il est long. Ne s'applique PAS à une feuille qui épouse
+ * son contenu (`GroupedSheet` par défaut) : là, il n'y a pas d'espace restant.
+ */
+export const lastCardFill: ViewStyle = { flex: 1 };
 
 /** Poignée de glissement standard, alignée au centre. */
 export function Handle({ style }: { style?: StyleProp<ViewStyle> }) {
@@ -122,6 +191,11 @@ const styles = StyleSheet.create({
 export const CARD_RADIUS = Radii.lg;
 /** Interstice gris entre cartes (= fond `track` qui transparaît). */
 export const CARD_GAP = 6;
+/** Gouttière INTERNE d'une carte de feuille, entre ses blocs de contenu. À ne pas
+ *  confondre avec `CARD_GAP`, qui sépare les cartes entre elles. Exposée parce
+ *  qu'un bloc qui se replie à la fermeture doit l'annuler pour ne pas laisser un
+ *  trou de 12 (cf. la bannière Affilié de l'accueil). */
+export const CARD_CONTENT_GAP = 12;
 
 /** Chrome du bottom sheet (coins hauts, ombre) mais fond `track` gris. */
 export const groupedSheetSurface: ViewStyle = {
@@ -174,10 +248,10 @@ function flattenCards(children: React.ReactNode): React.ReactElement<{ style?: S
  *   • la zone sûre du bas est absorbée EN BLANC par la dernière carte, jamais
  *     rendue en bande grise sous la feuille.
  *
- * Seule la DERNIÈRE carte est reprise : coins bas carrés, blanc jusqu'au bord de
- * l'écran. La première garde son rayon `lg` aux quatre coins, comme les vingt
- * instances de la maquette — le `track` de la feuille transparaît donc dans ses
- * coins hauts, et c'est la lèvre grise du motif, pas un défaut (Partie XXX).
+ * Les deux cartes extrêmes sont reprises : la première suit l'arc de la feuille
+ * (`firstCardEdge` — cf. son commentaire, c'est ce qui remplace le recadrage que
+ * l'ombre interdit), la dernière a ses coins bas carrés et absorbe la zone sûre
+ * en blanc.
  */
 export function GroupedSheet({
   children, translateY, contentStyle, onLayout, handle = true, style,
@@ -208,6 +282,7 @@ export function GroupedSheet({
           // la lèvre grise du motif. Seul le bas est repris ici — la feuille est
           // ancrée au bord de l'écran, ce que la maquette flottante ne dit pas.
           const edge: ViewStyle = {};
+          if (i === 0) Object.assign(edge, firstCardEdge);
           if (i === last) {
             edge.borderBottomLeftRadius = 0;
             edge.borderBottomRightRadius = 0;
@@ -241,6 +316,6 @@ const groupedStyles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: CARD_RADIUS,
     padding: 16,
-    gap: 12,
+    gap: CARD_CONTENT_GAP,
   },
 });

@@ -9,13 +9,39 @@ import * as Haptics from 'expo-haptics';
 import Avatar from '@/components/Avatar';
 import Divider from '@/components/Divider';
 import Icon, { type IconName } from '@/components/Icon';
+import Scrim, { ScrimLevels } from '@/components/Scrim';
 import Text from '@/components/Text';
-import { Colors, Radii, Shadows, Strokes } from '@/constants/tokens';
+import { Colors, Motion, Radii, Shadows, Strokes } from '@/constants/tokens';
 import { CLIENT } from '@/constants/data';
 
 const SCREEN_W = Dimensions.get('window').width;
 const DRAWER_W = Math.min(Math.round(SCREEN_W * 0.82), 320);
-const SPRING = { stiffness: 300, damping: 30, mass: 1, useNativeDriver: true };
+/**
+ * Un tiroir est un **conteneur** qui s'installe, pas un composant héros : la
+ * règle « Spring for Hero Only » lui retire son ressort. Il prend la même recette
+ * que les feuilles — fenêtre `container-morph` et courbe `Hold / Anchor`.
+ *
+ * Le ressort ne subsiste que pour le LÂCHER du swipe, où la continuité de
+ * vélocité est de la physique et non un rebond.
+ */
+const SLIDE = Motion.window(Motion.duration.containerMorph, Motion.duration.anticipationHold);
+/** Ouverture : lente et posée. */
+const OPEN_OPTS = {
+  delay: SLIDE.delay,
+  duration: SLIDE.dur,
+  easing: Motion.easing.hold,
+  useNativeDriver: true,
+} as const;
+/** Fermeture : `container-exit`, et **pas** la fenêtre d'ouverture à l'envers.
+ *  C'est tout le principe *Asymmetric Timing* — un tiroir qu'on referme dégage
+ *  la place tout de suite, il ne se retire pas avec la même componction qu'il a
+ *  mise à venir. */
+const CLOSE_OPTS = {
+  duration: Motion.duration.containerExit,
+  easing: Motion.easing.hold,
+  useNativeDriver: true,
+} as const;
+const SPRING = { ...Motion.spring.gentle, useNativeDriver: true };
 const CLOSE_DX = DRAWER_W * 0.30; // déplacement minimal pour déclencher la fermeture
 const CLOSE_VX = 0.5;              // vélocité minimale (px/ms) pour déclencher la fermeture
 
@@ -113,20 +139,22 @@ export default function MenuDrawer({ visible, onClose }: Props) {
     Alert.alert('Fiw Pro', 'Ouvrez ou installez l’application Fiw Pro pour devenir prestataire.');
   };
 
-  // Scrim dérivé de la position du panel : se synchronise automatiquement
-  // pendant l'animation d'entrée/sortie ET pendant le swipe.
+  // Voile dérivé de la position du panel : se synchronise automatiquement
+  // pendant l'animation d'entrée/sortie ET pendant le swipe. Un tiroir n'a pas
+  // de crans à suivre ; il couvre l'essentiel de l'écran, donc le niveau haut —
+  // c'est aussi la valeur qu'il portait déjà (0,48), arrondie à l'échelle.
   const scrimOpacity = translateX.interpolate({
     inputRange: [-DRAWER_W, 0],
-    outputRange: [0, 0.48],
+    outputRange: [0, ScrimLevels.full],
     extrapolate: 'clamp',
   });
 
   useEffect(() => {
     if (visible) {
       setInteractive(true);
-      Animated.spring(translateX, { toValue: 0, ...SPRING }).start();
+      Animated.timing(translateX, { toValue: 0, ...OPEN_OPTS }).start();
     } else {
-      Animated.spring(translateX, { toValue: -DRAWER_W, ...SPRING }).start(
+      Animated.timing(translateX, { toValue: -DRAWER_W, ...CLOSE_OPTS }).start(
         () => setInteractive(false),
       );
     }
@@ -166,7 +194,7 @@ export default function MenuDrawer({ visible, onClose }: Props) {
     <View style={StyleSheet.absoluteFill} pointerEvents={interactive ? 'box-none' : 'none'}>
       {/* Voile — opacité liée à la position du panel, tap pour fermer */}
       <TouchableWithoutFeedback onPress={() => onCloseRef.current()}>
-        <Animated.View style={[StyleSheet.absoluteFill, styles.scrim, { opacity: scrimOpacity }]} />
+        <View style={StyleSheet.absoluteFill}><Scrim opacity={scrimOpacity} /></View>
       </TouchableWithoutFeedback>
 
       {/* Panel — reçoit les gestes de swipe */}
@@ -249,9 +277,6 @@ export default function MenuDrawer({ visible, onClose }: Props) {
 }
 
 const styles = StyleSheet.create({
-  scrim: {
-    backgroundColor: '#000',
-  },
   panel: {
     position: 'absolute',
     left: 0,

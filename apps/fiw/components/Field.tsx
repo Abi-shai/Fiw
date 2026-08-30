@@ -226,7 +226,10 @@ const saisie = StyleSheet.create({
   },
   // Multiligne : l'interligne de la variante est nécessaire pour respirer, là
   // où sur une ligne il décalerait le texte verticalement sur Android.
-  inputZone: { ...Typography.body, height: '100%' },
+  // Champ multiligne : il reprend la variante ENTIÈRE (interligne compris), donc
+  // il ne passe pas par `inputTypo` et porte le correctif Android lui-même. Pas de
+  // `textAlignVertical` ici : un champ multiligne veut son texte en haut.
+  inputZone: { ...Typography.body, height: '100%', includeFontPadding: false },
   inputDisabled: { color: Colors.textDisabled },
   trailing: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
 });

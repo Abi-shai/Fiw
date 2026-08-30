@@ -1,6 +1,6 @@
 {
   "$generated": "GENERE — ne pas editer a la main. Source de verite : apps/fiw/constants/*.ts. Regenerer : python3 scripts/gen-style-guide-tokens.py",
-  "$generatedOn": "2026-08-25",
+  "$generatedOn": "2026-08-27",
   "color": {
     "primary": "#0066FF",
     "primaryHover": "#0676FF",
@@ -260,6 +260,31 @@
     "medium": 1.5,
     "thick": 2,
     "heavy": 3
+  },
+  "motion": {
+    "$note": "Durees = FENETRES (debut-fin), pas durees d'animation.",
+    "easing": {
+      "primary": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "hold": "cubic-bezier(0.5, 0, 0.5, 1)"
+    },
+    "spring-gentle": {
+      "stiffness": 280,
+      "damping": 25,
+      "mass": 1,
+      "$bounce": 0.25,
+      "$note": "damping derive de bounce 0.25 ; stiffness reprise du produit"
+    },
+    "duration": {
+      "anticipationHold": 50,
+      "decorationExit": 200,
+      "containerExit": 200,
+      "textExitFade": 250,
+      "textExitShift": 300,
+      "supportExit": 350,
+      "containerMorph": 500,
+      "heroReveal": 600
+    },
+    "stagger": 40
   },
   "icon": {
     "library": "phosphor-react-native",

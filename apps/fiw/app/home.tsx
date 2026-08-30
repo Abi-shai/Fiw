@@ -1,15 +1,17 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   View, StyleSheet, TouchableOpacity, Animated, ScrollView,
-  PanResponder, Dimensions, FlatList, Keyboard, Image,
-  Easing, AccessibilityInfo, type EasingFunction,
+  PanResponder, FlatList, Keyboard, Image, Dimensions, PixelRatio,
+  Easing, AccessibilityInfo, type EasingFunction, type LayoutChangeEvent,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import HandWithCash from '@/components/HandWithCash';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useScreenHeight } from '@/hooks/useScreenHeight';
 import * as Haptics from 'expo-haptics';
 import LeafletMap, { LeafletMapHandle } from '@/components/LeafletMap';
+import { useKeyboardState } from 'react-native-keyboard-controller';
 import MenuDrawer from '@/components/MenuDrawer';
 import IconButton from '@/components/IconButton';
 import ListRow from '@/components/ListRow';
@@ -17,12 +19,17 @@ import Medallion from '@/components/Medallion';
 import Divider from '@/components/Divider';
 import PlaceField from '@/components/PlaceField';
 import Button from '@/components/Button';
-import Scrim from '@/components/Scrim';
+import Scrim, { sheetScrimOpacity } from '@/components/Scrim';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
-import { CARD_GAP as SHEET_GAP, Handle, SheetCard, SheetHeader, groupedSheetSurface } from '@/components/Sheet';
-import { useSnapSheet, SHEET_SPRING } from '@/hooks/useSnapSheet';
-import { Colors, Radii, SectionLabel, Shadows, Strokes } from '@/constants/tokens';
+import { CARD_CONTENT_GAP, CARD_GAP as SHEET_GAP, Handle, SheetCard, SheetHeader, firstCardEdge, groupedSheetSurface, lastCardFill, sheetSnaps } from '@/components/Sheet';
+import { useSnapSheet } from '@/hooks/useSnapSheet';
+import { Colors, Motion, Radii, SectionLabel, Shadows, Spacing, Strokes } from '@/constants/tokens';
+
+// Raccourcis locaux : les fenêtres de l'identité de mouvement sont citées une
+// vingtaine de fois dans les timelines ci-dessous.
+const M = Motion;
+const D = Motion.duration;
 import { DAKAR_CENTER, SUGGESTIONS, RECENT_PLACES } from '@/constants/data';
 import { usePlaces } from '@/stores/places';
 
@@ -33,19 +40,7 @@ type ResultRow = { key: string; icon: IconName; accent?: boolean; title: string;
 
 const RECENTS: Place[] = [SUGGESTIONS[2], SUGGESTIONS[0]]; // Almadies, Aéroport AIBD
 
-const SCREEN_H = Dimensions.get('window').height;
-// Crans exprimés en translateY de la feuille (0 = couvre tout l'écran).
-// translateY plus grand = plus bas / plus replié. La mécanique de drag/snap est
-// dans le primitif partagé `useSnapSheet` (même logique côté course active).
-const PEEK_VISIBLE = 140;                       // façon Waze : seuls poignée + titre dépassent
-const TY_EXPANDED = Math.round(SCREEN_H * 0.08); // quasi plein écran
-const TY_DEFAULT = Math.round(SCREEN_H * 0.40);  // services visibles
-const TY_COLLAPSED = SCREEN_H - PEEK_VISIBLE;    // replié en bas
-const SNAPS = [TY_EXPANDED, TY_DEFAULT, TY_COLLAPSED]; // croissant : haut → bas
 const TAP_THRESHOLD = 6;
-// Hauteur visible du sheet une fois étendu : borne le contenu de recherche
-// pour que la liste scrolle dans l'écran (le sheet fait toute la hauteur).
-const SEARCH_H = SCREEN_H - TY_EXPANDED;
 
 type Service = {
   id: SearchService;
@@ -58,7 +53,7 @@ type Service = {
 // Location et Assistance ne sont pas lancés, ils ne figurent plus sur l'accueil.
 const SERVICES: Service[] = [
   { id: 'transport', label: 'Course',    blurb: 'Déplacez-vous en toute sécurité.' },
-  { id: 'livraison', label: 'Livraison', blurb: 'Faites-vous livrer, aussi vite que possible.' },
+  { id: 'livraison', label: 'Livraison', blurb: 'Faites-vous livrer rapidement.' },
 ];
 
 // Services dont la recherche d'itinéraire est câblée. La même feuille de
@@ -85,20 +80,24 @@ const SEARCH_COPY: Record<SearchService, {
 };
 
 // Géométrie de la tuile, relevée sur `BottomSheet / Accueil` (507:778) le
-// 26 août 2026. Elle fait **228** de haut : 6 + en-tête 39 + 10 + panneau 109
-// + 10 + pied 48 + 6.
-//
-// Le code citait encore le nœud 336:1175 et un panneau de 217 — la maquette a
-// depuis réduit le panneau de moitié et allongé le pied de 40 à 48. La tuile
-// était donc 100 px trop haute.
-const CARD_H = 228;
+// 26 août 2026 : 6 + en-tête 39 + 10 + panneau 109 + 10 + pied 48 + 6 = 228.
+// Écrite en pièces plutôt qu'en total, parce que la SORTIE s'en déduit — cf.
+// `EXIT.panel` plus bas.
+const CARD_PAD = 6;
+const CARD_HEAD_H = 39;
+const CARD_GUTTER = 10;
+const CARD_FOOT_H = 48;
+const CARD_H = CARD_PAD * 2 + CARD_HEAD_H + CARD_GUTTER * 2 + 109 + CARD_FOOT_H; // 228
 
 // Feuille décorative posée derrière les véhicules : une forme unique, pivotée,
 // centrée dans une boîte de 154.624. Remplace la bande bleue diagonale.
 const LEAF_PATH = 'M44.2062 20.6341C74.0014 6.73435 134.078 -13.91 133.47 13.4098C133.004 34.3277 110.859 90.7533 51.8918 124.281C-24.408 167.664 -7.4579 44.7359 44.2062 20.6341Z';
 const LEAF_SIZE = 133.474;
 const LEAF_BOX = 154.624;
-const LEAF_TOP = 86;
+// Boîte rendue de la feuille pivotée, relevée sur 853:12 : (19 ; 28) dans le
+// panneau, 154,62 de côté — soit exactement `LEAF_BOX`. Le 86 d'avant la posait
+// 58 px trop bas, donc quasiment hors du panneau de 109.
+const LEAF_TOP = 28;
 const LEAF_ROTATE = '80deg';
 const LEAF_OPACITY = 0.6;
 
@@ -107,9 +106,10 @@ const LEAF_OPACITY = 0.6;
 const EASE_QUART = Easing.bezier(0.25, 1, 0.5, 1);   // sorties douces
 const EASE_BACK = Easing.bezier(0.34, 1.56, 0.64, 1); // léger dépassement
 const EASE_QUINT = Easing.bezier(0.22, 1, 0.36, 1);   // traînées
-// Courbe standard exportée par Figma Motion (`cubic-bezier(0.4, 0, 0.2, 1)`) :
-// elle porte TOUTE la sortie de la tuile, sans exception.
-const EASE_STD = Easing.bezier(0.4, 0, 0.2, 1);
+// La courbe standard exportée par Figma Motion (`cubic-bezier(0.4, 0, 0.2, 1)`)
+// EST la `Primary Ease` de l'identité de mouvement : elle porte toute la sortie
+// de la tuile, sans exception. Elle passe donc par le jeton.
+const EASE_STD = Motion.easing.primary;
 
 // L'habillage de la tuile (en-tête, feuille, pied) s'anime à l'identique sur les
 // deux services : une seule définition, réutilisée.
@@ -135,18 +135,34 @@ const CHROME = {
  * pas un départ.
  */
 const EXIT = {
-  headOpacity:  { dur: 250, ease: EASE_STD },
-  headShift:    { dur: 300, ease: EASE_STD, to: -15 },
-  footOpacity:  { delay: 50, dur: 250, ease: EASE_STD },
-  footShift:    { delay: 50, dur: 300, ease: EASE_STD, to: 10 },
-  leaf:         { dur: 200, ease: EASE_STD },
-  groupOpacity: { delay: 50, dur: 300, ease: EASE_STD },
-  groupDrift:   { dur: 350, ease: EASE_STD, scale: 0.92 },
-  // La maquette fait passer le panneau de 109 à 228 de haut et le remonte de 55.
-  // La hauteur est gardée en RAPPORT et non en pixels : la tuile est en
-  // `flex: 1`, sa hauteur au repos dépend de la largeur de l'écran.
-  panelGrow:    { delay: 50, dur: 450, ease: EASE_STD, ratio: 228 / 109, lift: -55 },
-  panelFlat:    { delay: 250, dur: 250, ease: EASE_STD },
+  // Chaque piste est écrite comme la FENÊTRE de l'identité de mouvement
+  // (`Motion.duration`), et les neuf valeurs qui en sortent sont **exactement**
+  // celles que la timeline Figma Motion portait déjà — la planche
+  // `motion-identity-system` généralise cette sortie, elle ne la corrige pas.
+  headOpacity:  { ...M.window(D.textExitFade), ease: EASE_STD },
+  headShift:    { ...M.window(D.textExitShift), ease: EASE_STD, to: -15 },
+  footOpacity:  { ...M.window(D.textExitShift, D.anticipationHold), ease: EASE_STD },
+  footShift:    { ...M.window(D.supportExit, D.anticipationHold), ease: EASE_STD, to: 10 },
+  leaf:         { ...M.window(D.decorationExit), ease: EASE_STD },
+  groupOpacity: { ...M.window(D.supportExit, D.anticipationHold), ease: EASE_STD },
+  groupDrift:   { ...M.window(D.supportExit), ease: EASE_STD, scale: 0.92 },
+  // **Le panneau DEVIENT la tuile.** C'est le mécanisme, pas un agrandissement :
+  // il prend la hauteur entière de la tuile (`CARD_H`) et remonte jusqu'à son
+  // bord haut — d'où un décalage égal à ce qui le surplombe, padding + en-tête +
+  // gouttière. En perdant au même moment son rayon et son fond blanc, il laisse
+  // le `primarySubtle` et le rayon 20 de la tuile prendre le relais.
+  //
+  // Les deux valeurs se DÉDUISENT de la géométrie : plus de rapport ajusté à la
+  // main, plus de −55 magique. Elles suivent d'elles-mêmes si l'en-tête ou le
+  // pied changent de hauteur.
+  panelGrow: {
+    ...M.window(D.containerMorph, D.anticipationHold), ease: EASE_STD,
+    to: CARD_H,
+    lift: -(CARD_PAD + CARD_HEAD_H + CARD_GUTTER),
+  },
+  // Sous-étape INTERNE au morph : elle occupe sa seconde moitié, donc elle finit
+  // avec lui. Le panneau perd son rayon et son fond pendant qu'il grandit encore.
+  panelFlat:    { ...M.window(D.containerMorph, D.containerMorph / 2), ease: EASE_STD },
 } as const;
 
 // Chaque véhicule est un cadre de découpe (`frame`) dans lequel l'image déborde
@@ -154,11 +170,6 @@ const EXIT = {
 // de la contenir. Les calques fantômes sont des PNG déjà désaturés — React Native
 // n'a pas de `mix-blend-mode`, et sur fond blanc un mélange « luminosity » revient
 // exactement à un gris posé à la même opacité.
-// Traînée de la tuile Course. ⚠️ Encore dans l'ANCIEN style à plat : la maquette
-// n'a refait que le véhicule de tête, pas son sillage. Elle s'éteint à 30 %
-// d'opacité, donc l'écart de style se voit peu — mais il est là.
-const GHOST_AUTO = require('@/assets/home-ghost-auto.png');
-
 // Un palier d'opacité : la valeur visée et la durée pour l'atteindre.
 type Seg = { to: number; dur: number; ease: EasingFunction };
 type ArtLayer = {
@@ -189,17 +200,12 @@ const ENTER_FROM = { dx: -55, dy: -150 };
 // Les assets sont désormais recadrés au pixel sur le dessin, donc l'image
 // remplit sa boîte : plus d'`img` en débord négatif, `frame` et `img` coïncident.
 const SERVICE_ART: Record<SearchService, ServiceArt> = {
-  // Course : une traînée derrière la voiture de tête (`hayon 2` puis `hayon 1`).
+  // Course : la voiture seule. L'affinage de la maquette a retiré la traînée —
+  // `Group 1` ne contient plus que le véhicule de tête.
   transport: {
     leafLeft: 19,
     exitDrift: { x: 4.88, y: 4 },
     layers: [
-      { src: GHOST_AUTO,
-        frame: { x: 20, y: 25, w: 111, h: 88 },
-        img: { x: 0, y: 0, w: 111, h: 88 },
-        opFrom: 0.5,
-        opSegs: [{ to: 0.45, dur: 450, ease: EASE_QUINT }, { to: 0.3, dur: 400, ease: EASE_QUART }],
-        enter: { ...ENTER_FROM, scale: 1, dur: 650, ease: EASE_QUINT } },
       { src: require('@/assets/home-auto.png'),
         frame: { x: 16, y: 5, w: 122, h: 100 },
         img: { x: 0, y: 0, w: 122, h: 100 },
@@ -208,9 +214,9 @@ const SERVICE_ART: Record<SearchService, ServiceArt> = {
         enter: { ...ENTER_FROM, scale: 0.88, dur: 800, ease: EASE_BACK } },
     ],
   },
-  // Livraison : le vélo seul — la maquette a retiré la traînée moto.
+  // Livraison : le vélo seul.
   livraison: {
-    leafLeft: 19.5,
+    leafLeft: 19,
     exitDrift: { x: 4.32, y: 4.8 },
     layers: [
       { src: require('@/assets/home-velo.png'),
@@ -222,6 +228,156 @@ const SERVICE_ART: Record<SearchService, ServiceArt> = {
     ],
   },
 };
+
+/**
+ * Fin de la séquence d'atterrissage d'une tuile — **calculée**, pas devinée, sur
+ * le même principe que `EXIT_MS`. Sur les valeurs actuelles : 900 ms (la feuille
+ * décorative, delay 500 + dur 400).
+ */
+const ENTER_MS = Math.max(
+  ...Object.values(CHROME).map((t) => t.delay + t.dur),
+  ...Object.values(SERVICE_ART).flatMap((art) => art.layers.map((l) => l.enter.dur)),
+);
+
+/**
+ * Latence avant l'arrivée de la bannière Affilié — **déduite** elle aussi : la fin
+ * de l'atterrissage (`ENTER_MS`, 900) plus un temps de silence de `hero-reveal`
+ * (600). Soit **1 500 ms**.
+ *
+ * Le silence n'est pas un jeton de l'identité — la planche n'a pas de « pause » —
+ * mais il n'est pas non plus choisi à la main : il prend la **plus longue fenêtre
+ * du système**, celle d'une séquence de contenu complexe qui se déploie. Autrement
+ * dit, on laisse passer le temps qu'aurait pris un dévoilement entier avant que la
+ * bannière se manifeste. La bannière arrive donc bien après que tout se soit posé,
+ * ce qui est l'effet cherché : on la remarque parce qu'elle est **seule à bouger**,
+ * et le silence qui la précède fait partie de l'accroche.
+ *
+ * ⚠️ `hero-reveal` est le **plafond** de l'échelle : il n'y a pas de palier
+ * au-dessus. Allonger encore ne serait plus un changement de jeton mais une
+ * décision de design system — un jeton de pause à poser dans la planche, pas un
+ * nombre à écrire ici. Pour raccourcir, les paliers descendants sont
+ * `container-morph` (500), `support-exit` (350), puis `stagger` (40).
+ *
+ * Déduite, elle suit d'elle-même si la timeline de la tuile change.
+ *
+ * _(940 ms au premier jet — trop rapproché du reste ; 1 400 le 27 août 2026 ;
+ * 1 500 le 28 août 2026, les deux fois sur retour à l'écran de l'utilisatrice.)_
+ */
+const PROMO_INTRO_MS = ENTER_MS + Motion.duration.heroReveal;
+
+/**
+ * Décalages de l'arrivée et du départ de la bannière. **Aucune valeur inventée** :
+ * les trois sont reprises de valeurs déjà relevées sur la maquette ailleurs dans
+ * ce fichier, pour que la bannière bouge dans le même vocabulaire que le reste.
+ */
+/**
+ * Géométrie de la bannière, écrite **en pièces** et partagée avec ses styles pour
+ * qu'elle ne puisse pas dériver.
+ *
+ * Sa hauteur est **déduite, jamais mesurée** : elle est imposée par la vignette
+ * d'illustration (64, fixe), pas par le texte — deux lignes de 20 plus une
+ * gouttière de 3 font 43, donc plus court — plus le padding vertical de la carte.
+ *
+ * ⚠️ C'est le correctif d'un vrai défaut. La version d'avant mesurait la carte au
+ * `onLayout` **pendant que son cadre était replié à zéro**, en supposant que Yoga
+ * lui donnerait quand même sa hauteur naturelle. Faux : la hauteur remontée était
+ * trop petite, le cadre restait court, et les tuiles se dessinaient PAR-DESSUS la
+ * bannière. Une hauteur déduite ne peut pas se tromper — et supprime au passage un
+ * état, un `onLayout` et deux branches de rendu.
+ */
+/**
+ * Instrument de diagnostic de la bannière — **inactif**.
+ *
+ * Passer à `true` fait consigner dans la console la géométrie RÉELLEMENT rendue de
+ * chaque partie du bloc, avec la valeur attendue en face. C'est ce qu'il faut quand
+ * un écart de spacing ne se voit que sur un appareil : le relevé du 28 août 2026 a
+ * montré que le code est fidèle à la maquette sur toutes les mesures de ce bloc, donc
+ * un écart restant se lit dans les hauteurs rendues, pas dans les styles.
+ *
+ * À remettre à `false` une fois le diagnostic fait.
+ */
+const DEBUG_PROMO = false;
+
+const PROMO_TILE = 64;   // vignette d'illustration, carrée
+const PROMO_PAD_V = 6;   // padding vertical de la carte
+/**
+ * Hauteur **minimale** du bloc — celle qu'il a quand son titre tient sur une ligne,
+ * c'est-à-dire à la largeur de la maquette (375 pt).
+ *
+ * ⚠️ Ce n'est PAS une hauteur fixe, et c'est le correctif d'un vrai défaut. Le bloc
+ * la portait en dur, en supposant que le titre tenait toujours sur une ligne. Sur
+ * un écran plus étroit — ou avec un réglage de police système plus grand — il passe
+ * à deux lignes : le bloc de texte fait alors 40 + 3 + 40 = 83, crève la boîte de
+ * contenu de 64, et le padding de 6 **disparaît**. C'est ce que l'utilisatrice
+ * voyait sur son Android.
+ *
+ * En plancher, la carte grandit quand son texte grandit et le padding est toujours
+ * respecté, quelle que soit la largeur d'écran et quel que soit le réglage de
+ * police.
+ */
+const PROMO_MIN_H = PROMO_TILE + PROMO_PAD_V * 2;   // 76
+
+/**
+ * Hauteur réellement mesurée du bloc, gardée au niveau MODULE. Elle ne dépend que
+ * de la largeur d'écran et du réglage de police, donc elle ne change pas d'un
+ * montage à l'autre : la garder ici évite de repasser par la phase de mesure — et
+ * donc de faire clignoter le bloc — à chaque retour sur l'écran.
+ */
+let promoMeasuredH: number | null = null;
+
+const PROMO = {
+  /** Elle monte de 10 pour se poser — la magnitude des `CHROME.*Shift`. */
+  fromY: 10,
+  /** Elle arrive à 0,88, l'échelle d'arrivée des calques véhicule. */
+  fromScale: 0.88,
+  /** Elle se retire à 0,92, l'échelle de recul de `EXIT.groupDrift`. */
+  exitScale: 0.92,
+} as const;
+
+/**
+ * Arrivée de la bannière : **le plan de séquence de l'identité appliqué tel quel**
+ * (§ Motion, section 4), pour la première fois sur un bloc réel.
+ *
+ * Les couches partent toutes de 0 (ou du maintien d'anticipation) et se
+ * distinguent par leur **durée**, pas par des délais empilés : elles finissent
+ * l'une après l'autre au lieu de démarrer l'une après l'autre, et c'est ce qui
+ * donne un mouvement d'un seul tenant plutôt qu'une cascade.
+ *
+ * L'ordre est celui de *Hierarchy Staging* — décoration, ancre de titre, corps,
+ * supports — et le conteneur conclut, comme la planche le demande.
+ */
+const PROMO_IN = {
+  /**
+   * Décoration : elle part **la première** (délai 0), et elle seule porte le
+   * ressort.
+   *
+   * ⚠️ Sa durée n'est donc PAS celle de la fenêtre `decoration-exit` : un ressort
+   * n'a pas de durée, c'est sa physique qui décide. La fenêtre du plan ne dit ici
+   * que son **rang**, pas son temps — et c'est la seule couche des cinq dans ce
+   * cas. Le noter plutôt que de laisser croire à une application littérale.
+   */
+  illo:    { delay: 0 },
+  /** Ancre de titre : 0 → 250. */
+  title:   { ...M.window(D.textExitFade), ease: M.easing.primary },
+  /** Corps de texte : 0 → 300. */
+  body:    { ...M.window(D.textExitShift), ease: M.easing.primary },
+  /** Supports (chevron, pastille) : 50 → 350. */
+  support: { ...M.window(D.supportExit, D.anticipationHold), ease: M.easing.primary },
+  /** La place qui s'ouvre : 50 → 500, la dernière à finir. Courbe symétrique,
+   *  c'est la recette des conteneurs. */
+  space:   { ...M.window(D.containerMorph, D.anticipationHold), ease: M.easing.hold },
+} as const;
+
+/**
+ * L'intro de la bannière n'est jouée **qu'une fois par lancement d'app**.
+ *
+ * Le drapeau est au niveau MODULE et non dans un état React, et c'est ce qui donne
+ * la portée demandée : un `useState` repartirait à zéro à chaque remontage de
+ * l'écran — un `router.replace('/home')` depuis une clôture, par exemple — et
+ * l'intro se rejouerait en cours de navigation. Un module vit aussi longtemps que
+ * le bundle JS, donc jusqu'au prochain (re)démarrage.
+ */
+let promoIntroPlayed = false;
 
 /** Une valeur par PISTE de la timeline de sortie : les délais et les durées
  *  diffèrent d'une piste à l'autre, donc aucune ne peut en partager une.
@@ -318,9 +474,22 @@ function cardExit(a: CardAnim) {
     step(x.footOp, 1, EXIT.footOpacity),
     step(x.footY, 1, EXIT.footShift),
     step(x.leaf, 1, EXIT.leaf),
-    step(x.groupOp, 1, EXIT.groupOpacity),
-    step(x.groupDrift, 1, EXIT.groupDrift),
-    // Hauteur, rayon et fond : hors driver natif.
+    // ⚠️ Le groupe véhicule est sur le driver **JS**, comme le panneau qui le
+    // contient. Ce n'est pas une régression de performance, c'est le correctif
+    // d'un bégaiement : la hauteur du panneau ne PEUT PAS être native (c'est une
+    // propriété de mise en page), donc laisser le groupe en natif faisait tourner
+    // deux horloges — le conteneur avançait par saccades du thread JS pendant que
+    // son contenu glissait à 60 im/s sur le thread UI, et l'œil voit ce
+    // décalage-là. Une seule horloge, même imparfaite, est fluide ; deux horloges
+    // ne le sont jamais.
+    //
+    // Les autres pistes restent natives et ne PEUVENT pas descendre ici : elles
+    // sont combinées aux valeurs d'ENTRÉE (`Animated.multiply` / `add` dans
+    // `ServiceCard` et sur la feuille), et un même nœud animé ne peut pas vivre
+    // sur les deux drivers. Elles sont de toute façon figées pendant la sortie.
+    step(x.groupOp, 1, EXIT.groupOpacity, false),
+    step(x.groupDrift, 1, EXIT.groupDrift, false),
+    // Hauteur et fond : hors driver natif par nature.
     step(x.grow, 1, EXIT.panelGrow, false),
     step(x.flat, 1, EXIT.panelFlat, false),
   ]);
@@ -379,21 +548,33 @@ function IlloPanel({ art, anim }: { art: ServiceArt; anim: CardAnim }) {
   const [baseH, setBaseH] = useState<number | null>(null);
   return (
     <Animated.View
-      onLayout={(e) => {
-        const h = e.nativeEvent.layout.height;
-        setBaseH((prev) => prev ?? h);
-      }}
+      // La mesure ne sert qu'UNE fois. Garder le gestionnaire posé le ferait
+      // rappeler à chaque image pendant que la hauteur s'anime — du travail JS
+      // par image, sur le thread qui porte déjà l'animation.
+      onLayout={baseH == null ? (e) => setBaseH(e.nativeEvent.layout.height) : undefined}
       style={[styles.illoPanel, baseH != null && {
         flex: 0,
-        height: x.grow.interpolate({ inputRange: [0, 1], outputRange: [baseH, baseH * EXIT.panelGrow.ratio] }),
-        borderRadius: x.flat.interpolate({ inputRange: [0, 1], outputRange: [Radii.lg, 0] }),
-        backgroundColor: x.flat.interpolate({
-          inputRange: [0, 1],
-          outputRange: [Colors.surface, 'rgba(255,255,255,0)'],
-        }),
+        height: x.grow.interpolate({ inputRange: [0, 1], outputRange: [baseH, EXIT.panelGrow.to] }),
         transform: [{ translateY: x.grow.interpolate({ inputRange: [0, 1], outputRange: [0, EXIT.panelGrow.lift] }) }],
       }]}
     >
+      {/* Le blanc du panneau est un CALQUE, pas la couleur de fond du panneau.
+          Deux raisons, et les deux étaient des défauts visibles :
+
+          • un `backgroundColor` animé s'interpole couleur par couleur sur le
+            thread JS et invalide le fond à chaque image ;
+          • un `borderRadius` animé sur une vue qui ROGNE (`overflow: hidden`)
+            fait reconstruire le masque de clip à chaque image — c'est de là que
+            venait le flash.
+
+          En fondant un calque blanc, le rayon n'a plus à s'animer du tout : quand
+          le blanc a disparu, il n'y a plus de coin à arrondir. Le panneau garde
+          donc un rayon FIXE, son masque est stable, et le fondu est une simple
+          opacité. */}
+      <Animated.View
+        pointerEvents="none"
+        style={[StyleSheet.absoluteFillObject, styles.illoPanelFill, { opacity: fade(x.flat) }]}
+      />
       <Animated.View
         style={[styles.leafBox, {
           left: art.leafLeft,
@@ -411,7 +592,9 @@ function IlloPanel({ art, anim }: { art: ServiceArt; anim: CardAnim }) {
           viewBox={`0 0 ${LEAF_SIZE} ${LEAF_SIZE}`}
           style={styles.leafRotate}
         >
-          <Path d={LEAF_PATH} fill={Colors.track} fillRule="evenodd" />
+          {/* `primarySubtle` et non `track` : la feuille est un bleu pâle posé
+              sur le blanc du panneau, pas un gris. */}
+          <Path d={LEAF_PATH} fill={Colors.primarySubtle} fillRule="evenodd" />
         </Svg>
       </Animated.View>
 
@@ -471,32 +654,232 @@ function IlloPanel({ art, anim }: { art: ServiceArt; anim: CardAnim }) {
 // du coin haut-droit : elle est posée à côté de la carte, pas dedans, car un
 // enfant qui dépasse d'une vue à coins arrondis se fait rogner sur Android.
 function AffiliePromo({ onPress, onDismiss }: { onPress: () => void; onDismiss: () => void }) {
+  // Une valeur par COUCHE du plan de séquence, plus la sortie. Les fenêtres
+  // diffèrent d'une couche à l'autre, donc aucune ne peut en partager une.
+  const at = promoIntroPlayed ? 1 : 0;
+  const space = useRef(new Animated.Value(at)).current;   // la place qui s'ouvre
+  const illo = useRef(new Animated.Value(at)).current;    // décoration
+  const title = useRef(new Animated.Value(at)).current;   // ancre de titre
+  const body = useRef(new Animated.Value(at)).current;    // corps de texte
+  const support = useRef(new Animated.Value(at)).current; // chevron + pastille
+  const exit = useRef(new Animated.Value(0)).current;
+
+  // Le recadrage n'existe que PENDANT l'ouverture ou le repli : au repos il
+  // rognerait la pastille de fermeture, qui déborde volontairement de 10.
+  const [clipped, setClipped] = useState(!promoIntroPlayed);
+
+  /**
+   * Hauteur naturelle du bloc. Tant qu'elle est inconnue, le cadre est posé **hors
+   * flux** (`promoProbing`) : la mise en page l'ignore donc totalement — ce qui est
+   * l'effet voulu — ET il est mesurable à sa vraie hauteur.
+   *
+   * ⚠️ C'est ce qui manquait aux deux tentatives précédentes. Mesurer dans un cadre
+   * replié à `height: 0` ne rend PAS la hauteur naturelle ; le déduire des styles
+   * ne marche que si le texte tient sur le nombre de lignes prévu. Hors flux, la
+   * mesure est juste dans tous les cas.
+   */
+  const [h, setH] = useState<number | null>(promoMeasuredH);
+
+  // Le drapeau de module est posé au DÉMARRAGE de l'animation et non à sa
+  // programmation, et la garde passe par une ref. Sans ça, un double appel de
+  // l'effet (StrictMode en développement) annulerait le premier minuteur puis
+  // ressortirait aussitôt sur le drapeau : l'intro ne jouerait jamais.
+  const introDone = useRef(promoIntroPlayed);
+  useEffect(() => {
+    if (introDone.current) return;
+    const t = setTimeout(() => {
+      promoIntroPlayed = true;
+      introDone.current = true;
+      Animated.parallel([
+        // La place s'ouvre : morph de conteneur, courbe symétrique — c'est la
+        // recette des conteneurs, et la dernière couche à finir.
+        step(space, 1, PROMO_IN.space, false),
+        // La décoration porte le ressort : `HandWithCash` est l'actif de marque
+        // de l'offre, et le dépassement est ce qui fait remarquer l'arrivée.
+        Animated.spring(illo, {
+          toValue: 1, delay: PROMO_IN.illo.delay,
+          ...Motion.spring.gentle, useNativeDriver: false,
+        }),
+        step(title, 1, PROMO_IN.title, false),
+        step(body, 1, PROMO_IN.body, false),
+        step(support, 1, PROMO_IN.support, false),
+      ]).start(({ finished }) => { if (finished) setClipped(false); });
+    }, PROMO_INTRO_MS);
+    return () => clearTimeout(t);
+  }, [space, illo, title, body, support]);
+
+  // Fermeture : `container-exit` (200 ms) — un bloc qu'on renvoie. Le repli
+  // vertical accompagne le fondu pour que les tuiles reprennent la place sans
+  // saut ; c'est le motif « fading and collapsing vertically » de l'identité.
+  const dismiss = () => {
+    setClipped(true);
+    Animated.timing(exit, {
+      toValue: 1,
+      duration: Motion.duration.containerExit,
+      easing: Motion.easing.primary,
+      useNativeDriver: false,
+    }).start(({ finished }) => { if (finished) onDismiss(); });
+  };
+
+  /** Fondu d'une couche : elle entre, et la sortie l'éteint. Bornée, parce que le
+   *  ressort de la décoration dépasse 1 et qu'une opacité non. */
+  const layerOpacity = (v: Animated.Value) => Animated.multiply(
+    v.interpolate({ inputRange: [0, 1], outputRange: [0, 1], extrapolate: 'clamp' }),
+    fade(exit),
+  );
+  /** Consigne la géométrie rendue d'une partie du bloc, avec l'attendu en face.
+   *  N'existe que si `DEBUG_PROMO` est actif. */
+  const probe = (part: string, expected: string) => DEBUG_PROMO
+    ? (e: LayoutChangeEvent) => {
+        const { x, y, width, height } = e.nativeEvent.layout;
+        const r = (n: number) => Math.round(n * 100) / 100;
+        // La largeur d'écran et l'échelle de police en tête : ce sont elles qui
+        // décident si le titre tient sur une ligne, et donc toute la hauteur du
+        // bloc. Les avoir dès la première ligne du journal aurait tranché du
+        // premier coup — la maquette est dessinée à 375 pt et à l'échelle 1.
+        console.log(
+          `[promo] écran=${Math.round(Dimensions.get('window').width)}pt police=×${PixelRatio.getFontScale()} | ` +
+          `${part.padEnd(12)} x=${r(x)} y=${r(y)} w=${r(width)} h=${r(height)}  attendu: ${expected}`,
+        );
+      }
+    : undefined;
+
+  /** Chaque couche monte de 10 pour se poser — la magnitude des `CHROME.*Shift`. */
+  const layerRise = (v: Animated.Value) =>
+    v.interpolate({ inputRange: [0, 1], outputRange: [PROMO.fromY, 0] });
+
+  /**
+   * **Ouverture du bloc** : 0 = il n'existe pas · 1 = il est à sa place. L'arrivée
+   * l'ouvre, le départ la referme, et la hauteur COMME la gouttière en découlent —
+   * une seule valeur, donc les deux ne peuvent pas se contredire.
+   */
+  const openness = Animated.multiply(
+    space.interpolate({ inputRange: [0, 1], outputRange: [0, 1], extrapolate: 'clamp' }),
+    fade(exit),
+  );
+
   return (
-    <View style={styles.promoWrap}>
-      <TouchableOpacity style={styles.promoCard} activeOpacity={0.9} onPress={onPress}>
-        <View style={styles.promoTile}>
+    // ⚠️ Tout est sur le driver **JS**, ressort compris. La règle « une horloge,
+    // pas deux » l'impose : la hauteur du cadre ne peut pas être native, et les
+    // valeurs d'entrée se combinent à `exit` dans les mêmes opacités — un nœud de
+    // style ne peut pas mélanger les deux drivers. Le coût est nul : la bannière
+    // arrive quand tout le reste s'est posé, le thread JS est libre.
+    <Animated.View
+      style={[
+        styles.promoWrap,
+        clipped && styles.promoClip,
+        // Phase de MESURE : hors flux et invisible. La mise en page ignore le bloc,
+        // et il se mesure à sa hauteur réelle — ce qu'un cadre replié à 0 ne permet
+        // pas. Une seule image, et seulement au premier lancement : la mesure est
+        // ensuite gardée au niveau module.
+        h == null ? styles.promoProbing : {
+          // De 0 à la hauteur MESURÉE, donc juste même si le titre passe à deux
+          // lignes sur un écran étroit.
+          height: openness.interpolate({ inputRange: [0, 1], outputRange: [0, h] }),
+          // ⚠️ La gouttière suit la même ouverture, et ce n'est pas un détail : un
+          // enfant de hauteur 0 consomme quand même les 12 px de gouttière de la
+          // carte. Sans ce `marginBottom` négatif, « la mise en page se comporte
+          // comme si le bloc n'existait pas » serait faux — il resterait une bande
+          // vide de 12. Fermé : 0 + 12 − 12 = 0. Ouvert : h + 12 − 0.
+          marginBottom: openness.interpolate({
+            inputRange: [0, 1], outputRange: [-CARD_CONTENT_GAP, 0],
+          }),
+          // Elle se retire en reculant légèrement — 0,92, l'échelle de recul de
+          // `EXIT.groupDrift`.
+          transform: [{
+            scale: exit.interpolate({ inputRange: [0, 1], outputRange: [1, PROMO.exitScale] }),
+          }],
+        },
+      ]}
+      onLayout={h == null ? (e) => {
+        const measured = e.nativeEvent.layout.height;
+        promoMeasuredH = measured;
+        setH(measured);
+      } : undefined}
+    >
+      <TouchableOpacity
+        style={styles.promoCard}
+        activeOpacity={0.9}
+        onPress={onPress}
+        onLayout={probe('carte', `h≥${PROMO_MIN_H}`)}
+      >
+        {/* DÉCORATION — première couche du plan de séquence, et la seule à
+            ressort. */}
+        <Animated.View
+          onLayout={probe('vignette', 'x=6 y=6 w=64 h=64')}
+          style={[styles.promoTile, {
+            opacity: layerOpacity(illo),
+            transform: [{ scale: illo.interpolate({ inputRange: [0, 1], outputRange: [PROMO.fromScale, 1] }) }],
+          }]}
+        >
           {/* Illustration 52 × 64 pivotée de 30°, centrée sur (25.52 ; 40.71). */}
           <View style={styles.promoIllo}>
             <HandWithCash width={52} />
           </View>
+        </Animated.View>
+        <View style={styles.promoText} onLayout={probe('bloc texte', 'x=82 y=6.5 w=217 h=63')}>
+          {/* ANCRE DE TITRE — deuxième couche.
+
+              `numberOfLines={1}` : **une seule ligne, ellipse si ça ne tient pas.**
+              Décision de l'utilisatrice le 28 août 2026, après avoir vu le titre
+              passer à deux lignes sur Android.
+
+              La raison est géométrique, pas typographique : ce bloc a une hauteur
+              **contrainte** par sa vignette d'illustration. À 375 pt le titre tient
+              à un pixel près ; sur un écran plus étroit il passait à deux lignes, le
+              bloc de texte montait à 83 et écrasait le padding de la carte. Une
+              ligne ferme rend la hauteur du bloc de nouveau déterministe :
+              20 + 3 + 40 = 63, sous les 64 de la vignette, sur **toutes** les
+              largeurs.
+
+              ⚠️ Ça n'annule pas le plancher de la carte ni la mesure hors flux : un
+              réglage de police système à ×2 donne une ligne de 40, et le bloc doit
+              alors grandir plutôt qu'écraser son padding. La tolérance reste le
+              filet, la ligne unique enlève simplement le cas courant. */}
+          <Animated.View
+            onLayout={probe('titre', 'h=20 (1 ligne)')}
+            style={{ opacity: layerOpacity(title), transform: [{ translateY: layerRise(title) }] }}
+          >
+            <Text variant="bodyMedium" numberOfLines={1}>Gagnez de l’argent avec Fiw !</Text>
+          </Animated.View>
+          {/* CORPS DE TEXTE — troisième couche.
+
+              `numberOfLines={2}` : relevé sur la maquette (`maxLines: 2`,
+              `textTruncation: ENDING`). L'ellipse n'est pas déclarée parce que
+              `tail` EST le défaut de React Native, et c'est exactement le `ENDING`
+              de Figma — la poser serait du bruit.
+
+              Ce plafond **borne** la hauteur du bloc sans la fixer : à la largeur
+              de la maquette, titre 20 + gouttière 3 + corps 40 = 63, sous les 64 de
+              la vignette. Sur un écran plus étroit le titre passe à deux lignes et
+              le bloc monte à 83 — c'est légitime, et c'est pour ça que la carte a un
+              PLANCHER et non une hauteur fixe. Sans le plafond de 2 lignes, en
+              revanche, rien ne bornerait la croissance. */}
+          <Animated.View
+            onLayout={probe('corps', 'y=23 h=40 (2 lignes)')}
+            style={{ opacity: layerOpacity(body), transform: [{ translateY: layerRise(body) }] }}
+          >
+            <Text variant="body" color={Colors.textSecondary} numberOfLines={2}>
+              Et si vous deveniez un affilié réseau ?
+            </Text>
+          </Animated.View>
         </View>
-        <View style={styles.promoText}>
-          <Text variant="bodyMedium">Gagnez de l’argent avec Fiw !</Text>
-          <Text variant="body" color={Colors.textSecondary}>
-            Et si vous deveniez un affilié réseau ?
-          </Text>
-        </View>
-        <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
+        {/* SUPPORT — quatrième couche, avec la pastille de fermeture. */}
+        <Animated.View style={{ opacity: layerOpacity(support) }}>
+          <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
+        </Animated.View>
       </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.promoClose}
-        activeOpacity={0.85}
-        onPress={onDismiss}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Icon name="close" size={18} color={Colors.primary} />
-      </TouchableOpacity>
-    </View>
+      <Animated.View style={[styles.promoClose, { opacity: layerOpacity(support) }]}>
+        <TouchableOpacity
+          style={styles.promoCloseHit}
+          activeOpacity={0.85}
+          onPress={dismiss}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Icon name="close" size={18} color={Colors.primary} />
+        </TouchableOpacity>
+      </Animated.View>
+    </Animated.View>
   );
 }
 
@@ -546,6 +929,29 @@ function ServiceCard({ service, onPress, anim }: {
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const SCREEN_H = useScreenHeight();
+  // Hauteur du clavier, publiée par `react-native-keyboard-controller`. Le
+  // provider prend la main sur le mode de saisie : la fenêtre ne se
+  // redimensionne plus, donc cette hauteur EST ce que le clavier recouvre — sur
+  // les deux OS, sans branche `Platform`.
+  //
+  // Ici la valeur reste un nombre ordinaire et non un `Animated.Value` : elle ne
+  // sert qu'à donner du mou de défilement en bas de la liste. Rien ne se déplace
+  // à l'écran, il n'y a donc aucune synchro à tenir — la feuille, elle, est déjà
+  // remontée par la transformation (cf. `BottomSheet`).
+  const kbHeight = useKeyboardState((s) => s.height);
+  // Crans exprimés en translateY de la feuille (0 = couvre tout l'écran).
+  // translateY plus grand = plus bas / plus replié. La mécanique de drag/snap est
+  // dans le primitif partagé `useSnapSheet` (même logique côté course active).
+  // La feuille fait toute la hauteur de l'écran : ses trois crans sont donc les
+  // trois niveaux du système (`SHEET_LEVELS`) appliqués à la hauteur mesurée —
+  // 85 / 50 / 25 % de hauteur visible, soit 15 / 50 / 75 % de translateY.
+  const SNAPS = useMemo(() => sheetSnaps(SCREEN_H, SCREEN_H), [SCREEN_H]);
+  const [TY_EXPANDED, TY_DEFAULT, TY_COLLAPSED] = SNAPS;
+  // Hauteur visible du sheet une fois étendu — c'est le plafond de 85 % du
+  // système. Elle borne le contenu de recherche pour que la liste scrolle DANS la
+  // feuille : on ne gagne pas de hauteur en rognant la carte.
+  const SEARCH_H = SCREEN_H - TY_EXPANDED;
   const mapRef = useRef<LeafletMapHandle>(null);
 
   // Feuille à 3 crans — primitif partagé (même logique côté course active).
@@ -586,24 +992,36 @@ export default function HomeScreen() {
   const [departureName, setDepartureName] = useState('Ma position actuelle');
   const [departureQuery, setDepartureQuery] = useState('');
   const [destinationQuery, setDestinationQuery] = useState('');
-  const [kbHeight, setKbHeight] = useState(0);
 
   // Paramètres reçus quand configure renvoie ici pour éditer l'itinéraire.
   const editParams = useLocalSearchParams<{
     editTs?: string; editDeparture?: string; editDest?: string; editService?: string;
   }>();
 
+  // Entrée de l'écran. La feuille suit la recette « Modals / Sheets » de
+  // l'identité (fenêtre `container-morph`, courbe `Hold / Anchor`) — c'est la
+  // même que `snapTo` programmatique, écrite ici parce que le fondu l'accompagne.
+  //
+  // Le fondu de la feuille et celui des contrôles carte sont un dévoilement
+  // échelonné : la feuille est le conteneur, les contrôles sont du support qui
+  // arrive après. Le décalage entre les deux est le `stagger` de 40 de la
+  // planche, et non deux nombres réglés à la main (360 / 480+120).
   useEffect(() => {
-    const show = Keyboard.addListener('keyboardDidShow', (e) => setKbHeight(e.endCoordinates.height));
-    const hide = Keyboard.addListener('keyboardDidHide', () => setKbHeight(0));
-    return () => { show.remove(); hide.remove(); };
-  }, []);
-
-  useEffect(() => {
+    const morph = M.window(D.containerMorph, D.anticipationHold);
     Animated.parallel([
-      Animated.spring(ty, { toValue: TY_DEFAULT, ...SHEET_SPRING, useNativeDriver: false }),
-      Animated.timing(fade, { toValue: 1, duration: 360, useNativeDriver: false }),
-      Animated.timing(controlsFade, { toValue: 1, duration: 480, delay: 120, useNativeDriver: false }),
+      Animated.timing(ty, {
+        toValue: TY_DEFAULT,
+        delay: morph.delay, duration: morph.dur,
+        easing: M.easing.hold, useNativeDriver: false,
+      }),
+      Animated.timing(fade, {
+        toValue: 1, duration: D.supportExit,
+        easing: M.easing.primary, useNativeDriver: false,
+      }),
+      Animated.timing(controlsFade, {
+        toValue: 1, delay: M.stagger, duration: D.containerMorph,
+        easing: M.easing.primary, useNativeDriver: false,
+      }),
     ]).start();
   }, []);
 
@@ -670,14 +1088,11 @@ export default function HomeScreen() {
     },
   })).current;
 
-  // Voile : carte assombrie à mesure que la feuille monte (collapsed→0,
-  // default/medium léger, expanded/full marqué). Nul quand la feuille est
-  // escamotée (mappick, ty ≈ SCREEN_H → clamp à 0).
-  const scrimOpacity = ty.interpolate({
-    inputRange: [TY_EXPANDED, TY_DEFAULT, TY_COLLAPSED],
-    outputRange: [0.58, 0.38, 0],
-    extrapolate: 'clamp',
-  });
+  // Voile : carte assombrie à mesure que la feuille monte — `ScrimLevels`, une
+  // opacité par cran (0 au repli, 30 % à mi-hauteur, 50 % en haut). Il est donc
+  // déjà nul au cran bas, et le reste en mode `mappick` où la feuille est
+  // escamotée à SCREEN_H.
+  const scrimOpacity = sheetScrimOpacity(ty, SNAPS, SCREEN_H);
 
   const [course, livraison] = SERVICES;
 
@@ -701,12 +1116,21 @@ export default function HomeScreen() {
   }, [cardAnims]);
 
 
-  // La maquette fait sortir les DEUX tuiles ensemble : la timeline vit sur la
-  // feuille, pas sur une tuile. On joue donc la sortie complète, puis on bascule
-  // en mode recherche — l'inverse (basculer puis animer) démonterait les tuiles
-  // avant qu'elles aient bougé.
+  // **Seule la tuile touchée joue sa sortie.** La timeline Figma vit sur la
+  // feuille et non sur une tuile, ce qui avait fait conclure que les deux
+  // sortaient ensemble ; à l'écran ça se lit comme si on ouvrait les DEUX
+  // services à la fois. La tuile touchée est celle qui devient l'écran suivant,
+  // c'est donc la seule qui se transforme. _(Décision de l'utilisatrice,
+  // 27 août 2026, sur signalement à l'écran.)_
+  //
+  // L'animation est passée par la tuile elle-même plutôt que retrouvée par index :
+  // la tuile pressée tend sa propre `CardAnim`, il n'y a donc aucun appariement à
+  // maintenir entre l'ordre de `SERVICES` et celui de `cardAnims`.
+  //
+  // On joue la sortie AVANT de basculer en mode recherche — l'inverse démonterait
+  // la tuile avant qu'elle ait bougé.
   const exiting = useRef(false);
-  const onService = (s: Service) => {
+  const onService = (s: Service, anim: CardAnim) => {
     // « Réduire les animations » : on passe directement, sans jouer la sortie.
     if (reduceMotion.current) { openSearch(s.id); return; }
     // Un second tap pendant la sortie relancerait la timeline et empilerait deux
@@ -714,7 +1138,7 @@ export default function HomeScreen() {
     if (exiting.current) return;
     exiting.current = true;
     Haptics.selectionAsync();
-    Animated.parallel(cardAnims.map((a) => cardExit(a))).start();
+    cardExit(anim).start();
     setTimeout(() => { exiting.current = false; openSearch(s.id); }, EXIT_MS);
   };
 
@@ -888,20 +1312,26 @@ export default function HomeScreen() {
       {/* Recentrage géoloc — flotte 60 au-dessus de l'arête de la feuille, SUR la
           carte. Il vit hors de la feuille : celle-ci recadre son contenu (les 32
           variantes sont en `clipsContent`), donc un enfant en `top: -60` s'y
-          ferait couper. Il suit le cran par le même `ty`, moins 60. */}
+          ferait couper. Il suit le cran par le même `ty`, moins 60.
+
+          Le cadre `recenterFrame` n'est pas décoratif : il rejoue la géométrie
+          EXACTE de la feuille pour que le `top` du bouton et le `ty` de la
+          feuille se mesurent depuis le même bord. Cf. son commentaire. */}
       {mode === 'services' && (
-        <Animated.View
-          style={[
-            styles.recenterWrap,
-            { opacity: controlsFade, transform: [{ translateY: Animated.subtract(ty, 60) }] },
-          ]}
-        >
-          <IconButton name="navigate" onPress={() => mapRef.current?.recenter(DAKAR_CENTER, 15)} />
-        </Animated.View>
+        <View style={[styles.recenterFrame, { height: SCREEN_H }]} pointerEvents="box-none">
+          <Animated.View
+            style={[
+              styles.recenterWrap,
+              { opacity: controlsFade, transform: [{ translateY: Animated.subtract(ty, 60) }] },
+            ]}
+          >
+            <IconButton name="navigate" onPress={() => mapRef.current?.recenter(DAKAR_CENTER, 15)} />
+          </Animated.View>
+        </View>
       )}
 
       {/* Draggable bottom sheet — full height, anchored to screen bottom */}
-      <Animated.View style={[groupedSheetSurface, styles.sheet, { transform: [{ translateY: ty }], opacity: fade }]}>
+      <Animated.View style={[groupedSheetSurface, styles.sheet, { height: SCREEN_H, transform: [{ translateY: ty }], opacity: fade }]}>
         {mode === 'search' ? (
           <View style={{ height: SEARCH_H }}>
             {/* CARTE 1 — en-tête et les deux champs, dans une seule carte comme
@@ -909,7 +1339,7 @@ export default function HomeScreen() {
                 flux ; toute la carte est zone de glissement. */}
             <View {...panHandlers} style={styles.headerZone}>
               <View style={styles.handleFloat} pointerEvents="none"><Handle /></View>
-              <SheetCard>
+              <SheetCard style={firstCardEdge}>
                 <SheetHeader title={SEARCH_COPY[service].title} onClose={closeSearch} style={styles.sheetHeaderTight} />
 
                 {/* Champ « De » — passager (Transport) ou colis (Livraison) + géoloc si actif.
@@ -951,7 +1381,18 @@ export default function HomeScreen() {
                   data={results}
                   keyExtractor={(item) => item.key}
                   keyboardShouldPersistTaps="handled"
-                  contentContainerStyle={{ paddingBottom: kbHeight + insets.bottom + 16, paddingTop: 8 }}
+                  // Pas de `gap` ici : sur une `FlatList`, chaque cellule
+                  // enveloppe l'item AVEC son séparateur, donc une gouttière de
+                  // conteneur espace les cellules et laisse le filet soudé à la
+                  // rangée du dessus. C'est le SÉPARATEUR qui porte les 8, de
+                  // part et d'autre — cf. `styles.sep`.
+                  //
+                  // Pas de `paddingTop` non plus : le padding 16 de la carte
+                  // suffit, la maquette n'en ajoute pas.
+                  // Le clavier REMPLACE la zone sûre quand il est ouvert : il
+                  // couvre déjà la barre système, les additionner ajoutait sa
+                  // hauteur en trop.
+                  contentContainerStyle={{ paddingBottom: (kbHeight || insets.bottom) + 16 }}
                   renderItem={({ item }) => (
                     <ListRow
                       leading={<Medallion icon={item.icon} ton={item.accent ? 'accent' : 'neutre'} />}
@@ -961,7 +1402,9 @@ export default function HomeScreen() {
                       onPress={() => handleSelect(item.place)}
                     />
                   )}
-                  ItemSeparatorComponent={() => <Divider />}
+                  ItemSeparatorComponent={() => (
+                    <View style={styles.sep}><Divider /></View>
+                  )}
                 />
             </SheetCard>
           </View>
@@ -972,7 +1415,7 @@ export default function HomeScreen() {
                 est zone de glissement. */}
             <View {...panHandlers} style={styles.headerZone}>
               <View style={styles.handleFloat} pointerEvents="none"><Handle /></View>
-              <SheetCard>
+              <SheetCard style={firstCardEdge}>
                 <Text variant="heading1">De quoi avez-vous besoin ?</Text>
 
                 {/* Bannière Affilié Réseau — refermable */}
@@ -985,8 +1428,8 @@ export default function HomeScreen() {
 
                 {/* Les deux services ouverts, à parts égales */}
                 <View style={styles.grid}>
-                  <ServiceCard service={course} onPress={() => onService(course)} anim={cardAnims[0]} />
-                  <ServiceCard service={livraison} onPress={() => onService(livraison)} anim={cardAnims[1]} />
+                  <ServiceCard service={course} onPress={() => onService(course, cardAnims[0])} anim={cardAnims[0]} />
+                  <ServiceCard service={livraison} onPress={() => onService(livraison, cardAnims[1])} anim={cardAnims[1]} />
                 </View>
               </SheetCard>
             </View>
@@ -996,9 +1439,13 @@ export default function HomeScreen() {
                 titre de section (la maquette n'en a pas). */}
             <ScrollView
               showsVerticalScrollIndicator={false}
+              style={styles.flex1}
               contentContainerStyle={styles.stack}
             >
-              <SheetCard style={[styles.lastCard, { paddingBottom: 16 + insets.bottom }]}>
+              <SheetCard style={[styles.lastCard, lastCardFill, { paddingBottom: 16 + insets.bottom }]}>
+                {/* Le bloc de rangées porte sa propre gouttière de 8 — sans lui,
+                    les filets héritaient du 12 de la carte. */}
+                <View style={styles.rows}>
                 {RECENTS.map((r, i) => (
                   <React.Fragment key={r.name}>
                     {i > 0 ? <Divider /> : null}
@@ -1013,6 +1460,7 @@ export default function HomeScreen() {
                     />
                   </React.Fragment>
                 ))}
+                </View>
               </SheetCard>
             </ScrollView>
           </>
@@ -1044,13 +1492,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
   },
+  // `height` est posée à l'exécution, depuis le cadre mesuré.
   sheet: {
     position: 'absolute',
     left: 0, right: 0, bottom: 0,
-    height: SCREEN_H,
   },
-  // `top: 0` — le décalage de 60 au-dessus de l'arête est porté par la
-  // translation animée, qui suit le cran de la feuille.
+  /**
+   * Cadre de repère du bouton flottant — MÊME géométrie que `sheet` (`bottom: 0`
+   * et la hauteur mesurée), et c'est tout son rôle.
+   *
+   * La feuille est ancrée au BAS du conteneur ; le bouton, lui, se positionnait
+   * en `top: 0` du conteneur avec `translateY = ty - 60`. Les deux ne
+   * s'alignaient que si la hauteur réelle de la vue valait exactement
+   * `Dimensions.get('window').height`. C'est vrai sur iOS ; ça ne l'est pas
+   * garanti sur Android, où la hauteur de fenêtre rapportée et celle du conteneur
+   * `flex: 1` ne coïncident pas forcément (barres système, edge-to-edge). Le
+   * bouton se retrouvait alors décalé d'exactement cet écart.
+   *
+   * En posant le bouton dans un cadre qui a la géométrie de la feuille, son
+   * `top` se mesure depuis le même bord que le `ty` de la feuille : le 60 tient
+   * sur les deux OS, sans branche `Platform`.
+   */
+  recenterFrame: {
+    position: 'absolute',
+    left: 0, right: 0, bottom: 0,
+  },
   recenterWrap: {
     position: 'absolute',
     top: 0,
@@ -1070,8 +1536,16 @@ const styles = StyleSheet.create({
   // En-tête de carte sans sa marge basse : c'est la gouttière 12 de la carte qui
   // espace, comme dans la maquette.
   sheetHeaderTight: { marginBottom: 0 },
+  /** Bloc de rangées séparées par des filets : gouttière `space/2`. */
+  rows: { gap: Spacing[2] },
+  /** Séparateur de liste virtualisée : il porte lui-même les 8 de part et
+   *  d'autre, une gouttière de conteneur ne le ferait pas (cf. la `FlatList`). */
+  sep: { paddingVertical: Spacing[2] },
   // Interstice gris entre les cartes — le fond `track` de la feuille y passe.
-  stack: { paddingTop: SHEET_GAP },
+  // `flexGrow: 1` : le conteneur de défilement fait au moins la hauteur du
+  // cadre, donc la dernière carte peut s'y étirer (`lastCardFill`) quand le
+  // contenu est court — et défiler quand il est long.
+  stack: { paddingTop: SHEET_GAP, flexGrow: 1 },
   // Dernière carte : coins bas carrés, blanc jusqu'au bord de l'écran.
   lastCard: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
   // Carte des résultats de recherche : elle prend la hauteur restante.
@@ -1088,6 +1562,13 @@ const styles = StyleSheet.create({
   // Le wrapper n'a ni fond ni rayon : il ne rogne donc pas la pastille qui dépasse.
   // Pas de marge basse : la gouttière 12 de la `SheetCard` espace déjà.
   promoWrap: {},
+  /** Recadrage ACTIF pendant l'ouverture et le repli seulement : la carte est
+   *  rognée par le cadre qui grandit, donc elle se dévoile au lieu de déborder
+   *  sur les tuiles. Au repos il est retiré, sinon il rognerait la pastille de
+   *  fermeture qui déborde de 10. */
+  promoClip: { overflow: 'hidden' },
+  /** Phase de mesure : hors flux (la mise en page ignore le bloc) et invisible. */
+  promoProbing: { position: 'absolute', left: 0, right: 0, opacity: 0 },
   promoCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1096,10 +1577,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.blue100,
     paddingLeft: 6,
     paddingRight: 14,
-    paddingVertical: 6,
+    paddingVertical: PROMO_PAD_V,
+    // PLANCHER, pas hauteur fixe : la carte grandit si son titre passe à deux
+    // lignes, et son padding de 6 est alors respecté au lieu d'être écrasé. Le
+    // cadre s'ouvre sur la hauteur MESURÉE, donc les deux restent d'accord.
+    minHeight: PROMO_MIN_H,
   },
   promoTile: {
-    width: 64, height: 64,
+    width: PROMO_TILE, height: PROMO_TILE,
     borderRadius: Radii.md,
     backgroundColor: Colors.surface,
     overflow: 'hidden',
@@ -1121,6 +1606,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderWidth: Strokes.thick,
     borderColor: Colors.blue100,
+  },
+  /** Zone de frappe de la pastille : elle remplit le cadre animé, qui porte
+   *  désormais l'opacité de la couche « support ». */
+  promoCloseHit: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1133,13 +1623,11 @@ const styles = StyleSheet.create({
     flex: 1,
     height: CARD_H,
     borderRadius: Radii.card,
-    padding: 5,
-    gap: 10,
-    // La tuile est BLEUE, pas grise : `primarySubtle` avec un liseré `track`.
-    // Le gris sur gris d'avant venait d'un relevé plus ancien.
+    // Padding 6 plein : la tuile n'a **plus de liseré** depuis l'affinage de la
+    // maquette, donc plus rien à compenser (c'était 5 + 1 de bord).
+    padding: CARD_PAD,
+    gap: CARD_GUTTER,
     backgroundColor: Colors.primarySubtle,
-    borderWidth: Strokes.thin,
-    borderColor: Colors.track,
   },
 
   cardHeader: {
@@ -1154,6 +1642,7 @@ const styles = StyleSheet.create({
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     padding: 4,
   },
   // Pas de surcharge d'interligne : le style `body` porte 20, et le pied de 48
@@ -1164,10 +1653,12 @@ const styles = StyleSheet.create({
   illoPanel: {
     flex: 1,
     width: '100%',
+    // Rayon FIXE : il ne s'anime plus (cf. le calque de fond dans `IlloPanel`).
     borderRadius: Radii.lg,
-    backgroundColor: Colors.surface,
     overflow: 'hidden',
   },
+  /** Le blanc du panneau, porté par un calque qu'on fait fondre. */
+  illoPanelFill: { backgroundColor: Colors.surface },
   // Feuille décorative : centrée dans sa boîte puis pivotée (rotation RN = Figma).
   leafBox: {
     position: 'absolute',

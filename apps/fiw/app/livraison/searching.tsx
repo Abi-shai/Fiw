@@ -18,7 +18,7 @@ import InfoBanner from '@/components/InfoBanner';
 import ProgressBar from '@/components/ProgressBar';
 import VehicleGroup from '@/components/VehicleGroup';
 import LivraisonModeChoice, { type LivraisonMode } from '@/components/LivraisonModeChoice';
-import { Colors, Outfit, Radii, Shadows, Strokes } from '@/constants/tokens';
+import { Colors, Motion, Outfit, Radii, Shadows, Strokes } from '@/constants/tokens';
 import {
   DAKAR_CENTER, FRAIS_RAPPROCHEMENT, VELO_LIVREUR, MOTO_LIVREUR,
   livraisonGamme, complementaryLivraisonGamme, GROUPEE_ECONOMIE,
@@ -36,8 +36,11 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 // existent dans le même cluster : Option A (normale, départ immédiat) vs
 // Option B (groupée, prix réduit, départ dès 2 commandes confirmées) ; si le
 // seuil n'est pas atteint dans le délai → livraison simple au prix normal.
+// Fenêtre d'entrée de la feuille — recette « Modals / Sheets » de l'identité.
+const SHEET_IN = Motion.window(Motion.duration.containerMorph, Motion.duration.anticipationHold);
+
 const SHEET_LAYOUT = {
-  duration: 280,
+  duration: Motion.duration.textExitShift,
   update: { type: LayoutAnimation.Types.easeInEaseOut },
   create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
   delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
@@ -65,7 +68,13 @@ function Radar() {
     const anims = rings.map((v, i) =>
       Animated.loop(Animated.sequence([
         Animated.delay(i * 900),
-        Animated.timing(v, { toValue: 1, duration: 2700, useNativeDriver: true }),
+        // Boucle utilitaire : la planche lui destine explicitement la courbe
+        // `Hold / Anchor` — pas de biais d'entrée, l'anneau part et finit au même
+        // rythme, ce qu'une boucle exige pour ne pas pulser.
+        Animated.timing(v, {
+          toValue: 1, duration: 2700,
+          easing: Motion.easing.hold, useNativeDriver: true,
+        }),
       ])),
     );
     anims.forEach(a => a.start());
@@ -150,19 +159,36 @@ export default function LivraisonSearchingScreen() {
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(scrimFade, { toValue: 1, duration: 450, useNativeDriver: true }).start();
+    // Voile carto : « background shift », donc courbe symétrique. Sa fenêtre est
+    // celle de la feuille qu'il accompagne — le 450 d'avant était déjà exactement
+    // `container-morph` moins son maintien, il porte maintenant le nom.
+    Animated.timing(scrimFade, {
+      toValue: 1, duration: SHEET_IN.dur,
+      easing: Motion.easing.hold, useNativeDriver: true,
+    }).start();
   }, []);
 
   useEffect(() => {
     if (sheetH > 0 && !didEnter.current) {
       didEnter.current = true;
-      Animated.spring(sheetY, { toValue: 0, tension: 60, friction: 12, useNativeDriver: true }).start();
+      // Entrée de feuille → recette « Modals / Sheets » de l'identité, comme
+      // partout ailleurs : fenêtre `container-morph`, courbe `Hold / Anchor`.
+      Animated.timing(sheetY, {
+        toValue: 0,
+        delay: SHEET_IN.delay, duration: SHEET_IN.dur,
+        easing: Motion.easing.hold, useNativeDriver: true,
+      }).start();
     }
   }, [sheetH]);
 
   useEffect(() => {
     contentAnim.setValue(0);
-    Animated.timing(contentAnim, { toValue: 1, duration: 260, useNativeDriver: true }).start();
+    // Bascule de contenu d'une phase à l'autre : fenêtre de texte (le 260
+    // d'avant était un 250 arrondi à la main).
+    Animated.timing(contentAnim, {
+      toValue: 1, duration: Motion.duration.textExitFade,
+      easing: Motion.easing.primary, useNativeDriver: true,
+    }).start();
   }, [phase]);
 
   const resolve = (o: Outcome) => {
@@ -189,8 +215,16 @@ export default function LivraisonSearchingScreen() {
 
   useEffect(() => {
     if (phase !== 'reveal') return;
-    Animated.timing(scrimFade, { toValue: 0, duration: 600, useNativeDriver: true }).start();
-    Animated.timing(progress, { toValue: 1, duration: 350, useNativeDriver: false }).start();
+    // La levée du voile fait partie de la révélation du Prestataire : c'est un
+    // `hero-reveal`, et le 600 d'avant en portait déjà la valeur.
+    Animated.timing(scrimFade, {
+      toValue: 0, duration: Motion.duration.heroReveal,
+      easing: Motion.easing.hold, useNativeDriver: true,
+    }).start();
+    Animated.timing(progress, {
+      toValue: 1, duration: Motion.duration.supportExit,
+      easing: Motion.easing.primary, useNativeDriver: false,
+    }).start();
     mapRef.current?.recenter(DAKAR_CENTER, 15);
     const t = setTimeout(() => {
       router.replace({

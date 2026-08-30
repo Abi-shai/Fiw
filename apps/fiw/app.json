@@ -21,7 +21,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0066FF"
       },
-      "package": "com.fiw.app"
+      "package": "com.fiw.app",
+      "softwareKeyboardLayoutMode": "resize"
     },
     "plugins": [
       "expo-router",

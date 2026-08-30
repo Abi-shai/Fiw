@@ -234,6 +234,44 @@ qui ont besoin de cet interligne pour respirer, reprennent la variante entière
 | Emojis (`PaymentSheet`, drapeau `index`) | 28, 22 | Taille d'un glyphe, pas de la typographie |
 | `WheelPicker`, saisies de montant `affilie` | 22/30, 24, 48 | Chiffres d'un sélecteur ou d'une saisie de montant, absents de la maquette |
 
+### Troncature : deux lignes pour un descriptif, jamais pour un titre
+
+La maquette a tranché, et le partage est net (relevé du 28 août 2026 sur
+`853:12`) :
+
+| Rôle | Traitement | Exemples |
+|---|---|---|
+| **Descriptif** — sous-titre, phrase d'accroche, blurb | `numberOfLines={2}`, ellipse en fin | le corps de la bannière Affilié, les deux phrases de pied des tuiles de service |
+| **Titre dans un bloc à hauteur contrainte** | `numberOfLines={1}`, ellipse en fin | « Gagnez de l'argent avec Fiw ! » (bannière Affilié) |
+| **Titre libre** | **aucune** troncature | « De quoi avez-vous besoin ? », « Course », « Livraison » |
+
+Un descriptif est du remplissage utile : il peut se faire couper sans qu'on perde
+l'essentiel, et le borner protège la géométrie de son conteneur.
+
+Un titre porte le sens, donc **là où la mise en page peut céder, on ne le coupe
+pas** — on raccourcit la copie s'il ne tient pas. Mais **là où elle ne peut pas
+céder, il tient sur une ligne et s'ellipse.** Un bloc dont la hauteur est contrainte
+par autre chose que son texte — la bannière Affilié l'est par sa vignette de 64 — ne
+peut pas absorber une deuxième ligne : elle écraserait son padding. Entre un titre
+tronqué et un padding détruit, c'est la troncature qui coûte le moins.
+
+_(Amendement du 28 août 2026. Ce document disait « un titre ne se tronque jamais »,
+écrit d'après l'état de la maquette de la veille. Le titre de la bannière tenait à
+**un pixel près** à 375 pt : il passait à deux lignes sur un Android plus étroit, le
+bloc de texte montait de 63 à 83 et crevait la boîte de 64. La maquette porte
+désormais `maxLines: 1` / `ENDING` sur ce titre, décision de l'utilisatrice après
+essai à l'écran.)_
+
+> **Ne pas déclarer `ellipsizeMode`.** `tail` est le défaut de React Native et
+> c'est exactement le `textTruncation: ENDING` de Figma. L'écrire serait du bruit.
+>
+> **Le plafond de lignes est souvent porteur.** Sur la bannière Affilié il ne
+> décore pas : titre 20 + gouttière 3 + corps borné à 40 = 63, sous les 64 de la
+> vignette d'illustration — c'est lui qui **garantit** la hauteur du bloc quelle que
+> soit la copie. Sans lui, une phrase plus longue passerait à trois lignes et la
+> carte déborderait de son cadre. Quand une hauteur est déduite, vérifier que le
+> texte qu'elle contient est borné.
+
 ### Libellé de section en capitales
 
 Le titre qui coiffe une liste ou une carte (`SettingsGroup`, `ReceiptCard`,
@@ -514,6 +552,36 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > rangée, et le mode `plat` de `List` porte la géométrie sans carte décrite
 > ci-dessus (débord de la gouttière pour que les filets filent aux bords)._
 
+> **Un bloc de listing respire de 8.** Dès qu'un bloc empile des `ListRow` — avec
+> ou sans `Divider` entre elles — son conteneur porte une gouttière de **`space/2`
+> (8 px)**. Avec filets, les 8 s'appliquent **de part et d'autre** du filet : la
+> ligne ne touche jamais la rangée qu'elle sépare.
+>
+> Le pourquoi : une `ListRow` a déjà 8 de padding vertical, donc deux rangées
+> collées mettent 16 entre leurs textes mais **0 entre leurs limites** — le filet
+> s'y écrase et la liste se lit comme un bloc compact. Les 8 rendent au filet son
+> rôle de séparation au lieu d'en faire une soudure. Et pour une liste sans filet
+> (l'historique des courses), c'est l'air seul qui sépare : il lui faut la même
+> valeur, sinon les deux motifs de liste ne se ressemblent plus.
+>
+> Porté par `components/List.tsx` pour tout ce qui passe par lui, et à la main
+> dans les listings qui ne l'emploient pas : les deux listes de l'accueil, le
+> sélecteur de pays, l'historique.
+>
+> ⚠️ **Sur une liste virtualisée, c'est le SÉPARATEUR qui porte l'espace**, pas le
+> conteneur. Une `FlatList` enveloppe chaque item avec son séparateur dans une
+> cellule : une gouttière de conteneur espace les cellules et laisse le filet
+> soudé à la rangée qui le précède. Poser `paddingVertical: 8` sur le séparateur
+> donne les 8 des deux côtés. Sur un conteneur à plat (`View`, `ScrollView`), la
+> gouttière suffit — à condition que rangées et filets soient des frères.
+>
+> _(Décidé le 26 août 2026. La règle est née des deux listes de feuille de la
+> maquette — `Lignes` et `Frame 27`, toutes deux en `space/2` — puis **étendue à
+> tous les blocs de listing**, l'espace paramètres compris. Le composant `List`
+> de la maquette, qui collait encore ses rangées, a été aligné le même jour.
+> Exception assumée : le `MenuDrawer` garde son rythme dense à 14 — ce n'est pas
+> une liste de `ListRow` mais la sidebar, et ses filets séparent des GROUPES.)_
+
 > **Le filet d'une liste en feuille file d'un bord à l'autre.** Une liste posée
 > dans une `BottomSheet` sépare ses rangées d'un filet **pleine largeur**
 > (`Divider / Retrait=0`) — quelle que soit la tête des rangées : icône 22,
@@ -579,19 +647,92 @@ libres : ils sortent du système de rangées et de cartes.
 
 Basé sur `@gorhom/bottom-sheet`, enveloppé pour injecter les tokens (`radius-xl`, `shadow-lg`, `Handle`). Un `Panel` statique sépare le contenu bas **non-déplaçable** (ex. statut « recherche en cours »).
 
-**3 niveaux (fractions fixes)** — un écran peut n'exposer qu'un sous-ensemble :
+**3 niveaux (fractions fixes), et rien entre les deux** — un écran peut n'exposer
+qu'un sous-ensemble. Valeurs relevées sur `Scrim state` (836:615) : sur l'écran de
+375×844 de la maquette, la feuille mesure 220 / 430 / 717 px.
 
-| Niveau | Hauteur ≈ | Usage |
-|---|---|---|
-| `collapsed` | 14% | Poignée + 1ʳᵉ ligne, carte visible |
-| `half` | 48% | Contenu principal, **état de repos par défaut** |
-| `full` | 90% | Listes longues / clavier actif |
+| Niveau | Hauteur | Voile | Usage |
+|---|---|---|---|
+| `collapsed` | **25 %** | **aucun** | La feuille affleure ; ce qu'elle laisse voir doit rester franc |
+| `half` | **50 %** | noir 30 % | Contenu principal, **état de repos par défaut** |
+| `full` | **85 %** | noir 50 % | Listes longues / clavier actif — **le maximum du système** |
+
+> ⚠️ **85 % est un plafond dur, quel que soit l'écran ou le contenu.** Une feuille
+> ne grandit jamais au-delà : du contenu qui ne tient pas **scrolle dans la
+> feuille**. On ne gagne pas de hauteur en rognant la carte — c'est ce que le
+> Client garde sous les yeux, et c'est pour ça que le plafond ne se négocie pas
+> écran par écran. Corollaire de code : le corps scrollable d'une feuille est
+> borné par `sheetMaxH(screenH)`, et les trois crans sont donnés par
+> `sheetSnaps(screenH, sheetH)` (`components/Sheet.tsx`) — aucun écran ne calcule
+> ses propres crans.
+>
+> _(Amendement du 27 août 2026. Ce document annonçait 14 / 48 / 90 % ; les crans
+> sont désormais **25 / 50 / 85**, relevés dans la maquette. Le 90 % passait au
+> travers du plafond, et le 14 % — « poignée + 1ʳᵉ ligne » — était trop bas pour
+> qu'un cran replié montre quelque chose d'utile.)_
 
 **Clavier** : au focus d'un champ interne → snap `full` (`keyboardBehavior: fillParent`) via `BottomSheetTextInput`, contenu scrollé au-dessus du clavier ; au blur, retour au cran précédent. Android : `adjustResize`.
 
+**La dernière carte prend la hauteur restante.** Dans une feuille dont la hauteur
+est **fixe** — un cran, ou la pleine hauteur de l'accueil — le contenu court ne
+doit pas laisser apparaître le fond `track` gris sous la dernière carte : la
+feuille se lit alors comme une carte posée dans un vide gris plutôt que comme une
+surface. La dernière carte porte donc **`lastCardFill`** (`components/Sheet.tsx`)
+et s'étire jusqu'au bord.
+
+> Les rangées **à l'intérieur** continuent d'épouser leur contenu et restent en
+> haut de la carte : c'est la carte qui s'étire, pas ce qu'elle contient. C'est
+> exactement ce que fait la maquette — `layoutGrow: 1` sur la dernière carte,
+> `AUTO` sur le bloc de rangées (`Scrim state`, `State=Half` → `Récemment`,
+> 836:611).
+>
+> Le conteneur de défilement qui la porte prend `flexGrow: 1` sur son
+> `contentContainerStyle` : la carte peut ainsi **s'étirer quand le contenu est
+> court ET défiler quand il est long**, sans choisir entre les deux.
+>
+> ⚠️ **Ne s'applique pas à une feuille qui épouse son contenu** (`GroupedSheet`
+> par défaut, donc `searching` et `configure`) : là, il n'y a pas d'espace
+> restant, et la feuille s'arrête exactement où sa dernière carte s'arrête.
+>
+> _(Règle actée le 27 août 2026, sur signalement d'un rendu à l'écran : la feuille
+> d'accueil au repos laissait une bande grise sous la carte des lieux récents. Le
+> motif existait déjà à un endroit — la carte de résultats de la recherche est en
+> `flex: 1` depuis le début — il est maintenant nommé.)_
+
 **Feuille figée à un niveau** : un écran peut verrouiller la feuille sur **un seul cran**, non déplaçable (poignée alors purement visuelle). Si le contenu dépasse la hauteur du cran, il **scrolle à l'intérieur** — on ne compresse jamais le contenu. Ex. : étape *Configurer la course* (Transport) = `full` figé, contenu scrollable, footer (total + CTA) épinglé en bas.
 
-**Physique du snap** (feuilles déplaçables, ex. accueil) : suit le doigt au 1:1, **rubber-band** aux bornes, et au lâcher un ressort qui **repart à la vélocité du doigt** (continuité de vélocité) — `SHEET_SPRING = stiffness 280 / damping 22 / mass 1` (vif, légèrement sous-amorti). Flick franc → cran suivant dans la direction ; drag lent → cran le plus proche.
+**Physique du snap** (feuilles déplaçables, ex. accueil) : suit le doigt au 1:1, **rubber-band** aux bornes. Flick franc → cran suivant dans la direction ; drag lent → cran le plus proche. Au lâcher, **deux régimes** que `snapTo` distingue à la vélocité :
+
+| Déclencheur | Mouvement | Pourquoi |
+|---|---|---|
+| **Lâcher de geste** (vélocité ≠ 0) | ressort `Spring Gentle` qui **repart à la vélocité du doigt** | Une courbe de timing ne sait pas accepter une vélocité initiale : il y aurait un micro-arrêt au lâcher. Le ressort est ici de la **physique**, pas un rebond décoratif — c'est ce qui le fait survivre au principe « Spring for Hero Only ». |
+| **Snap programmatique** (entrée, ouverture, retour à un cran) | fenêtre `container-morph` + courbe `Hold / Anchor` | C'est la recette « Modals / Sheets » de l'identité de mouvement. Bords fermes pour une surface qui s'installe, et le maintien de 50 ms laisse la mise en page parente finir avant que la feuille bouge. |
+
+_(Amendement du 27 août 2026, à l'arrivée de l'identité de mouvement. Ce document
+annonçait un seul ressort `stiffness 280 / damping 22 / mass 1` pour le snap **et**
+l'entrée. L'amortissement passe de 22 à 25 — le `bounce` de 0,25 de la planche au
+lieu de 0,34 : la feuille rebondit un peu moins, elle ne va pas plus lentement. Et
+l'entrée cesse d'être un ressort.)_
+
+**Modales de feuille — DEUX cartes.** Une modale n'est pas une surface blanche
+unique : c'est une **feuille groupée**, fond `track`, avec le **contenu** dans une
+première `SheetCard` et les **actions** dans une seconde, séparées par la gouttière
+de 6. Ce n'est pas décoratif — le contenu explique, les actions engagent, et
+l'interstice gris dit que ce sont deux natures différentes. Les cinq variantes de
+modale de la maquette ont toutes cette structure, sans exception (`Annuler` 499:582,
+`SOS` 500:596, `Paiement` 674:3375, `Décrire le colis`, `Destinataire`).
+
+> En code : `BottomSheet` porte un emplacement **`actions`** à côté de `children`.
+> Sans `actions`, la feuille n'a qu'une carte. La zone de glissement s'arrête à la
+> carte de contenu — un doigt posé sur un bouton ne doit pas commencer à traîner la
+> feuille.
+>
+> ⚠️ Le `SheetHeader` d'une modale passe en `marginBottom: 0` : c'est la gouttière
+> de 12 de la `SheetCard` qui l'espace du corps. Cumuler les deux donnerait 28 là
+> où la maquette met 12.
+>
+> _(Structure relevée et implémentée le 29 août 2026. Le code mettait jusque-là
+> contenu et actions dans une seule surface blanche à padding 20.)_
 
 **Modales de feuille — en-tête obligatoire.** Toute feuille modale porte un
 `SheetHeader` (titre `heading1` à gauche + croix `flat`), y compris les
@@ -603,7 +744,38 @@ tap sur le voile — elle rend seulement visible une sortie qui existait déjà.
 _(Règle actée le 24 août 2026 : 7 des 9 modales du set la suivaient déjà, les
 deux modales Livraison ont été alignées et le code a suivi.)_
 
-**Voile (scrim)** — composant `Scrim` : voile noir derrière la feuille dont l'opacité **suit la position de la feuille**. Nul quand la feuille est basse (`collapsed` / escamotée), net à `half`/medium (~0.38), marqué à `full`/expanded (~0.58) — pour assombrir la carte/le fond et concentrer l'attention sur la feuille. `pointerEvents="none"` (purement visuel, ne bloque pas le fond) et posé **entre le fond et les contrôles flottants** (les boutons carte restent nets). Comportement standard de toute bottom sheet montant aux niveaux hauts.
+**Voile (scrim)** — composant `Scrim` : voile noir derrière la feuille dont l'opacité **suit la position de la feuille**. Une opacité par cran — `collapsed` **0** · `half` **30 %** · `full` **50 %** (`ScrimLevels`, exposé par `components/Scrim.tsx`), relevées sur `Scrim state` (836:615). `pointerEvents="none"` (purement visuel, ne bloque pas le fond) et posé **entre le fond et les contrôles flottants** (les boutons carte restent nets). Comportement standard de toute feuille posée sur un fond.
+
+> **Le cran bas ne porte AUCUN voile.** C'est une décision, pas un oubli : à 25 %
+> la feuille ne fait qu'affleurer, et ce qu'elle laisse voir derrière elle — la
+> carte, le véhicule, l'itinéraire — doit rester **franc**. Le voile n'apparaît
+> qu'à partir du moment où la feuille prend la moitié de l'écran et devient
+> l'objet regardé.
+>
+> ⚠️ **Ne pas confondre les deux échelles.** `SHEET_LEVELS` (25 / 50 / 85 %) sont
+> des **hauteurs de feuille** ; `ScrimLevels` (0 / 30 / 50 %) sont les
+> **opacités de voile** à ces trois crans. Deux axes, et les nombres ne se
+> correspondent pas : le cran de 25 % de hauteur porte un voile de 0 %.
+>
+> **Une feuille à position unique** — modale, tiroir, feuille figée — n'a aucun
+> cran à suivre : elle prend le **niveau nommé** qui lui correspond. Une modale
+> mesure 44 à 47 % dans la maquette, donc `half` (`BottomSheet`) ; un tiroir
+> couvre 82 % de la largeur, donc `full` (`MenuDrawer`) ; une feuille figée haute
+> prend `full` (`transport/configure`). Le nombre de crans ne suffit pas à choisir
+> le niveau, d'où deux écritures et non une abstraction de plus :
+> `sheetScrimOpacity(ty, snaps, offscreen)` pour les feuilles à trois crans, une
+> interpolation en clair vers `ScrimLevels.*` pour les autres.
+>
+> **Exception écrite : les deux écrans `searching`.** Ils portent déjà un voile,
+> mais sur la **carte elle-même** (`Colors.scrim`, encre 22 %), pour poser le
+> radar. Empiler le voile de feuille par-dessus ferait deux voiles pour deux
+> intentions, et éteindrait la carto au moment précis où le Client regarde
+> arriver un Prestataire. Le voile carto y tient lieu de voile d'écran.
+>
+> _(Amendement du 27 août 2026. Ce document prescrivait « nul quand la feuille
+> est basse, ~0,38 à `half`, ~0,58 à `full` » ; le code, lui, portait cinq
+> opacités différentes pour dire la même chose — 0,38 · 0,40 · 0,48 · 0,50 ·
+> 0,58 — pendant que quatre feuilles sur carte n'avaient aucun voile.)_
 
 ### Formulaires
 
@@ -650,6 +822,294 @@ deux modales Livraison ont été alignées et le code a suivi.)_
 
 ---
 
+## Motion
+
+> Miroir de la planche **`motion-identity-system`** (`842:2727`, page
+> `03 — Patterns`). Valeurs dans **`apps/fiw/constants/motion.ts`** ; la maquette
+> fait autorité, ce document en porte le pourquoi.
+
+L'identité de mouvement formalise la chorégraphie, les paramètres de temps et les
+courbes structurelles. Elle n'a pas été inventée par-dessus le produit : la sortie
+de tuile de l'accueil, transcrite d'une piste Figma Motion, en portait déjà les
+neuf valeurs. **La planche généralise ce qui existait**, elle ne le corrige pas —
+c'est ce qui la rend applicable sans rien casser.
+
+### 1. Courbes — trois, et trois seulement
+
+| Courbe | Valeur | Registre | Emploi |
+|---|---|---|---|
+| **Primary Ease** | `cubic-bezier(0.4, 0, 0.2, 1)` | Standard | Décélération assurée : départ vif, large coussin à l'arrivée. **Plus de 80 % des actions d'interface.** C'est le défaut ; s'en écarter demande une raison. |
+| **Hold / Anchor** | `cubic-bezier(0.5, 0, 0.5, 1)` | Symétrique | Vélocité neutre, sans biais d'entrée. Glissements de fond, **boucles utilitaires**, états temporaires — et les feuilles, dont elle tient les bords fermes. |
+| **Spring Gentle** | `spring(bounce: 0.25, mass: 1)` | Élastique | Dépassement organique, stabilisation rapide. **Réservé aux composants héros et aux moments de signature.** |
+
+> **Il n'y a pas de quatrième courbe à ajouter au coup par coup.** Un mouvement qui
+> ne rentre dans aucune des trois est un mouvement à **requalifier**, pas une
+> courbe à inventer.
+>
+> **Conversion du ressort vers React Native.** Le `bounce` de la planche est un
+> taux d'amortissement déguisé : `ζ = 1 − bounce = 0,75`, d'où
+> `damping = 2 ζ √(k·m) ≈ 25` pour `k = 280`. ⚠️ **La raideur n'est pas dans la
+> planche** : 280 est reprise de la valeur que le produit portait déjà, pour que
+> seul le rebond change et pas la vitesse ressentie. C'est une dérivation
+> assumée, signalée comme telle dans `constants/motion.ts`.
+
+### 2. Constantes de temps — ce sont des FENÊTRES
+
+⚠️ **Le point qui se lit de travers une fois et coûte une passe.** La planche écrit
+« Container morph · 50–500 ms » : cela veut dire *ça commence à 50 et c'est fini à
+500* — donc **450 ms d'animation après un maintien de 50**, pas 500 ms d'animation.
+Même sémantique que la timeline Figma Motion dont l'identité est tirée. D'où
+`Motion.window(fin, début)`, qui rend le couple `{ delay, dur }` : personne n'a à
+refaire la soustraction de tête.
+
+| Jeton | Fenêtre | Contexte |
+|---|---|---|
+| `anticipation-hold` | 50 ms | Micro-attente avant un changement de structure |
+| `decoration-exit` | 200 ms | Départ d'un élément secondaire, rognage visuel |
+| `container-exit` | 200 ms | Un conteneur qu'on **renvoie** : modale, tiroir, feuille qui se retire |
+| `text-exit` | 250–300 ms | Bloc de texte qui se fond et se replie verticalement |
+| `support-exit` | 350 ms | Une mise en page principale qui **cède la place** |
+| `container-morph` | 500 ms | Grand bloc qui se reforme au changement de vue |
+| `hero-reveal` | 600 ms | Séquence de contenu complexe qui se déploie |
+
+> **La bande `text-exit` n'est pas une approximation.** Le code en emploie les deux
+> bouts : le **fondu** prend 250, le **déplacement** 300 — le texte a fini de
+> disparaître avant d'avoir fini de glisser. D'où `textExitFade` et
+> `textExitShift` dans les jetons plutôt qu'une moyenne.
+>
+> **Les noms disent « exit » mais les fenêtres servent aussi aux entrées** : la
+> timeline de la section 4 est une séquence de dévoilement et réemploie les mêmes
+> valeurs. Les noms sont ceux de la planche, on ne les renomme pas.
+
+### 3. Principes de chorégraphie
+
+- **Hierarchy Staging.** Échelonner les entrées selon l'importance spatiale :
+  décoration d'abord, ancres de titre ensuite, corps de texte troisième, supports
+  environnants quatrième, et **le conteneur en dernier**.
+- **Asymmetric Timing.** **Sorties rapides (200–350 ms), entrées lentes
+  (500–600 ms).** Un objet entre avec de l'énergie gracieuse, mais dégage
+  instantanément quand on le renvoie — c'est ce qui tient la vitesse *ressentie*
+  de l'app.
+- **Spring for Hero Only.** Ne pas saturer les pages de rebonds. Ce sont les
+  courbes qui tiennent la discipline du système ; le ressort ne va qu'aux actifs
+  de marque à forte valeur et aux modales d'action finale.
+
+### 4. Séquence & échelonnement
+
+Plan d'une séquence standard, de 0 à 600 ms, orchestrée par priorité structurelle :
+
+| Couche | Fenêtre |
+|---|---|
+| Décoration | 0–200 ms |
+| Texte d'en-tête | 0–250 ms |
+| Corps de texte | 0–300 ms |
+| Contenu de support | 50–350 ms |
+| Morph du conteneur | 50–500 ms |
+| Révélation héros | 0–600 ms |
+
+Tout part de 0 ou de 50 : **l'échelonnement se fait par la durée, pas par le
+délai.** Les couches finissent l'une après l'autre au lieu de démarrer l'une après
+l'autre — c'est ce qui donne un mouvement d'un seul tenant plutôt qu'une cascade.
+Pour un dévoilement de contenu, s'y ajoute un décalage de **40 ms** entre groupes
+(`Motion.stagger`).
+
+### 5. Recettes d'implémentation
+
+| Contexte | Recette | Détail |
+|---|---|---|
+| **Modales / Feuilles** | `container-morph` + maintien de 50 ms | Entrée en 500 ms avec le maintien symétrique, pour des bords fermes ; le maintien laisse la mise en page parente se terminer avant l'ouverture. |
+| **Transitions de page** | `Primary Ease` + ressort pour le héros | La transition par défaut tient sur 300 ms de courbe primaire, les cadres d'image héros étant mis en scène séparément avec le ressort élastique. |
+| **Dévoilements de contenu** | entrée échelonnée par la hiérarchie | Les cartes introduisent leurs éléments par groupes de 40 ms : les décorations grandissent d'abord, le texte s'écrit ensuite, les métadonnées de support se résolvent en dernier. |
+| **Micro-interactions** | `Primary Ease` au press + retour élastique | Les réponses rapides (survol, focus actif) finissent **en moins de 200 ms** avec les courbes primaires. Une validation positive déclenche un rebond doux. |
+
+### Faire remarquer un bloc : l'arrivée décalée
+
+Un bloc qui porte un **enjeu de conversion** peut arriver **après** le reste de
+l'écran plutôt qu'avec lui. C'est le seul motif du système où le mouvement sert à
+attirer l'œil et non à expliquer une transition, et il obéit à trois contraintes :
+
+1. **La latence se déduit, elle ne se choisit pas.** Le bloc arrive à la fin de la
+   séquence d'atterrissage — **calculée** depuis la timeline, pas écrite en dur,
+   donc elle suit d'elle-même quand cette timeline change — plus un temps de
+   silence de `hero-reveal`. Sur l'accueil : 900 + 600 = **1 500 ms**.
+
+   La planche n'a pas de jeton de « pause », et ce silence n'est pourtant pas un
+   nombre choisi à la main : il prend la **plus longue fenêtre du système**, celle
+   d'une séquence de contenu complexe qui se déploie — on laisse passer le temps
+   qu'aurait pris un dévoilement entier avant que le bloc se manifeste.
+   **Le silence fait partie de l'accroche** : trop court, le bloc se confond avec
+   l'atterrissage et la latence ne sert à rien.
+
+   ⚠️ `hero-reveal` est le **plafond** de l'échelle. Allonger encore ne serait plus
+   un changement de jeton mais une décision de design system — un jeton de pause à
+   poser dans la planche, pas un nombre à écrire dans un écran.
+
+   _(940 ms au premier jet ; 1 400 le 27 août 2026 ; 1 500 le 28 août 2026 — les
+   deux fois sur retour à l'écran de l'utilisatrice, qui la trouvait trop
+   rapprochée du reste.)_
+2. **La mise en page se comporte comme si le bloc n'existait pas, et c'est le
+   SHIFT qui le fait naître.** Aucune place réservée : voir un emplacement vide
+   attendre son contenu se lit comme un trou, pas comme une promesse. Le bloc est
+   replié à zéro, et à l'arrivée sa hauteur s'ouvre sur la fenêtre
+   `container-morph` — le reste de l'écran cède la place, et ce mouvement-là fait
+   partie de l'effet.
+
+   ⚠️ **Un bloc qui s'ouvre doit être recadré pendant qu'il s'ouvre**, sinon son
+   contenu — qui garde sa hauteur naturelle — déborde sur ce qui le suit. Et le
+   recadrage doit être **retiré au repos** dès que l'ouverture est finie, sans quoi
+   il rogne ce qui dépasse volontairement du bloc (ici une pastille de fermeture
+   en débord de 10 px). Un `overflow` qu'on active le temps de l'animation, pas un
+   `overflow` permanent.
+
+   ⚠️ **La hauteur cible se mesure HORS FLUX, jamais dans un cadre replié.** Deux
+   façons de s'y tromper, toutes deux payées :
+   - mesurer le contenu d'un cadre à `height: 0` ne rend pas sa hauteur naturelle ;
+   - la **déduire** des styles ne tient que si le texte occupe le nombre de lignes
+     prévu — et un titre qui tient sur une ligne à 375 pt passe à deux sur un écran
+     plus étroit, ou avec un réglage de police système plus grand.
+
+   La phase de mesure pose donc le cadre **hors flux** (`position: 'absolute'`) et
+   invisible : la mise en page l'ignore — ce qui est l'effet voulu — et il se mesure
+   à sa hauteur réelle. Une seule image, et la mesure se garde au niveau **module**
+   pour ne pas refaire la phase (donc ne pas faire clignoter le bloc) à chaque
+   remontage de l'écran.
+
+   ⚠️ **Et le contenu porte un PLANCHER, pas une hauteur fixe.** Une hauteur fixe
+   suppose que le texte tient : quand il ne tient pas, il crève la boîte de contenu
+   et **le padding disparaît**. Avec `minHeight`, le bloc grandit et son padding est
+   respecté sur toutes les largeurs d'écran et toutes les échelles de police.
+
+   ⚠️ **Un enfant de hauteur zéro consomme quand même la gouttière de son
+   parent.** « La mise en page se comporte comme si le bloc n'existait pas » est
+   donc faux sans un `marginBottom` négatif qui l'annule — sinon il reste une
+   bande vide de la taille de la gouttière. Hauteur et gouttière se dérivent de la
+   **même** valeur d'ouverture, pour qu'elles ne puissent pas se contredire.
+3. **Le contenu arrive par couches, selon le plan de séquence.** C'est là que
+   l'identité se dépense le plus : les cinq couches de la section 4 appliquées à
+   un seul bloc — décoration (rang 0), ancre de titre (0–250), corps (0–300),
+   supports (50–350), et **le conteneur qui conclut** (50–500). Elles finissent
+   l'une après l'autre au lieu de démarrer l'une après l'autre, dans l'ordre de
+   *Hierarchy Staging*.
+4. **Le ressort ne va qu'à la décoration, et seulement pour cette raison.** Un bloc
+   qui arrive seul, après tout le monde, avec un enjeu business : sa décoration est
+   un « brand-signature interactive moment » au sens de *Spring for Hero Only*.
+   Sans le dépassement, la latence ne servirait à rien — c'est lui qui fait
+   remarquer l'arrivée. ⚠️ **La couche à ressort quitte le modèle des fenêtres** :
+   un ressort n'a pas de durée, sa fenêtre ne dit plus que son rang.
+
+**Une fois par lancement d'app, pas à chaque retour sur l'écran.** L'état vit dans
+une variable de **module**, pas dans un `useState` : un état React repart à zéro à
+chaque remontage de l'écran (un `router.replace` depuis une clôture, par exemple)
+et l'intro se rejouerait en cours de navigation. Un module vit aussi longtemps que
+le bundle JS.
+
+**Au retrait, `container-exit` et un repli vertical.** Le bloc est un conteneur
+qu'on renvoie (200 ms), et son fondu s'accompagne d'un repli de sa hauteur pour
+que le reste reprenne la place sans saut — motif « fading and collapsing
+vertically ». ⚠️ Un bloc qui se replie dans une carte doit **annuler la gouttière**
+de cette carte (`marginBottom: -CARD_CONTENT_GAP`) : replié à 0, il laisserait
+sinon ses 12 px de gouttière, et le contenu suivant sauterait de 12 au démontage.
+
+_(Motif écrit le 27 août 2026 pour la bannière Affilié Réseau de l'accueil. Ses
+trois décalages — monter de 10, arriver à 0,88, se retirer à 0,92 — sont
+**repris** de valeurs déjà relevées sur la maquette ailleurs dans l'écran
+(`CHROME.*Shift`, l'échelle d'arrivée des calques véhicule, `EXIT.groupDrift`),
+pour que le bloc bouge dans le vocabulaire du reste plutôt qu'avec des nombres
+neufs.)_
+
+### Trois règles de rendu, payées par des défauts visibles
+
+Elles ne viennent pas de la planche mais du moteur, et elles décident si une
+animation juste sur le papier est fluide à l'écran.
+
+**1. Une horloge, pas deux.** React Native a deux moteurs : le **driver natif**
+(thread UI, 60 im/s garanties) et le **driver JS**. Certaines propriétés ne
+peuvent pas être natives — `height`, `width`, `backgroundColor`, tout ce qui
+relève de la **mise en page**. Dès qu'une piste d'une animation est obligée
+d'être en JS, **toutes les pistes qui bougent AVEC elle doivent l'être aussi**.
+Sinon le conteneur avance par saccades du thread JS pendant que son contenu
+glisse à 60 im/s sur le thread UI, et l'œil voit ce décalage-là. **Une seule
+horloge, même imparfaite, est fluide ; deux horloges ne le sont jamais.**
+
+> Piège dont la règle est née : la sortie de tuile de l'accueil animait la
+> `height` du panneau en JS et le fondu du groupe véhicule en natif. Les véhicules
+> bégayaient en disparaissant, sur les deux OS. _(27 août 2026.)_
+>
+> ⚠️ Contrainte à connaître avant de déplacer une piste : **un même nœud animé ne
+> peut pas vivre sur les deux drivers.** Une valeur combinée par
+> `Animated.multiply` / `Animated.add` à une valeur de l'autre driver lève une
+> erreur à l'exécution. C'est ce qui cloue les pistes d'en-tête, de pied et de
+> feuille au driver natif : elles sont additionnées aux valeurs d'entrée.
+
+**2. Ne jamais animer le `borderRadius` d'une vue qui rogne.** Sur une vue en
+`overflow: 'hidden'`, le rayon définit le **masque de clip** : l'animer le fait
+reconstruire à chaque image, et ça se voit — un flash. Si le rayon doit
+disparaître, c'est presque toujours qu'un **fond** disparaît : faire fondre le
+fond et laisser le rayon fixe donne le même résultat, puisqu'un fond transparent
+n'a pas de coin à arrondir.
+
+**3. Faire fondre un calque plutôt qu'interpoler un `backgroundColor`.** Une
+couleur animée s'interpole composante par composante sur le thread JS et invalide
+le fond à chaque image. Un calque de couleur en `absoluteFill` dont on anime
+l'**opacité** coûte une fraction de ça — et l'opacité, elle, peut être native
+quand rien ne l'en empêche.
+
+### Ce que l'identité laisse hors d'elle, et pourquoi
+
+Trois familles de mouvement ne passent pas par les jetons. Ce n'est pas un oubli,
+et il faut que ce soit écrit pour que personne ne « corrige » ces endroits :
+
+1. **La timeline d'ENTRÉE des tuiles de l'accueil** (`CHROME`, `SERVICE_ART`) garde
+   ses trois courbes propres — `EASE_QUART`, `EASE_BACK` (dépassement 1,56),
+   `EASE_QUINT` — parce qu'elle est **transcrite d'une piste Figma Motion**
+   authored à la main sur cette frame précise (`357:1685`). La maquette fait
+   autorité sur son propre mouvement, et le dépassement de `EASE_BACK` sur
+   l'illustration relève exactement du « brand-signature » que la planche autorise
+   aux héros. La remplacer par les défauts du système effacerait une animation
+   dessinée.
+2. **Le ressort du lâcher de geste** survit à « Spring for Hero Only » : voir
+   § BottomSheet, il n'y a pas de courbe de timing qui accepte une vélocité
+   initiale.
+3. **Trois durées sans rôle dans la planche** restent en dur, faute de jeton
+   honnête : le fondu du splash de marque (420 ms), l'apparition/disparition du
+   `Toast` (180 / 280 ms) et le clignotement du curseur de `CodeField` (480 ms).
+   Ce sont des candidats à un futur jeton, pas des valeurs à forcer dans un jeton
+   voisin. Le press de `Button` (`bounciness: 0`, settle ≈ 120 ms) **respecte
+   déjà** la recette micro-interaction sans rien changer.
+
+### Les deux 200 ms, et pourquoi ce n'est pas un doublon
+
+`decoration-exit` et `container-exit` portent la même valeur et des rôles
+opposés. Les fusionner serait perdre l'information :
+
+- **`decoration-exit`** est le premier pas d'une sortie **échelonnée** dans une
+  composition — `decoration 200 → text 250–300 → support 350` — où le conteneur
+  part **en dernier** parce qu'il attend que son contenu ait dégagé.
+- **`container-exit`** est un **renvoi en bloc** : rien n'attend, donc rien ne
+  retarde. C'est le principe *Asymmetric Timing* pris au mot — « clean up and
+  clear space **instantly** when dismissed to maintain high perceived application
+  speed ».
+
+Sortie échelonnée et renvoi en bloc sont deux événements différents, et c'est le
+nom du jeton qui dit lequel on est en train d'écrire.
+
+**Corollaire, visible partout dans le code : entrée 500, sortie 200.** L'asymétrie
+n'est pas une nuance de la planche, c'est sa mécanique principale.
+
+- `BottomSheet` : ouverture `container-morph`, fermeture `container-exit`.
+- `MenuDrawer` : idem — et sa fermeture n'est **pas** sa fenêtre d'ouverture jouée
+  à l'envers.
+- `useSnapSheet`, snap programmatique : la **direction** tranche. La feuille monte
+  → elle s'installe (`container-morph`, avec son maintien de 50) ; elle descend →
+  elle rend la place (`container-exit`, sans maintien). Le sens suffit, ce qui
+  évite un paramètre que chaque appelant devrait penser à passer.
+
+_(Jeton ajouté le 27 août 2026, à la planche `motion-identity-system` comme au
+code. Il manquait : `BottomSheet` empruntait `support-exit` (350 ms) faute de
+mieux, ce qui **ralentissait** la fermeture des modales au lieu de la presser.)_
+
+---
+
 ## Transitions & navigation
 
 Deux familles de transitions, à ne jamais confondre :
@@ -666,7 +1126,180 @@ Tout passage **d'une page à une autre** (nouvelle route) utilise la transition 
 
 Tout changement **à l'intérieur d'une même page** (morph d'un mode à l'autre, ouverture/fermeture d'une bottom sheet, snap entre crans) utilise une **animation locale** — pas une transition de pile :
 
-- Entrée de feuille : slide-up + `SHEET_SPRING` (cf. BottomSheet).
+- Entrée de feuille : slide-up sur la fenêtre `container-morph` + courbe `Hold / Anchor` (cf. § Motion, recette « Modals / Sheets »).
 - Morph in-place (ex. accueil : grille de services ↔ recherche d'itinéraire ↔ choix sur carte) : on **reste sur la même route**, on anime le contenu.
 
+> **Seul l'élément touché se transforme.** Quand un morph part d'un objet d'une
+> liste ou d'une grille — une tuile de service, une carte de gamme — c'est **cet
+> objet-là** qui joue la transition, pas ses voisins. Les voisins n'ont rien
+> déclenché ; les animer dit à l'utilisatrice qu'elle a ouvert plusieurs choses à
+> la fois.
+>
+> Piège dont la règle est née : la timeline Motion de la maquette vit sur la
+> **feuille**, pas sur une tuile. Lue littéralement, elle fait sortir les deux
+> tuiles de l'accueil ensemble — et c'est ce que le code faisait. À l'écran, ça se
+> lit comme si on ouvrait Course ET Livraison. Une timeline posée au niveau d'un
+> conteneur ne dit pas que tous ses enfants la jouent : elle dit seulement où
+> l'auteur l'a rangée. _(Corrigé le 27 août 2026 sur signalement à l'écran.)_
+>
+> Corollaire de code : l'objet pressé **tend sa propre valeur animée** au
+> gestionnaire (`onService(service, anim)`) au lieu qu'on la retrouve par index —
+> il n'y a alors aucun appariement à maintenir entre l'ordre des données et celui
+> des animations.
+
 > Repère : changement de **page** = transition de pile (slide + swipe-back). Changement d'**état dans la page** = animation locale (sheet, morph). Si on se surprend à pousser une route juste pour animer un changement d'état, c'est probablement le mauvais outil.
+
+---
+
+## Les deux OS
+
+Le design se décide sur une maquette iPhone (375×844) ; le produit tourne sur les
+deux. Ces règles sont nées d'écarts **constatés sur Android**, et aucune ne passe
+par une branche `Platform` : dans les trois cas, la version correcte l'est sur les
+deux OS. Une branche `Platform` est le dernier recours, pas le premier réflexe.
+
+### Un repère, pas deux
+
+**Deux éléments qui doivent rester alignés se mesurent depuis le même bord.** Un
+enfant ancré en `top` et un frère ancré en `bottom` ne s'alignent que si la
+hauteur de vue supposée par l'un vaut exactement celle de l'autre.
+
+_Défaut réel : le bouton de recentrage de l'accueil, ancré en `top: 0` avec
+`translateY = ty − 60`, devait flotter 60 px au-dessus d'une feuille ancrée en
+`bottom: 0`. Juste sur iOS, décalé sur Android d'exactement l'écart entre la
+hauteur de fenêtre rapportée et celle de la vue. Corrigé non par un décalage
+Android, mais en posant le bouton dans un cadre qui **rejoue la géométrie de la
+feuille** — le 60 est alors mesuré depuis le même bord, et n'a plus à être
+corrigé nulle part._
+
+### La hauteur d'écran se lit à l'exécution
+
+**Toujours `useScreenHeight()` (`hooks/`), jamais `Dimensions.get('window')`.**
+Sur iOS les deux coïncident ; sur Android, pas forcément — barres système,
+edge-to-edge activé par défaut depuis le SDK 54. Or **tous les niveaux de feuille
+sont des fractions de cette hauteur** : lue au mauvais endroit, le plafond de
+85 % cesse d'être 85 % de ce que l'utilisatrice voit.
+
+Corollaire : une valeur qui dépend de la hauteur d'écran ne peut pas être une
+constante de module ni vivre dans un `StyleSheet.create` — elle se pose à
+l'exécution. C'est le prix de la justesse, et il est faible.
+
+> **`useScreenHeight` garde la plus GRANDE hauteur observée, pas la dernière.**
+> Le cadre mesuré rétrécit quand la fenêtre se redimensionne. Si la géométrie
+> d'une feuille en dépendait, ses crans et sa hauteur se recalculeraient pendant
+> que son `translateY` porte encore une valeur absolue calculée dans l'ancien
+> repère : **la feuille entière saute**. Le clavier ne peut que rétrécir le cadre,
+> jamais l'agrandir, et l'app est verrouillée en portrait — garder le maximum
+> suffit donc à immuniser la géométrie.
+>
+> _(Défaut réel, introduit le 27 août 2026 en passant de `Dimensions` au cadre
+> mesuré, et signalé à l'écran sur Android le même jour. La cause première est
+> traitée par `adjustNothing`, mais une géométrie qui ne dépend pas du clavier
+> reste juste quel que soit le mode.)_
+
+### Le texte n'a pas la même hauteur sur les deux OS
+
+**Android réserve un espace au-dessus de l'ascendante et sous la descendante de la
+police** (`includeFontPadding`, actif par défaut) ; iOS non. Chaque texte y est donc
+plus haut de quelques points **en haut et en bas** — et comme la hauteur d'un texte
+participe à la mise en page (rangées, cartes, gouttières, alignements sur la ligne
+de base), l'écart se propage partout. À l'écran ça se lit comme du **padding en trop
+autour du texte**, alors que rien dans les styles ne l'a demandé.
+
+L'effet est d'autant plus net avec **Outfit**, dont les métriques déclarées sont
+généreuses.
+
+**Règle : `includeFontPadding: false` sur tout texte.** Android mesure alors sur
+l'interligne réel — donc comme iOS, et comme la maquette, qui est dessinée sur un
+cadre iPhone. Pas de branche `Platform` : la propriété est ignorée sur iOS.
+
+Il est posé aux **deux sources** de la typographie, donc l'immense majorité du
+produit l'a sans rien demander :
+
+| Source | Portée |
+|---|---|
+| `components/Text.tsx` (style `base`) | tout texte passant par l'atome |
+| `constants/typography.ts` (`inputTypo`) | tout champ de saisie d'**une** ligne |
+
+> **Compagnon obligé sur un champ d'une ligne : `textAlignVertical: 'center'`.**
+> Sans le padding de police, le texte d'un champ se cale en haut de sa boîte sur
+> Android. Il est dans `inputTypo`, donc réservé aux champs d'une ligne — un champ
+> **multiligne** reprend la variante entière et veut son texte en haut.
+>
+> **Les sites qui contournent l'atome portent le correctif eux-mêmes.** Ce sont
+> exactement ceux que § Typographie liste comme « hors échelle » : `PlateChip`,
+> `FlagChip`, le champ multiligne de `Field`, et les deux saisies de montant de
+> `affilie`. Cinq sites — et c'est un argument de plus pour l'atome : un texte qui
+> passe par lui n'a jamais ce problème.
+>
+> _(Règle écrite le 28 août 2026, sur signalement d'un écart de spacing constaté
+> sur appareil Android. `includeFontPadding` n'apparaissait alors nulle part dans
+> le projet, donc l'écart existait sur **tout** le produit.)_
+
+### Clavier
+
+**Le clavier passe par `react-native-keyboard-controller`, jamais par les
+événements `Keyboard` de React Native.** La raison est unique et suffit : les
+événements de RN sont des `keyboardDidShow` / `keyboardDidHide` — ils ne se
+déclenchent qu'une fois le clavier **posé**, donc la mise en page rattrape son
+retard d'un coup et ça se voit. Android n'a même pas les `will*` d'iOS. La
+bibliothèque publie la position du clavier **image par image**, sur les deux OS.
+
+Quatre règles, dans cet ordre :
+
+0. **Android ne redimensionne PAS la fenêtre.** `app/_layout.tsx` appelle
+   `KeyboardController.setInputMode(SOFT_INPUT_ADJUST_NOTHING)` au démarrage. En
+   `adjustResize` — le défaut — Android rétrécit la fenêtre dès que le clavier
+   monte : **deux choses bougent au lieu d'une**, le système repositionne
+   instantanément tout ce qui est ancré en bas, et notre décalage animé s'ajoute
+   par-dessus. Un saut, puis une animation. `adjustNothing` rend la main : le seul
+   mouvement est celui qu'on anime.
+
+   ⚠️ **Contrepartie, et elle n'est pas optionnelle : plus aucun écran ne peut
+   compter sur le système pour dégager un champ.** Tout écran à saisie doit
+   porter son propre `KeyboardAvoidingView`, ou vivre dans une feuille qui se
+   décale, ou avoir une liste au `paddingBottom` conscient du clavier. Un écran à
+   champ qu'on ajoute sans rien de tout ça aura son champ sous le clavier — sur
+   les deux OS. Deux exclusions **vérifiées** et volontaires : l'écran OTP (tout
+   son contenu est en haut, le clavier ne l'atteint pas) et l'étape carte de la
+   fiche de Lieu (sa barre de recherche flotte en haut d'une carto plein écran —
+   un `padding` y rétrécirait la carte).
+1. **`KeyboardAvoidingView` s'importe de `react-native-keyboard-controller`**, pas
+   de `react-native`. Mêmes props (`behavior="padding"` sur les deux OS), mais le
+   décalage suit le clavier. Passer `behavior={undefined}` côté Android n'a jamais
+   été une option : ça reposait sur `adjustResize`, qui **ne redimensionne plus la
+   fenêtre depuis Android 15** (API 35) et l'edge-to-edge — le champ restait
+   simplement caché.
+2. **Une feuille ancrée en bas se décale par sa TRANSFORMATION, pas par son
+   `paddingBottom`.** `useKeyboardAnimation()` rend des `Animated.Value` en
+   **native driver** : ils se composent avec le `translateY` de la feuille
+   (`Animated.subtract(ty, kbHeight)`) et elle monte s'asseoir sur le clavier en
+   synchro. Une valeur en native driver ne peut pas animer une propriété de mise
+   en page — donc `paddingBottom` reste statique, et c'est très bien ainsi.
+3. **Le clavier REMPLACE la zone sûre, il ne s'y ajoute pas.** Il couvre déjà la
+   barre système. `paddingBottom: (kbHeight || insets.bottom) + 16`, jamais
+   `kbHeight + insets.bottom`. Pour les cas non animés — du mou de défilement en
+   bas d'une liste, où rien ne bouge à l'écran — `useKeyboardState((s) =>
+   s.height)` donne un nombre ordinaire, et c'est suffisant.
+
+Et le décalage clavier d'une feuille modale vit **dans `BottomSheet`**, une fois,
+pas répété dans chaque écran qui en ouvre une.
+
+`KeyboardProvider` est monté dans `app/_layout.tsx` avec `statusBarTranslucent` et
+`navigationBarTranslucent` : l'edge-to-edge est actif par défaut depuis le SDK 54,
+l'app dessine derrière les deux barres, leur hauteur ne doit donc pas être comptée
+deux fois. `android.softwareKeyboardLayoutMode` reste déclaré à `"resize"` dans `app.json`,
+mais ce n'est plus qu'un **repli** : le mode posé à l'exécution (`adjustNothing`)
+gagne. On le garde parce qu'il vaut mieux que le silence — c'est ce silence qui
+avait laissé trois stratégies coexister — et parce qu'il redonne le comportement
+système si la bibliothèque venait à ne pas se charger.
+
+⚠️ **C'est un module natif : l'app ne tourne plus dans Expo Go.** Il faut un dev
+client (`npx expo run:android` / `run:ios`, ou un build EAS).
+
+_(Section écrite le 27 août 2026, après un signalement sur appareil Android :
+bouton flottant mal placé, et décalage clavier qui ne suivait pas le comportement
+du système. La partie Clavier a été refaite le même jour : une première passe
+avait unifié le `KeyboardAvoidingView` de React Native, mais le décalage restait
+désynchronisé du clavier — défaut confirmé à l'écran par l'utilisatrice, d'où le
+passage à `react-native-keyboard-controller`.)_

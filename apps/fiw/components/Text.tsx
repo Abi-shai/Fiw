@@ -23,10 +23,30 @@ export default function Text({
   return (
     <RNText
       {...rest}
-      style={[styles[variant], { color }, align ? { textAlign: align } : null, style]}
+      style={[base, styles[variant], { color }, align ? { textAlign: align } : null, style]}
     />
   );
 }
+
+/**
+ * Réglage de base de TOUT texte du produit — la seule raison d'être de cet objet
+ * est `includeFontPadding`, et elle vaut d'être écrite.
+ *
+ * **Android réserve un espace supplémentaire au-dessus de l'ascendante et sous la
+ * descendante de la police** (`includeFontPadding`, actif par défaut) ; iOS non.
+ * Chaque texte y est donc plus haut que sur iOS de quelques points en haut ET en
+ * bas — et comme la hauteur d'un texte participe à la mise en page (rangées,
+ * cartes, gouttières), l'écart se propage partout. À l'écran ça se lit comme du
+ * **padding en trop autour du texte**, alors que rien dans les styles ne l'a
+ * demandé.
+ *
+ * L'effet est d'autant plus net avec **Outfit**, dont les métriques déclarées sont
+ * généreuses. Le mettre à `false` fait mesurer Android sur l'interligne réel — donc
+ * comme iOS, et comme la maquette, qui est dessinée sur un cadre iPhone.
+ *
+ * Pas de branche `Platform` : la propriété est ignorée sur iOS.
+ */
+const base: TextStyle = { includeFontPadding: false };
 
 const styles = StyleSheet.create(
   Object.fromEntries(
