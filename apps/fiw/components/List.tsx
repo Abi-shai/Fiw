@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
-import { Colors, Radii, SectionLabel, Strokes } from '@/constants/tokens';
+import { Colors, Radii, SectionLabel, Spacing, Strokes } from '@/constants/tokens';
 import Text from '@/components/Text';
 import Divider from '@/components/Divider';
 
@@ -51,12 +51,16 @@ export default function List({
           ? <Text variant="label" color={Colors.textSecondary} style={styles.title}>{title}</Text>
           : <Text variant="caption" color={Colors.textTertiary} style={styles.title}>{title}</Text>
       ) : null}
-      <View style={[plat ? null : styles.card, bleed ? { marginHorizontal: -bleed } : null]}>
+      {/* Rangées et filets sont des FRÈRES à plat, séparés par la gouttière de 8
+          — et non chacun dans son propre cadre. C'est ce que fait la maquette
+          (son cadre `Lignes` est en `space/2`), et c'est la seule façon d'obtenir
+          8 au-dessus ET au-dessous du filet. */}
+      <View style={[styles.rows, plat ? null : styles.card, bleed ? { marginHorizontal: -bleed } : null]}>
         {items.map((child, i) => (
-          <View key={i}>
+          <React.Fragment key={i}>
             {i > 0 ? <Divider inset={bleed ? inset + bleed : inset} /> : null}
             {child}
-          </View>
+          </React.Fragment>
         ))}
       </View>
       {footnote ? (
@@ -67,6 +71,9 @@ export default function List({
 }
 
 const styles = StyleSheet.create({
+  /** Gouttière d'un bloc de rangées séparées par des filets : `space/2`. Elle
+   *  vaut pour les DEUX modes — la respiration ne dépend pas de la carte. */
+  rows: { gap: Spacing[2] },
   wrap: { gap: 8, marginBottom: 20 },
   // En `plat`, la coupure entre deux groupes ne tient qu'à l'air : 28 au lieu
   // de 20, puisqu'il n'y a plus de liseré de carte pour la marquer.

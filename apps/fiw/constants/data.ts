@@ -276,7 +276,13 @@ export const PAYMENT_METHODS: { id: string; label: string; icon: IconName }[] = 
 export const FRAIS_RAPPROCHEMENT = 350;
 
 // Frais d'attente (cf. CONTEXT.md) : délai gratuit unique de 5 min à l'arrivée
-// du prestataire, puis 100 F CFA/min. Annoncés au client dès la commande.
+// du prestataire, puis 100 F CFA/min.
+//
+// ⚠️ Plus d'annonce à la commande depuis le 26 août 2026 : le bandeau de
+// `transport/configure` a été retiré — il n'apprenait rien au Client à un moment
+// où il n'attend personne. Les frais se disent quand ils courent, dans le
+// bandeau d'attente de `transport/course-active`. `WAIT_GRACE_MINUTES` n'est donc
+// plus affiché nulle part ; il reste la valeur de référence de la règle.
 export const WAIT_GRACE_MINUTES = 5;
 export const WAIT_FEE_PER_MIN = 100;
 

@@ -94,7 +94,8 @@ Fonctionnalité dans Fiw Pro permettant au prestataire de définir une direction
 _Avoid_ : filtre de destination, trajet préféré
 
 **Frais d'attente** :
-Frais facturés au client si le prestataire est arrivé et attend au-delà du délai gratuit (**5 min, délai unique quel que soit le prix de la course**). 100 F CFA/minute au-delà. Déclenchés automatiquement par GPS. Le montant potentiel est **annoncé au client dès la commande** (message clair avant confirmation), jamais révélé seulement en fin de course.
+Frais facturés au client si le prestataire est arrivé et attend au-delà du délai gratuit (**5 min, délai unique quel que soit le prix de la course**). 100 F CFA/minute au-delà. Déclenchés automatiquement par GPS.
+_Amendement du 26 août 2026_ : **l'annonce à la commande est retirée.** La règle disait que le montant potentiel devait être « annoncé au client dès la commande, jamais révélé seulement en fin de course » ; le bandeau qui le faisait sur l'écran de configuration a été supprimé de la maquette et du code. Un avertissement sur des frais d'attente n'apprend rien au Client au moment où il commande — il n'attend encore personne, et le message occupait une rangée entière juste au-dessus du bouton de confirmation. Ce qui reste, et qui suffit : les frais **se disent quand ils courent**, dans le bandeau d'attente de la course active (`transport/course-active`), à l'arrivée du Prestataire. La partie « jamais révélé seulement en fin de course » tient donc toujours — c'est le moment de l'annonce qui change, pas le principe de transparence.
 _Avoid_ : frais de retard, pénalité d'attente
 
 ### Modèle économique

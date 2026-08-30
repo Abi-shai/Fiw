@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
-import { Colors } from '@/constants/tokens';
+import { Colors, Spacing } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
 import ListRow from '@/components/ListRow';
 import Medallion from '@/components/Medallion';
@@ -42,6 +42,8 @@ export default function HistoryScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
-  list: { paddingHorizontal: 20, paddingBottom: 24 },
+  // Bloc de listing : gouttière `space/2` entre les rangées. Sans filet ici,
+  // c'est l'air seul qui les sépare.
+  list: { gap: Spacing[2], paddingHorizontal: 20, paddingBottom: 24 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 40 },
 });
