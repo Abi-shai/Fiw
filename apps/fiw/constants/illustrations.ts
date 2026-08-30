@@ -4,11 +4,16 @@ import { Image } from 'react-native';
 // la clé `illu` portée par chaque gamme (cf. GAMMES/COVOITURAGE/LIVRAISON_GAMMES
 // dans data.ts). Une illustration par type de véhicule, quel que soit le service
 // qui l'emploie : la moto sert autant au Taxi Moto qu'à la Moto Livraison.
-//   moto · velo (nouveau rendu 3D, masters + provenance Figma dans
-//   `assets/illustrations/` à la racine du dépôt) · auto (taxi jaune, gamme
-//   classique) · luxe (auto noire, gammes élevées + covoiturage solo) ·
-//   covoiturage (auto orange, covoiturage partagé) — ces trois-là encore dans
-//   l'ancien style isométrique à plat.
+//   moto · velo · auto (taxi jaune, gamme classique) · luxe (auto noire, gammes
+//   élevées + covoiturage solo) · covoiturage (auto orange, covoiturage
+//   partagé). **Les cinq sont passées au rendu volumétrique le 25 août 2026** :
+//   les trois voitures n'étaient plus les seules dans l'ancien style isométrique
+//   à plat, tout le jeu est désormais homogène.
+//
+//   Les assets sont reconstruits depuis les sources transparentes de Figma et le
+//   recadrage de chaque cadre (×4). ⚠️ Ne pas les régénérer avec l'export du MCP
+//   Figma : il cuit un fond `#F9FAFB` OPAQUE dans le PNG, même quand la source
+//   et le cadre sont transparents.
 // Partagé entre l'écran de configuration et l'écran de recherche.
 export const GAMME_ILLUSTRATIONS = {
   moto: require('../assets/gamme-moto.png'),
@@ -45,14 +50,19 @@ export const TOPVIEW_ILLUSTRATIONS: Record<IlluKey, ReturnType<typeof require>> 
  *  (l'ombre portée élargit un peu la boîte des voitures). Sert à dimensionner
  *  le marqueur à partir de sa seule LONGUEUR, sans jamais l'étirer. */
 export const TOPVIEW_RATIOS: Record<IlluKey, number> = {
-  // Deux-roues redessinés le 14 août 2026 : la moto s'affine (silhouette plus
-  // serrée) tandis que le vélo s'élargit nettement — le cycliste y écarte les
-  // bras jusqu'aux poignées, et c'est cette envergure qui fait la largeur.
-  moto: 0.385,
-  velo: 0.51,
-  auto: 0.549,
-  luxe: 0.497,
-  covoiturage: 0.569,
+  // Style d'illustration refait le 25 août 2026. Les valeurs ne sont plus
+  // approchées sur l'asset : les assets sont recadrés **au pixel** sur le dessin
+  // (marge alpha nulle sur les quatre côtés, vérifiée), donc le ratio de l'asset
+  // est exactement celui du cadre Figma.
+  //
+  // ⚠️ Les trois voitures divergent maintenant de 0,447 à 0,539 — pour trois
+  // berlines vues du dessus, c'est le signe que les rendus ne sont pas cadrés
+  // de la même façon, pas que les véhicules diffèrent. À regarder côté artwork.
+  moto: 0.442,
+  velo: 0.671,
+  auto: 0.539,
+  luxe: 0.447,
+  covoiturage: 0.461,
 };
 
 export const topviewIllustration = (illu: IlluKey) =>
@@ -118,17 +128,23 @@ export const TOPVIEW_MARKER: Record<
     steerBand: number; maxSteer: number;
   }
 > = {
-  auto: { len: 48, ambLen: 34, pivot: 0.68, lean: 0, steerBand: 0, maxSteer: 0 },
-  luxe: { len: 48, ambLen: 34, pivot: 0.68, lean: 0, steerBand: 0, maxSteer: 0 },
-  covoiturage: { len: 48, ambLen: 34, pivot: 0.68, lean: 0, steerBand: 0, maxSteer: 0 },
+  // Longueurs recalculées le 25 août 2026 pour **conserver la largeur apparente**
+  // validée sur le terrain (auto 26,4 · luxe 23,9 · covoiturage 27,3 px) avec les
+  // nouveaux ratios : len = largeur ÷ ratio. Les trois valeurs divergent parce
+  // que les trois rendus ne sont pas cadrés pareil — cf. la note de
+  // `TOPVIEW_RATIOS`. Si l'artwork est recadré uniformément, les trois
+  // reviendront à une seule longueur.
+  auto: { len: 49, ambLen: 34, pivot: 0.68, lean: 0, steerBand: 0, maxSteer: 0 },
+  luxe: { len: 53, ambLen: 37, pivot: 0.68, lean: 0, steerBand: 0, maxSteer: 0 },
+  covoiturage: { len: 59, ambLen: 41, pivot: 0.68, lean: 0, steerBand: 0, maxSteer: 0 },
   // Deux-roues redessinés le 14 août 2026. Les LONGUEURS sont recalculées pour
   // **conserver la largeur apparente** validée sur le terrain (moto 30 px,
   // vélo 23,6 px) : c'est elle le critère de lisibilité, pas la longueur. Le
   // nouveau ratio fait donc rallonger la moto (60 → 78, sous le plafond ×1,5
   // constaté) et raccourcir le vélo (63 → 46), qui gagne en largeur ce qu'il
   // perd en longueur. `ambLen` suit le même rapport qu'avant (≈ 0,70 · len).
-  moto: { len: 78, ambLen: 56, pivot: 0.72, lean: 0.14, steerBand: 0.24, maxSteer: 26 },
-  velo: { len: 46, ambLen: 32, pivot: 0.75, lean: 0.16, steerBand: 0.22, maxSteer: 28 },
+  moto: { len: 68, ambLen: 48, pivot: 0.72, lean: 0.14, steerBand: 0.24, maxSteer: 26 },
+  velo: { len: 35, ambLen: 25, pivot: 0.75, lean: 0.16, steerBand: 0.22, maxSteer: 28 },
 };
 
 export interface TopviewSprite {
@@ -164,23 +180,19 @@ export const ILLO_SLOT = 68;
  * maquette.
  */
 export const ILLO_SIZES: Record<IlluKey, { width: number; height: number }> = {
-  // Passe « craft » du 14 août 2026 : les deux-roues sont redessinés **sans
-  // pilote** sur cette vue (il ne reste que sur la vue de dessus, cf. plus bas)
-  // et en 3/4 plus couché. Ils passent donc de silhouettes étroites et debout
-  // (59 et 47 de large) à des gabarits couchés, comme les voitures.
+  // Style refait le 25 août 2026. Ces valeurs ne sont plus mesurées à la main :
+  // ce sont **les gabarits des cadres Figma**, et les assets sont recadrés au
+  // pixel dessus (marge alpha nulle, vérifiée sur les cinq).
   //
-  // La moto **casse le gabarit commun** : elle est dessinée à 87 de haut là où
-  // le reste de la famille tient sur 76 (mesuré sur la maquette, boîte alpha
-  // 423 × 347 au ×4). C'est délibéré — elle est la gamme la plus vendue et
-  // occupe la carte en conséquence. Ne pas la « rentrer » à 76 : le débord sur
-  // la plateforme fait partie du dessin.
-  moto: { width: 106, height: 87 },
-  velo: { width: 78, height: 76 },
-  auto: { width: 93, height: 76 },
-  covoiturage: { width: 93, height: 76 },
-  // Variante masquée dans le jeu Figma, mais l'illustration a le gabarit exact
-  // des deux autres voitures.
-  luxe: { width: 93, height: 76 },
+  // Toute la famille partage la même hauteur de 88 — l'ancienne table faisait
+  // dominer la moto de 14 % sur les voitures (87 contre 76) en croyant citer la
+  // maquette ; la maquette ne l'a jamais dit. Le vélo est le seul en portrait
+  // (79 × 88) : son dessin est plus haut que large.
+  moto: { width: 107, height: 88 },
+  velo: { width: 79, height: 88 },
+  auto: { width: 108, height: 88 },
+  covoiturage: { width: 108, height: 88 },
+  luxe: { width: 108, height: 88 },
 };
 
 /** Dimensions d'une illustration pour un emplacement d'un autre côté que 68

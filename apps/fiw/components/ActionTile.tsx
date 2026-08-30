@@ -6,7 +6,12 @@ import Text from '@/components/Text';
 
 /** Tuile carrée icône + libellé d'une rangée d'actions de feuille (appeler,
  *  chat, partager, urgence) — Figma `ActionTile`. `danger` bascule le fond sur
- *  `errorSubtle` et l'icône en `fill`. */
+ *  `errorSubtle`, le glyphe et le libellé sur `error`.
+ *
+ *  **La graisse du glyphe ne bouge pas** : la maquette garde `bold` dans les
+ *  deux variantes. C'est la couleur qui porte le danger, pas le remplissage —
+ *  la tuile SOS ne doit pas peser plus lourd que ses trois voisines dans une
+ *  rangée où elles ont la même taille. */
 export default function ActionTile({ icon, label, danger, onPress }: {
   icon: IconName; label: string; danger?: boolean; onPress?: () => void;
 }) {
@@ -17,7 +22,7 @@ export default function ActionTile({ icon, label, danger, onPress }: {
       onPress={onPress}
       activeOpacity={0.85}
     >
-      <Icon name={icon} size={20} color={color} weight={danger ? 'fill' : 'bold'} />
+      <Icon name={icon} size={20} color={color} weight="bold" />
       <Text variant="caption" color={danger ? Colors.error : Colors.textPrimary}>{label}</Text>
     </TouchableOpacity>
   );

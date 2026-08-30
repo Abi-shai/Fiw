@@ -7,7 +7,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import Button from '@/components/Button';
 import Icon from '@/components/Icon';
 import Text from '@/components/Text';
-import PhoneField from '@/components/PhoneField';
+import Field from '@/components/Field';
 import CodeField from '@/components/CodeField';
 import Hint from '@/components/Hint';
 import CountryPicker from '@/components/CountryPicker';
@@ -65,8 +65,11 @@ export default function NumeroScreen() {
             Saisissez votre nouveau numéro. Un code de vérification y sera envoyé par SMS.
           </Text>
 
-          <Text variant="caption" color={Colors.textTertiary} style={styles.label}>Nouveau numéro</Text>
-          <PhoneField
+          {/* Le libellé n'est plus écrit par l'écran : `Field` porte l'en-tête
+              de la maquette (`label` en `label`/`textSecondary`). */}
+          <Field
+            type="téléphone"
+            label="Nouveau numéro"
             country={country}
             digits={digits}
             onChangeDigits={setDigits}
@@ -129,7 +132,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.surface },
   content: { paddingHorizontal: 20, paddingTop: 8 },
   intro: { lineHeight: 22, marginBottom: 28 },
-  label: { marginBottom: 8, marginLeft: 4 },
 
   note: { marginTop: 12, marginBottom: 24, paddingHorizontal: 4 },
   cta: { marginTop: 8 },

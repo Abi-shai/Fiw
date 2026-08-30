@@ -12,6 +12,7 @@ import ScreenFooter from '@/components/ScreenFooter';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import Avatar from '@/components/Avatar';
+import AlertBadge from '@/components/AlertBadge';
 import ResultState from '@/components/ResultState';
 import ReceiptCard from '@/components/ReceiptCard';
 
@@ -89,9 +90,7 @@ export default function LivraisonClotureScreen() {
       >
         {/* Confirmation — pastille succès + date. */}
         <View style={styles.header}>
-          <View style={styles.successBadge}>
-            <Icon name="check" size={34} weight="fill" color={Colors.success} />
-          </View>
+          <AlertBadge icon="check" ton="succès" weight="fill" />
           <Text variant="display" style={styles.headerTitle}>Colis remis</Text>
           <Text variant="body" color={Colors.textSecondary}>
             à {params.destinataireName || 'votre destinataire'} · {dateStr} · {timeStr}
@@ -197,12 +196,6 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 20, paddingBottom: 16, gap: 14 },
 
   header: { alignItems: 'center', paddingVertical: 12, gap: 6 },
-  successBadge: {
-    width: 64, height: 64, borderRadius: 32,
-    backgroundColor: Colors.successSubtle,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 6,
-  },
   headerTitle: {},
 
   ratingCard: {

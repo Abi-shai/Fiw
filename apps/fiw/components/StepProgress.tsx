@@ -21,6 +21,12 @@ type Props = {
  * Gopuff) : pastilles-icônes reliées par des segments, remplies en primary au
  * fil de la progression ; le segment courant se remplit en continu via
  * `segmentProgress`. Réutilisable : suivi Livraison, legs Yobanté, Assistance.
+ *
+ * **Un jalon garde toujours son propre glyphe** — la maquette ne le remplace
+ * jamais par une coche. Ce qui dit qu'une étape est acquise, c'est la GRAISSE :
+ * `fill` dès que le jalon est atteint (fait ou courant), `bold` tant qu'il est à
+ * venir. Un `tick` effacerait l'étape dont on parle au moment où elle compte le
+ * plus — juste après l'avoir franchie.
  */
 export default function StepProgress({ steps, activeIndex, segmentProgress, style }: Props) {
   return (
@@ -51,9 +57,9 @@ export default function StepProgress({ steps, activeIndex, segmentProgress, styl
               )}
               <View style={[styles.dot, done && styles.dotDone, current && styles.dotCurrent]}>
                 <Icon
-                  name={done ? 'tick' : step.icon}
+                  name={step.icon}
                   size={20}
-                  weight="bold"
+                  weight={done || current ? 'fill' : 'bold'}
                   color={current ? Colors.surface : done ? Colors.primary : Colors.textTertiary}
                 />
               </View>

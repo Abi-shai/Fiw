@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Radii, Shadows, Strokes } from '@/constants/tokens';
+import { Colors, Radii, SectionLabel, Shadows, Strokes } from '@/constants/tokens';
 import LeafletMap, { type LeafletMapHandle } from '@/components/LeafletMap';
 import ScreenHeader from '@/components/ScreenHeader';
 import Field from '@/components/Field';
@@ -292,7 +292,7 @@ export default function LieuScreen() {
             chauffeur ni le livreur ne montent, l'étage n'intéresse personne. */}
         <Field
           label="Repère"
-          zone
+          type="zone"
           value={repere}
           onChangeText={setRepere}
           placeholder="Ex. Villa 214, portail vert en face de la boutique"
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
   pinDot: {
     position: 'absolute',
     width: 10, height: 10, borderRadius: 5,
-    backgroundColor: 'rgba(17, 24, 39, 0.25)',
+    backgroundColor: Colors.scrim,
   },
   pickDock: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   recenterPick: { alignSelf: 'flex-end', marginRight: 16, marginBottom: 12 },
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     gap: 14,
     ...Shadows.sheet,
   },
-  pickKicker: { textTransform: 'uppercase', letterSpacing: 0.8 },
+  pickKicker: { ...SectionLabel },
   pickRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 
   // --- Détails ---

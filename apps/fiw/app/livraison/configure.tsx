@@ -227,7 +227,7 @@ export default function LivraisonConfigureScreen() {
           onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)}
         >
           <View style={styles.handleFloat} pointerEvents="none"><Handle /></View>
-          <SheetCard style={styles.headerCard}>
+          <SheetCard>
             <View style={styles.headerRow}>
               <Text variant="heading1" style={styles.flex1} numberOfLines={1}>Planifier la livraison</Text>
               <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()} activeOpacity={0.85}>
@@ -309,7 +309,7 @@ export default function LivraisonConfigureScreen() {
           </SheetCard>
 
           {/* Paiement + confirmation — dernière étape avant la mise en relation. */}
-          <SheetCard style={[styles.lastCard, { paddingBottom: 20 + insets.bottom }]}>
+          <SheetCard style={[styles.lastCard, { paddingBottom: 16 + insets.bottom }]}>
             {/* Rangée pleine largeur au-dessus du CTA — cf. `transport/configure` :
                 le moyen de paiement se nomme, il ne se devine pas à un logo. */}
             <ListRow
@@ -379,8 +379,8 @@ export default function LivraisonConfigureScreen() {
                 placeholder="Rechercher un nom ou un numéro…"
                 style={styles.searchWrap}
               />
-              {/* Retrait du filet = padding 16 + avatar 48 + gouttière 12. */}
-              <List style_="plat" inset={76}>
+              {/* Filet pleine largeur : liste en feuille. */}
+              <List style_="plat" inset={0}>
                 {contactMatches.map((c) => (
                   <ListRow
                     key={c.id}
@@ -496,7 +496,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 2,
   },
-  headerCard: { borderTopLeftRadius: SHEET_RADIUS, borderTopRightRadius: SHEET_RADIUS },
   lastCard: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
   body: { backgroundColor: 'transparent' },
   // `CARD_GAP` EST l'espacement de section de la feuille : l'interstice `track`

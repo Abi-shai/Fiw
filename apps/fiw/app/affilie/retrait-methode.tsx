@@ -6,7 +6,7 @@ import Button from '@/components/Button';
 import ScreenFooter from '@/components/ScreenFooter';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
-import { Colors, Radii, Spacing, Outfit, Shadows, Strokes } from '@/constants/tokens';
+import { Colors, Outfit, Radii, SectionLabel, Shadows, Spacing, Strokes } from '@/constants/tokens';
 import { AMBASSADEUR, WITHDRAW_MIN, fcfa } from '@/constants/affilie';
 
 type Method = { id: string; name: string; color: string };
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: Spacing[4] },
 
   hero: { alignItems: 'center', paddingTop: Spacing[8], gap: 6 },
-  kicker: { textTransform: 'uppercase', letterSpacing: 0.8 },
+  kicker: { ...SectionLabel },
   amountRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing[2] },
   amountInput: {
     fontFamily: Outfit.semibold,
@@ -139,8 +139,7 @@ const styles = StyleSheet.create({
   errorText: { marginTop: -2 },
 
   sectionLabel: {
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    ...SectionLabel,
     marginTop: Spacing[8],
     marginBottom: Spacing[3],
   },

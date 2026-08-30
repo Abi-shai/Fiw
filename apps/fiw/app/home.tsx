@@ -14,16 +14,18 @@ import MenuDrawer from '@/components/MenuDrawer';
 import IconButton from '@/components/IconButton';
 import ListRow from '@/components/ListRow';
 import Medallion from '@/components/Medallion';
+import Divider from '@/components/Divider';
 import PlaceField from '@/components/PlaceField';
 import Button from '@/components/Button';
 import Scrim from '@/components/Scrim';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
-import { Handle, SheetHeader, sheetSurface } from '@/components/Sheet';
+import { CARD_GAP as SHEET_GAP, Handle, SheetCard, SheetHeader, groupedSheetSurface } from '@/components/Sheet';
 import { useSnapSheet, SHEET_SPRING } from '@/hooks/useSnapSheet';
-import { Colors, Radii, Shadows, Strokes } from '@/constants/tokens';
+import { Colors, Radii, SectionLabel, Shadows, Strokes } from '@/constants/tokens';
 import { DAKAR_CENTER, SUGGESTIONS, RECENT_PLACES } from '@/constants/data';
 import { usePlaces } from '@/stores/places';
+
 
 type Place = { name: string; detail: string; lat: number; lng: number };
 type Field = 'departure' | 'destination';
@@ -55,8 +57,8 @@ type Service = {
 // Seuls les deux services ouverts sont annoncés (maquette du 16 août 2026) :
 // Location et Assistance ne sont pas lancés, ils ne figurent plus sur l'accueil.
 const SERVICES: Service[] = [
-  { id: 'transport', label: 'Course',    blurb: 'Rendez vous rapidement à votre destination.' },
-  { id: 'livraison', label: 'Livraison', blurb: 'Faites vous livré, aussi vite que possible.' },
+  { id: 'transport', label: 'Course',    blurb: 'Déplacez-vous en toute sécurité.' },
+  { id: 'livraison', label: 'Livraison', blurb: 'Faites-vous livrer, aussi vite que possible.' },
 ];
 
 // Services dont la recherche d'itinéraire est câblée. La même feuille de
@@ -82,10 +84,14 @@ const SEARCH_COPY: Record<SearchService, {
   },
 };
 
-// Géométrie du panneau illustré, relevée EXACTEMENT sur la maquette
-// (node 336:1175). La tuile fait 328 de haut : 6 + en-tête 39 + 10 + panneau 217
-// + 10 + pied 40 + 6.
-const CARD_H = 328;
+// Géométrie de la tuile, relevée sur `BottomSheet / Accueil` (507:778) le
+// 26 août 2026. Elle fait **228** de haut : 6 + en-tête 39 + 10 + panneau 109
+// + 10 + pied 48 + 6.
+//
+// Le code citait encore le nœud 336:1175 et un panneau de 217 — la maquette a
+// depuis réduit le panneau de moitié et allongé le pied de 40 à 48. La tuile
+// était donc 100 px trop haute.
+const CARD_H = 228;
 
 // Feuille décorative posée derrière les véhicules : une forme unique, pivotée,
 // centrée dans une boîte de 154.624. Remplace la bande bleue diagonale.
@@ -101,6 +107,9 @@ const LEAF_OPACITY = 0.6;
 const EASE_QUART = Easing.bezier(0.25, 1, 0.5, 1);   // sorties douces
 const EASE_BACK = Easing.bezier(0.34, 1.56, 0.64, 1); // léger dépassement
 const EASE_QUINT = Easing.bezier(0.22, 1, 0.36, 1);   // traînées
+// Courbe standard exportée par Figma Motion (`cubic-bezier(0.4, 0, 0.2, 1)`) :
+// elle porte TOUTE la sortie de la tuile, sans exception.
+const EASE_STD = Easing.bezier(0.4, 0, 0.2, 1);
 
 // L'habillage de la tuile (en-tête, feuille, pied) s'anime à l'identique sur les
 // deux services : une seule définition, réutilisée.
@@ -112,12 +121,42 @@ const CHROME = {
   footShift: { delay: 600, dur: 250, ease: EASE_BACK, from: 10 },
 };
 
+/**
+ * SORTIE de la tuile de service — transcrite de la timeline Figma Motion posée
+ * sur `BottomSheet / Parcours=Accueil, État=Services` (2 000 ms, en boucle sur
+ * la maquette ; jouée une fois ici, sur 600 ms). Les pourcentages de la timeline
+ * deviennent des délais et des durées : 2,5 % = 50 ms, 12,5 % = 250 ms,
+ * 25 % = 500 ms.
+ *
+ * **Ce n'est pas le miroir de `CHROME`.** L'entrée fait descendre l'en-tête de
+ * 10 et remonter le pied de 10 ; la sortie pousse l'en-tête à −15, le pied à
+ * +10, et surtout elle DÉFAIT le panneau — il grandit, perd son rayon et son
+ * fond blanc, et laisse l'illustration occuper l'écran. C'est une dissolution,
+ * pas un départ.
+ */
+const EXIT = {
+  headOpacity:  { dur: 250, ease: EASE_STD },
+  headShift:    { dur: 300, ease: EASE_STD, to: -15 },
+  footOpacity:  { delay: 50, dur: 250, ease: EASE_STD },
+  footShift:    { delay: 50, dur: 300, ease: EASE_STD, to: 10 },
+  leaf:         { dur: 200, ease: EASE_STD },
+  groupOpacity: { delay: 50, dur: 300, ease: EASE_STD },
+  groupDrift:   { dur: 350, ease: EASE_STD, scale: 0.92 },
+  // La maquette fait passer le panneau de 109 à 228 de haut et le remonte de 55.
+  // La hauteur est gardée en RAPPORT et non en pixels : la tuile est en
+  // `flex: 1`, sa hauteur au repos dépend de la largeur de l'écran.
+  panelGrow:    { delay: 50, dur: 450, ease: EASE_STD, ratio: 228 / 109, lift: -55 },
+  panelFlat:    { delay: 250, dur: 250, ease: EASE_STD },
+} as const;
+
 // Chaque véhicule est un cadre de découpe (`frame`) dans lequel l'image déborde
 // (`img`) : Figma recadre l'illustration, on reproduit le même cadrage plutôt que
 // de la contenir. Les calques fantômes sont des PNG déjà désaturés — React Native
 // n'a pas de `mix-blend-mode`, et sur fond blanc un mélange « luminosity » revient
 // exactement à un gris posé à la même opacité.
-const GHOST_MOTO = require('@/assets/home-ghost-moto.png');
+// Traînée de la tuile Course. ⚠️ Encore dans l'ANCIEN style à plat : la maquette
+// n'a refait que le véhicule de tête, pas son sillage. Elle s'éteint à 30 %
+// d'opacité, donc l'écart de style se voit peu — mais il est là.
 const GHOST_AUTO = require('@/assets/home-ghost-auto.png');
 
 // Un palier d'opacité : la valeur visée et la durée pour l'atteindre.
@@ -132,50 +171,51 @@ type ArtLayer = {
   /** Arrivée du véhicule : décalage et échelle de départ, fenêtre et courbe. */
   enter: { dx: number; dy: number; scale: number; dur: number; ease: EasingFunction };
 };
-type ServiceArt = { leafLeft: number; layers: ArtLayer[] };
+/** `exitDrift` : le déplacement de quelques pixels que la maquette applique au
+ *  groupe de véhicules en le réduisant à 0,92 — le contrecoup d'une réduction
+ *  qui ne part pas du centre. Deux valeurs voisines mais distinctes, relevées
+ *  telles quelles sur `Group 1` et `Group 2`. */
+type ServiceArt = { leafLeft: number; exitDrift: { x: number; y: number }; layers: ArtLayer[] };
 
 // Les traînées entrent de plus en plus tard et s'éteignent en se posant ; le
 // véhicule de tête arrive en dernier, avec un léger dépassement d'échelle.
 const ENTER_FROM = { dx: -55, dy: -150 };
 
+// Composition reprise de `BottomSheet / Accueil` (507:778), passe du 25 août
+// 2026 : la maquette a **réduit le sillage**. La tuile Course garde UNE traînée
+// (elle en avait deux), la tuile Livraison n'en a plus du tout — son vélo est
+// seul dans le panneau.
+//
+// Les assets sont désormais recadrés au pixel sur le dessin, donc l'image
+// remplit sa boîte : plus d'`img` en débord négatif, `frame` et `img` coïncident.
 const SERVICE_ART: Record<SearchService, ServiceArt> = {
-  // Course : deux traînées (moto, puis berline) derrière la voiture de tête.
+  // Course : une traînée derrière la voiture de tête (`hayon 2` puis `hayon 1`).
   transport: {
     leafLeft: 19,
+    exitDrift: { x: 4.88, y: 4 },
     layers: [
-      { src: GHOST_MOTO,
-        frame: { x: 7, y: 22, w: 111, h: 92 },
-        img: { x: 0, y: -46.52, w: 111, h: 138.25 },
-        opFrom: 0.45,
-        opSegs: [{ to: 0.35, dur: 350, ease: EASE_QUINT }, { to: 0.1, dur: 350, ease: EASE_QUART }],
-        enter: { ...ENTER_FROM, scale: 1, dur: 500, ease: EASE_QUINT } },
       { src: GHOST_AUTO,
-        frame: { x: 19, y: 52, w: 111, h: 89 },
-        img: { x: -5.55, y: -12.24, w: 119.88, h: 120.15 },
+        frame: { x: 20, y: 25, w: 111, h: 88 },
+        img: { x: 0, y: 0, w: 111, h: 88 },
         opFrom: 0.5,
         opSegs: [{ to: 0.45, dur: 450, ease: EASE_QUINT }, { to: 0.3, dur: 400, ease: EASE_QUART }],
         enter: { ...ENTER_FROM, scale: 1, dur: 650, ease: EASE_QUINT } },
       { src: require('@/assets/home-auto.png'),
-        frame: { x: 31, y: 88, w: 111, h: 88 },
-        img: { x: -16.05, y: -24, w: 144.43, h: 144 },
+        frame: { x: 16, y: 5, w: 122, h: 100 },
+        img: { x: 0, y: 0, w: 122, h: 100 },
         opFrom: 0,
         opSegs: [{ to: 1, dur: 150, ease: EASE_QUINT }],
         enter: { ...ENTER_FROM, scale: 0.88, dur: 800, ease: EASE_BACK } },
     ],
   },
-  // Livraison : une traînée moto derrière le vélo de tête.
+  // Livraison : le vélo seul — la maquette a retiré la traînée moto.
   livraison: {
     leafLeft: 19.5,
+    exitDrift: { x: 4.32, y: 4.8 },
     layers: [
-      { src: GHOST_MOTO,
-        frame: { x: 12.5, y: 36, w: 111.184, h: 91.848 },
-        img: { x: 0, y: -46.45, w: 111.184, h: 138.03 },
-        opFrom: 0.5,
-        opSegs: [{ to: 0.45, dur: 400, ease: EASE_QUINT }, { to: 0.3, dur: 350, ease: EASE_QUART }],
-        enter: { ...ENTER_FROM, scale: 1, dur: 550, ease: EASE_QUINT } },
       { src: require('@/assets/home-velo.png'),
-        frame: { x: 24.684, y: 58.157, w: 111.141, h: 123.843 },
-        img: { x: -5.48, y: -55.32, w: 120.74, h: 177.81 },
+        frame: { x: 22.5, y: -5, w: 102, h: 114 },
+        img: { x: 0, y: 0, w: 102, h: 114 },
         opFrom: 0,
         opSegs: [{ to: 1, dur: 150, ease: EASE_QUINT }],
         enter: { ...ENTER_FROM, scale: 0.88, dur: 800, ease: EASE_BACK } },
@@ -183,12 +223,27 @@ const SERVICE_ART: Record<SearchService, ServiceArt> = {
   },
 };
 
-/** Valeurs animées d'une tuile : l'habillage + une paire par calque de véhicule. */
+/** Une valeur par PISTE de la timeline de sortie : les délais et les durées
+ *  diffèrent d'une piste à l'autre, donc aucune ne peut en partager une.
+ *  `grow` et `flat` pilotent hauteur, rayon et fond — trois propriétés que le
+ *  driver natif ne sait pas animer : elles restent donc en JS, et comme elles
+ *  vivent sur la même vue que la translation du panneau, celle-ci les suit. */
+type CardExit = {
+  headOp: Animated.Value; headY: Animated.Value;
+  footOp: Animated.Value; footY: Animated.Value;
+  leaf: Animated.Value;
+  groupOp: Animated.Value; groupDrift: Animated.Value;
+  grow: Animated.Value; flat: Animated.Value;
+};
+
+/** Valeurs animées d'une tuile : l'habillage + une paire par calque de véhicule,
+ *  et la timeline de sortie. */
 type CardAnim = {
   headOpacity: Animated.Value; headShift: Animated.Value;
   leaf: Animated.Value;
   footOpacity: Animated.Value; footShift: Animated.Value;
   layers: { op: Animated.Value; en: Animated.Value }[];
+  exit: CardExit;
 };
 
 function makeCardAnim(layerCount: number): CardAnim {
@@ -199,14 +254,29 @@ function makeCardAnim(layerCount: number): CardAnim {
     layers: Array.from({ length: layerCount }, () => ({
       op: new Animated.Value(0), en: new Animated.Value(0),
     })),
+    exit: {
+      headOp: new Animated.Value(0), headY: new Animated.Value(0),
+      footOp: new Animated.Value(0), footY: new Animated.Value(0),
+      leaf: new Animated.Value(0),
+      groupOp: new Animated.Value(0), groupDrift: new Animated.Value(0),
+      grow: new Animated.Value(0), flat: new Animated.Value(0),
+    },
   };
 }
 
-const step = (v: Animated.Value, toValue: number, s: { delay?: number; dur: number; ease: EasingFunction }) =>
+const step = (
+  v: Animated.Value,
+  toValue: number,
+  s: { delay?: number; dur: number; ease: EasingFunction },
+  native = true,
+) =>
   Animated.sequence([
     Animated.delay(s.delay ?? 0),
-    Animated.timing(v, { toValue, duration: s.dur, easing: s.ease, useNativeDriver: true }),
+    Animated.timing(v, { toValue, duration: s.dur, easing: s.ease, useNativeDriver: native }),
   ]);
+
+/** Opacité qui s'éteint : une piste de sortie va de 0 à 1, l'opacité de 1 à 0. */
+const fade = (v: Animated.Value) => v.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
 
 /** Rejoue toute la timeline de la tuile depuis le début. */
 function cardTimeline(art: ServiceArt, a: CardAnim) {
@@ -230,8 +300,44 @@ function cardTimeline(art: ServiceArt, a: CardAnim) {
   return Animated.parallel(tracks);
 }
 
+/**
+ * Joue la sortie de la tuile — les neuf pistes de la timeline Figma.
+ *
+ * La maquette porte une dixième piste, `Illustration` : un blow-up ×2,5 vers
+ * (−99, −99) en ressort, **sur la seule tuile Course**. Elle n'est pas reprise
+ * ici : elle suppose un calque héros distinct du groupe qui s'en va (dans la
+ * maquette, `Illustration` et `Group 1` sont frères et jouent l'un contre
+ * l'autre), et le code n'en a pas. À trancher avant de l'ajouter — cf. Partie
+ * XLII de l'inventaire.
+ */
+function cardExit(a: CardAnim) {
+  const x = a.exit;
+  return Animated.parallel([
+    step(x.headOp, 1, EXIT.headOpacity),
+    step(x.headY, 1, EXIT.headShift),
+    step(x.footOp, 1, EXIT.footOpacity),
+    step(x.footY, 1, EXIT.footShift),
+    step(x.leaf, 1, EXIT.leaf),
+    step(x.groupOp, 1, EXIT.groupOpacity),
+    step(x.groupDrift, 1, EXIT.groupDrift),
+    // Hauteur, rayon et fond : hors driver natif.
+    step(x.grow, 1, EXIT.panelGrow, false),
+    step(x.flat, 1, EXIT.panelFlat, false),
+  ]);
+}
+
+/** Durée totale de la sortie, pour enchaîner sans deviner. */
+const EXIT_MS = Math.max(
+  ...Object.values(EXIT).map((t: any) => (t.delay ?? 0) + (t.dur ?? 0)),
+);
+
+function resetCardExit(a: CardAnim) {
+  Object.values(a.exit).forEach((v) => v.setValue(0));
+}
+
 /** Pose la tuile à son état de repos, sans jouer l'animation. */
 function settleCard(art: ServiceArt, a: CardAnim) {
+  resetCardExit(a);
   [a.headOpacity, a.headShift, a.leaf, a.footOpacity, a.footShift].forEach(v => v.setValue(1));
   art.layers.forEach((layer, i) => {
     a.layers[i].op.setValue(layer.opSegs.length);
@@ -240,6 +346,7 @@ function settleCard(art: ServiceArt, a: CardAnim) {
 }
 
 function resetCard(art: ServiceArt, a: CardAnim) {
+  resetCardExit(a);
   [a.headOpacity, a.headShift, a.leaf, a.footOpacity, a.footShift].forEach(v => v.setValue(0));
   art.layers.forEach((_, i) => {
     a.layers[i].op.setValue(0);
@@ -265,12 +372,35 @@ function openConfigure(service: SearchService, place: Place, departureName: stri
 // traînées arrivent avant le véhicule de tête et s'estompent en se posant, ce
 // qui donne l'impression d'un sillage plutôt que d'un bloc qui glisse.
 function IlloPanel({ art, anim }: { art: ServiceArt; anim: CardAnim }) {
+  const x = anim.exit;
+  // La hauteur au repos vient du `flex: 1` de la tuile. On la mesure une fois
+  // pour pouvoir l'animer en rapport (× 2,09), comme la maquette de 109 à 228 :
+  // en dur, la tuile serait fausse dès qu'on change de largeur d'écran.
+  const [baseH, setBaseH] = useState<number | null>(null);
   return (
-    <View style={styles.illoPanel}>
+    <Animated.View
+      onLayout={(e) => {
+        const h = e.nativeEvent.layout.height;
+        setBaseH((prev) => prev ?? h);
+      }}
+      style={[styles.illoPanel, baseH != null && {
+        flex: 0,
+        height: x.grow.interpolate({ inputRange: [0, 1], outputRange: [baseH, baseH * EXIT.panelGrow.ratio] }),
+        borderRadius: x.flat.interpolate({ inputRange: [0, 1], outputRange: [Radii.lg, 0] }),
+        backgroundColor: x.flat.interpolate({
+          inputRange: [0, 1],
+          outputRange: [Colors.surface, 'rgba(255,255,255,0)'],
+        }),
+        transform: [{ translateY: x.grow.interpolate({ inputRange: [0, 1], outputRange: [0, EXIT.panelGrow.lift] }) }],
+      }]}
+    >
       <Animated.View
         style={[styles.leafBox, {
           left: art.leafLeft,
-          opacity: anim.leaf.interpolate({ inputRange: [0, 1], outputRange: [0, LEAF_OPACITY] }),
+          opacity: Animated.multiply(
+            anim.leaf.interpolate({ inputRange: [0, 1], outputRange: [0, LEAF_OPACITY] }),
+            fade(x.leaf),
+          ),
           transform: [{ translateX: anim.leaf.interpolate({ inputRange: [0, 1], outputRange: [CHROME.leaf.fromX, 0] }) }],
         }]}
         pointerEvents="none"
@@ -285,6 +415,21 @@ function IlloPanel({ art, anim }: { art: ServiceArt; anim: CardAnim }) {
         </Svg>
       </Animated.View>
 
+      {/* Enrobage du groupe de véhicules — il n'existait pas, la maquette l'a
+          (`Group 1` / `Group 2`) et c'est lui qui porte la sortie du groupe :
+          fondu, dérive de quelques pixels et réduction à 0,92. Les calques
+          gardent leurs coordonnées absolues à l'intérieur. */}
+      <Animated.View
+        pointerEvents="none"
+        style={[StyleSheet.absoluteFillObject, {
+          opacity: fade(x.groupOp),
+          transform: [
+            { translateX: x.groupDrift.interpolate({ inputRange: [0, 1], outputRange: [0, art.exitDrift.x] }) },
+            { translateY: x.groupDrift.interpolate({ inputRange: [0, 1], outputRange: [0, art.exitDrift.y] }) },
+            { scale: x.groupDrift.interpolate({ inputRange: [0, 1], outputRange: [1, EXIT.groupDrift.scale] }) },
+          ],
+        }]}
+      >
       {art.layers.map((layer, i) => {
         const { op, en } = anim.layers[i];
         return (
@@ -317,7 +462,8 @@ function IlloPanel({ art, anim }: { art: ServiceArt; anim: CardAnim }) {
           </Animated.View>
         );
       })}
-    </View>
+      </Animated.View>
+    </Animated.View>
   );
 }
 
@@ -336,7 +482,7 @@ function AffiliePromo({ onPress, onDismiss }: { onPress: () => void; onDismiss: 
         </View>
         <View style={styles.promoText}>
           <Text variant="bodyMedium">Gagnez de l’argent avec Fiw !</Text>
-          <Text variant="body" color={Colors.textSecondary} style={styles.promoSubtitle}>
+          <Text variant="body" color={Colors.textSecondary}>
             Et si vous deveniez un affilié réseau ?
           </Text>
         </View>
@@ -366,8 +512,13 @@ function ServiceCard({ service, onPress, anim }: {
     <TouchableOpacity style={styles.card} activeOpacity={0.9} onPress={onPress}>
       <Animated.View
         style={[styles.cardHeader, {
-          opacity: anim.headOpacity,
-          transform: [{ translateY: anim.headShift.interpolate({ inputRange: [0, 1], outputRange: [CHROME.headShift.from, 0] }) }],
+          opacity: Animated.multiply(anim.headOpacity, fade(anim.exit.headOp)),
+          transform: [{
+            translateY: Animated.add(
+              anim.headShift.interpolate({ inputRange: [0, 1], outputRange: [CHROME.headShift.from, 0] }),
+              anim.exit.headY.interpolate({ inputRange: [0, 1], outputRange: [0, EXIT.headShift.to] }),
+            ),
+          }],
         }]}
       >
         <Text variant="heading2" style={styles.flex1} numberOfLines={1}>{service.label}</Text>
@@ -376,11 +527,16 @@ function ServiceCard({ service, onPress, anim }: {
       <IlloPanel art={art} anim={anim} />
       <Animated.View
         style={[styles.cardFooter, {
-          opacity: anim.footOpacity,
-          transform: [{ translateY: anim.footShift.interpolate({ inputRange: [0, 1], outputRange: [CHROME.footShift.from, 0] }) }],
+          opacity: Animated.multiply(anim.footOpacity, fade(anim.exit.footOp)),
+          transform: [{
+            translateY: Animated.add(
+              anim.footShift.interpolate({ inputRange: [0, 1], outputRange: [CHROME.footShift.from, 0] }),
+              anim.exit.footY.interpolate({ inputRange: [0, 1], outputRange: [0, EXIT.footShift.to] }),
+            ),
+          }],
         }]}
       >
-        <Text variant="bodySmall" style={styles.cardBlurb} numberOfLines={2}>
+        <Text variant="body" color={Colors.textSecondary} style={styles.cardBlurb} numberOfLines={2}>
           {service.blurb}
         </Text>
       </Animated.View>
@@ -525,7 +681,6 @@ export default function HomeScreen() {
 
   const [course, livraison] = SERVICES;
 
-  const onService = (s: Service) => openSearch(s.id);
 
   // Entrée des tuiles (Figma Motion, frame 357:1685) : les traînées arrivent du
   // coin haut-gauche et s'éteignent en se posant, le véhicule de tête suit avec
@@ -544,6 +699,24 @@ export default function HomeScreen() {
     });
     return () => sub.remove();
   }, [cardAnims]);
+
+
+  // La maquette fait sortir les DEUX tuiles ensemble : la timeline vit sur la
+  // feuille, pas sur une tuile. On joue donc la sortie complète, puis on bascule
+  // en mode recherche — l'inverse (basculer puis animer) démonterait les tuiles
+  // avant qu'elles aient bougé.
+  const exiting = useRef(false);
+  const onService = (s: Service) => {
+    // « Réduire les animations » : on passe directement, sans jouer la sortie.
+    if (reduceMotion.current) { openSearch(s.id); return; }
+    // Un second tap pendant la sortie relancerait la timeline et empilerait deux
+    // navigations.
+    if (exiting.current) return;
+    exiting.current = true;
+    Haptics.selectionAsync();
+    Animated.parallel(cardAnims.map((a) => cardExit(a))).start();
+    setTimeout(() => { exiting.current = false; openSearch(s.id); }, EXIT_MS);
+  };
 
   const playCardsIn = useCallback(() => {
     // « Réduire les animations » : on pose les tuiles à leur état final.
@@ -712,109 +885,135 @@ export default function HomeScreen() {
         </>
       )}
 
+      {/* Recentrage géoloc — flotte 60 au-dessus de l'arête de la feuille, SUR la
+          carte. Il vit hors de la feuille : celle-ci recadre son contenu (les 32
+          variantes sont en `clipsContent`), donc un enfant en `top: -60` s'y
+          ferait couper. Il suit le cran par le même `ty`, moins 60. */}
+      {mode === 'services' && (
+        <Animated.View
+          style={[
+            styles.recenterWrap,
+            { opacity: controlsFade, transform: [{ translateY: Animated.subtract(ty, 60) }] },
+          ]}
+        >
+          <IconButton name="navigate" onPress={() => mapRef.current?.recenter(DAKAR_CENTER, 15)} />
+        </Animated.View>
+      )}
+
       {/* Draggable bottom sheet — full height, anchored to screen bottom */}
-      <Animated.View style={[sheetSurface, styles.sheet, { transform: [{ translateY: ty }], opacity: fade }]}>
+      <Animated.View style={[groupedSheetSurface, styles.sheet, { transform: [{ translateY: ty }], opacity: fade }]}>
         {mode === 'search' ? (
-          <View style={[styles.searchWrap, { height: SEARCH_H }]}>
-            {/* Poignée déplaçable — glisser vers le bas ferme la recherche */}
-            <View {...panHandlers} style={styles.searchHandleArea}>
-              <Handle />
+          <View style={{ height: SEARCH_H }}>
+            {/* CARTE 1 — en-tête et les deux champs, dans une seule carte comme
+                `Transport / Adresse` (216). La poignée flotte au-dessus, hors
+                flux ; toute la carte est zone de glissement. */}
+            <View {...panHandlers} style={styles.headerZone}>
+              <View style={styles.handleFloat} pointerEvents="none"><Handle /></View>
+              <SheetCard>
+                <SheetHeader title={SEARCH_COPY[service].title} onClose={closeSearch} style={styles.sheetHeaderTight} />
+
+                {/* Champ « De » — passager (Transport) ou colis (Livraison) + géoloc si actif.
+                    La `key` bascule quand le champ devient actif : elle remonte la saisie,
+                    donc `autoFocus` reprend la main comme le faisait le rendu conditionnel
+                    d'avant. Elle ne bouge pas pendant la frappe. */}
+                <PlaceField
+                  key={`dep-${activeField === 'departure'}`}
+                  label={SEARCH_COPY[service].fromLabel}
+                  icon={service === 'livraison' ? 'package' : 'walk'}
+                  actif={activeField === 'departure'}
+                  value={activeField === 'departure' ? departureQuery : departureName}
+                  onChangeText={setDepartureQuery}
+                  onFocus={() => setActiveField('departure')}
+                  placeholder={SEARCH_COPY[service].fromPlaceholder}
+                  autoFocus={activeField === 'departure'}
+                  onAction={openMapPick}
+                />
+
+                {/* Champ « À » — géoloc si actif */}
+                <PlaceField
+                  label={SEARCH_COPY[service].toLabel}
+                  icon="search"
+                  actif={activeField === 'destination'}
+                  value={destinationQuery}
+                  onChangeText={setDestinationQuery}
+                  onFocus={() => setActiveField('destination')}
+                  placeholder={SEARCH_COPY[service].toPlaceholder}
+                  autoFocus={activeField === 'destination'}
+                  onAction={openMapPick}
+                />
+              </SheetCard>
             </View>
 
-            <SheetHeader title={SEARCH_COPY[service].title} onClose={closeSearch} />
-
-            {/* Champ « De » — passager (Transport) ou colis (Livraison) + géoloc si actif.
-                La `key` bascule quand le champ devient actif : elle remonte la saisie,
-                donc `autoFocus` reprend la main comme le faisait le rendu conditionnel
-                d'avant. Elle ne bouge pas pendant la frappe. */}
-            <PlaceField
-              key={`dep-${activeField === 'departure'}`}
-              label={SEARCH_COPY[service].fromLabel}
-              icon={service === 'livraison' ? 'package' : 'walk'}
-              actif={activeField === 'departure'}
-              value={activeField === 'departure' ? departureQuery : departureName}
-              onChangeText={setDepartureQuery}
-              onFocus={() => setActiveField('departure')}
-              placeholder={SEARCH_COPY[service].fromPlaceholder}
-              autoFocus={activeField === 'departure'}
-              onAction={openMapPick}
-              style={styles.fieldSpace}
-            />
-
-            {/* Champ « À » — géoloc si actif */}
-            <PlaceField
-              label={SEARCH_COPY[service].toLabel}
-              icon="search"
-              actif={activeField === 'destination'}
-              value={destinationQuery}
-              onChangeText={setDestinationQuery}
-              onFocus={() => setActiveField('destination')}
-              placeholder={SEARCH_COPY[service].toPlaceholder}
-              autoFocus={activeField === 'destination'}
-              onAction={openMapPick}
-              style={styles.fieldSpaceLast}
-            />
-
-            {/* Résultats — une seule liste, suit la saisie du champ actif */}
-            <FlatList
-              data={results}
-              keyExtractor={(item) => item.key}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingBottom: kbHeight + insets.bottom + 16, paddingTop: 8 }}
-              renderItem={({ item }) => (
-                <ListRow
-                  leading={<Medallion icon={item.icon} ton={item.accent ? 'accent' : 'neutre'} />}
-                  title={item.title}
-                  subtitle={item.subtitle}
-                  trailing={null}
-                  onPress={() => handleSelect(item.place)}
+            {/* CARTE 2 — les résultats. Séparée de la première par l'interstice
+                gris de 6, comme `Frame 26` (208) de la maquette. */}
+            <SheetCard style={styles.resultsCard}>
+                <FlatList
+                  data={results}
+                  keyExtractor={(item) => item.key}
+                  keyboardShouldPersistTaps="handled"
+                  contentContainerStyle={{ paddingBottom: kbHeight + insets.bottom + 16, paddingTop: 8 }}
+                  renderItem={({ item }) => (
+                    <ListRow
+                      leading={<Medallion icon={item.icon} ton={item.accent ? 'accent' : 'neutre'} />}
+                      title={item.title}
+                      subtitle={item.subtitle}
+                      trailing={null}
+                      onPress={() => handleSelect(item.place)}
+                    />
+                  )}
+                  ItemSeparatorComponent={() => <Divider />}
                 />
-              )}
-              ItemSeparatorComponent={() => <View style={styles.separator} />}
-            />
+            </SheetCard>
           </View>
         ) : mode === 'services' ? (
           <>
-            {/* Recenter floats just above the sheet, over the map */}
-            <Animated.View style={[styles.recenterWrap, { opacity: controlsFade }]}>
-              <IconButton name="navigate" onPress={() => mapRef.current?.recenter(DAKAR_CENTER, 15)} />
-            </Animated.View>
+            {/* CARTE 1 — titre, bannière et les deux tuiles, dans UNE carte
+                (`Frame 3`, 388). La poignée flotte hors flux ; toute la carte
+                est zone de glissement. */}
+            <View {...panHandlers} style={styles.headerZone}>
+              <View style={styles.handleFloat} pointerEvents="none"><Handle /></View>
+              <SheetCard>
+                <Text variant="heading1">De quoi avez-vous besoin ?</Text>
 
-            {/* Draggable header */}
-            <View {...panHandlers} style={styles.sheetHeader}>
-              <Handle style={styles.handle} />
-              <Text variant="heading1" style={styles.heading}>De quoi avez-vous besoin ?</Text>
+                {/* Bannière Affilié Réseau — refermable */}
+                {!promoDismissed && (
+                  <AffiliePromo
+                    onPress={() => router.push('/affilie/presentation')}
+                    onDismiss={() => setPromoDismissed(true)}
+                  />
+                )}
+
+                {/* Les deux services ouverts, à parts égales */}
+                <View style={styles.grid}>
+                  <ServiceCard service={course} onPress={() => onService(course)} anim={cardAnims[0]} />
+                  <ServiceCard service={livraison} onPress={() => onService(livraison)} anim={cardAnims[1]} />
+                </View>
+              </SheetCard>
             </View>
 
+            {/* CARTE 2 — les lieux récents. **Aucun libellé** : c'est
+                l'interstice gris de 6 entre les deux cartes qui sépare, pas un
+                titre de section (la maquette n'en a pas). */}
             <ScrollView
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={[styles.sheetContent, { paddingBottom: insets.bottom + 28 }]}
+              contentContainerStyle={styles.stack}
             >
-              {/* Bannière Affilié Réseau — refermable */}
-              {!promoDismissed && (
-                <AffiliePromo
-                  onPress={() => router.push('/affilie/presentation')}
-                  onDismiss={() => setPromoDismissed(true)}
-                />
-              )}
-
-              {/* Les deux services ouverts, à parts égales */}
-              <View style={styles.grid}>
-                <ServiceCard service={course} onPress={() => onService(course)} anim={cardAnims[0]} />
-                <ServiceCard service={livraison} onPress={() => onService(livraison)} anim={cardAnims[1]} />
-              </View>
-
-              {/* Recents */}
-              <Text variant="caption" color={Colors.textTertiary} style={styles.sectionLabel}>Récemment</Text>
-              {RECENTS.map((r) => (
-                <ListRow
-                  key={r.name}
-                  leading={<Medallion icon="clock" />}
-                  title={r.name}
-                  subtitle={r.detail}
-                  onPress={() => openConfigure('transport', r, departureName)}
-                />
-              ))}
+              <SheetCard style={[styles.lastCard, { paddingBottom: 16 + insets.bottom }]}>
+                {RECENTS.map((r, i) => (
+                  <React.Fragment key={r.name}>
+                    {i > 0 ? <Divider /> : null}
+                    <ListRow
+                      leading={<Medallion icon="clock" />}
+                      title={r.name}
+                      subtitle={r.detail}
+                      // La maquette ne met pas de chevron sur ces rangées : le
+                      // slot Trailing de ses `ListRow` est vide.
+                      trailing={null}
+                      onPress={() => openConfigure('transport', r, departureName)}
+                    />
+                  </React.Fragment>
+                ))}
+              </SheetCard>
             </ScrollView>
           </>
         ) : null}
@@ -850,26 +1049,33 @@ const styles = StyleSheet.create({
     left: 0, right: 0, bottom: 0,
     height: SCREEN_H,
   },
+  // `top: 0` — le décalage de 60 au-dessus de l'arête est porté par la
+  // translation animée, qui suit le cran de la feuille.
   recenterWrap: {
     position: 'absolute',
-    top: -60,
+    top: 0,
     right: 16,
   },
-  sheetHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 4,
+  // Zone de glissement : la première carte. Elle porte le `zIndex` pour que la
+  // poignée flottante passe au-dessus.
+  headerZone: { zIndex: 1 },
+  // Poignée hors flux, à 6 du haut — la 1re carte est donc collée au sommet de
+  // la feuille, comme dans la maquette.
+  handleFloat: {
+    position: 'absolute',
+    top: 6, left: 0, right: 0,
+    alignItems: 'center',
+    zIndex: 2,
   },
-  handle: {
-    marginBottom: 14,
-  },
-  heading: {
-    letterSpacing: -0.4,
-  },
-  sheetContent: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-  },
+  // En-tête de carte sans sa marge basse : c'est la gouttière 12 de la carte qui
+  // espace, comme dans la maquette.
+  sheetHeaderTight: { marginBottom: 0 },
+  // Interstice gris entre les cartes — le fond `track` de la feuille y passe.
+  stack: { paddingTop: SHEET_GAP },
+  // Dernière carte : coins bas carrés, blanc jusqu'au bord de l'écran.
+  lastCard: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
+  // Carte des résultats de recherche : elle prend la hauteur restante.
+  resultsCard: { flex: 1, marginTop: SHEET_GAP },
 
   grid: {
     flexDirection: 'row',
@@ -880,12 +1086,13 @@ const styles = StyleSheet.create({
 
   // --- Bannière Affilié Réseau ---
   // Le wrapper n'a ni fond ni rayon : il ne rogne donc pas la pastille qui dépasse.
-  promoWrap: { marginBottom: CARD_GAP },
+  // Pas de marge basse : la gouttière 12 de la `SheetCard` espace déjà.
+  promoWrap: {},
   promoCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderRadius: 20,
+    borderRadius: Radii.card,
     backgroundColor: Colors.blue100,
     paddingLeft: 6,
     paddingRight: 14,
@@ -906,12 +1113,11 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '30deg' }],
   },
   promoText: { flex: 1, gap: 3, overflow: 'hidden' },
-  promoSubtitle: { lineHeight: 19 },
   promoClose: {
     position: 'absolute',
     top: -10, right: -10,
     width: 38, height: 38,
-    borderRadius: 19,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.surface,
     borderWidth: Strokes.thick,
     borderColor: Colors.blue100,
@@ -926,12 +1132,14 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     height: CARD_H,
-    borderRadius: 20,
+    borderRadius: Radii.card,
     padding: 5,
     gap: 10,
-    backgroundColor: Colors.track,
+    // La tuile est BLEUE, pas grise : `primarySubtle` avec un liseré `track`.
+    // Le gris sur gris d'avant venait d'un relevé plus ancien.
+    backgroundColor: Colors.primarySubtle,
     borderWidth: Strokes.thin,
-    borderColor: 'rgba(242, 243, 245, 0.5)',
+    borderColor: Colors.track,
   },
 
   cardHeader: {
@@ -948,7 +1156,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 4,
   },
-  cardBlurb: { flex: 1, lineHeight: 16 },
+  // Pas de surcharge d'interligne : le style `body` porte 20, et le pied de 48
+  // (padding 4 + 40) tient exactement deux lignes de 20.
+  cardBlurb: { flex: 1 },
 
   // Panneau illustré : fond blanc, calques positionnés en absolu et clipés.
   illoPanel: {
@@ -971,29 +1181,12 @@ const styles = StyleSheet.create({
   // Cadre de découpe d'un véhicule : l'image déborde et se fait couper ici.
   layerFrame: { position: 'absolute', overflow: 'hidden' },
   // Tuile carrée blanche de la carte Affilié Réseau.
-  fieldSpace: { marginBottom: 12 },
-  fieldSpaceLast: { marginBottom: 4 },
-  sectionLabel: {
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginTop: 24,
-    marginBottom: 8,
-  },
 
   // --- Mode recherche (morph in-place du sheet) ---
-  searchWrap: {
-    paddingHorizontal: 20,
-  },
-  searchHandleArea: {
-    paddingTop: 10,
-    paddingBottom: 12,
-    alignItems: 'center',
-  },
   // Champs De / À — coins arrondis (registre bouton, sans aller jusqu'au pill).
 
   // Bouton « Choisir sur la carte », présent à droite du champ actif.
 
-  separator: { height: 1, backgroundColor: Colors.borderSubtle, marginLeft: 54 },
 
   // --- Choix sur carte (overlay) ---
   pinWrap: {
@@ -1006,7 +1199,7 @@ const styles = StyleSheet.create({
   pinDot: {
     position: 'absolute',
     width: 10, height: 10, borderRadius: 5,
-    backgroundColor: 'rgba(17, 24, 39, 0.25)',
+    backgroundColor: Colors.scrim,
   },
   pickDock: {
     position: 'absolute',
@@ -1026,10 +1219,7 @@ const styles = StyleSheet.create({
     gap: 14,
     ...Shadows.sheet,
   },
-  pickKicker: {
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
+  pickKicker: { ...SectionLabel },
   pickRow: {
     flexDirection: 'row',
     alignItems: 'center',

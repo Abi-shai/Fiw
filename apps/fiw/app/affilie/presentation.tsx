@@ -7,6 +7,7 @@ import ScreenFooter from '@/components/ScreenFooter';
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 import Checkbox from '@/components/Checkbox';
+import Medallion from '@/components/Medallion';
 import { Colors, Radii, Spacing } from '@/constants/tokens';
 
 type Step = { icon: IconName; title: string; body: string };
@@ -47,9 +48,7 @@ export default function Presentation() {
         <View style={styles.steps}>
           {STEPS.map((s) => (
             <View key={s.title} style={styles.step}>
-              <View style={styles.stepIcon}>
-                <Icon name={s.icon} size={22} color={Colors.primary} />
-              </View>
+              <Medallion icon={s.icon} ton="accent" />
               <View style={styles.stepText}>
                 <Text variant="label">{s.title}</Text>
                 <Text variant="bodySmall" color={Colors.textSecondary} style={styles.stepBody}>{s.body}</Text>
@@ -102,13 +101,6 @@ const styles = StyleSheet.create({
 
   steps: { marginTop: Spacing[8], gap: Spacing[4] },
   step: { flexDirection: 'row', gap: Spacing[3], alignItems: 'flex-start' },
-  stepIcon: {
-    width: 44, height: 44,
-    borderRadius: Radii.md,
-    backgroundColor: Colors.primarySubtle,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   stepText: { flex: 1, paddingTop: 2 },
   stepBody: { marginTop: 2 },
 

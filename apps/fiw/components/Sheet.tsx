@@ -20,6 +20,16 @@ export const sheetSurface: ViewStyle = {
   // Liseré fin sur l'arête haute : détache la feuille du fond carto.
   borderTopWidth: Strokes.hairline,
   borderColor: Colors.hairline,
+  // **La feuille recadre son contenu.** Les 32 variantes de `BottomSheet` sont
+  // en `clipsContent`, et c'est ce qui donne son arête au motif : la première
+  // carte, pleine largeur, est coupée par l'arc de 28 du conteneur au lieu de
+  // déborder de son coin arrondi. Sans ça, un angle blanc dépasse de la feuille.
+  //
+  // L'ombre n'en souffre pas : `overflow` ne rogne que les ENFANTS, la vue peint
+  // la sienne au-delà de ses bornes (`shadow*` sur iOS, `elevation` sur Android).
+  // En revanche tout enfant volontairement hors bornes se fait couper — c'est
+  // pour ça que le bouton de recentrage de l'accueil vit désormais hors feuille.
+  overflow: 'hidden',
   ...Shadows.sheet,
 };
 
@@ -119,7 +129,10 @@ export const groupedSheetSurface: ViewStyle = {
   backgroundColor: Colors.track,
 };
 
-/** Carte blanche d'un groupe (surface, rayon 20, px16 py20, gap 12). */
+/** Carte blanche d'un groupe : surface, rayon `lg`, **padding 16 sur les quatre
+ *  côtés**, gouttière 12. Les vingt instances de `SheetCard` de la maquette sont
+ *  toutes à 16/16/16/16 — le py:20 d'avant ajoutait 8 de haut à CHAQUE carte du
+ *  produit, soit 32 sur une feuille à quatre cartes. */
 export function SheetCard({ children, style }: {
   children: React.ReactNode; style?: StyleProp<ViewStyle>;
 }) {
@@ -153,15 +166,18 @@ function flattenCards(children: React.ReactNode): React.ReactElement<{ style?: S
  * Géométrie reprise telle quelle des maquettes :
  *   • fond `track`, coins hauts rayon 28, ancré en bas, AUCUN padding de
  *     feuille — dans Figma le conteneur n'a ni padding haut/bas ni padding
- *     latéral ; la respiration vient uniquement du py:20 interne des cartes ;
- *   • cartes blanches PLEINE LARGEUR, interstice de 6 (le `track` transparaît) ;
+ *     latéral ; la respiration vient uniquement du padding 16 interne des cartes ;
+ *   • cartes blanches PLEINE LARGEUR à padding 16, interstice de 6 (le `track`
+ *     transparaît) ;
  *   • poignée flottante en absolu à 6px du haut, centrée, hors flux (elle
  *     n'occupe aucune hauteur — la 1re carte est donc collée au sommet) ;
  *   • la zone sûre du bas est absorbée EN BLANC par la dernière carte, jamais
  *     rendue en bande grise sous la feuille.
  *
- * Les coins de la 1re carte (haut) et de la dernière (bas) sont alignés sur la
- * feuille (28 en haut, carrés en bas) pour épouser le conteneur sans liseré gris.
+ * Seule la DERNIÈRE carte est reprise : coins bas carrés, blanc jusqu'au bord de
+ * l'écran. La première garde son rayon `lg` aux quatre coins, comme les vingt
+ * instances de la maquette — le `track` de la feuille transparaît donc dans ses
+ * coins hauts, et c'est la lèvre grise du motif, pas un défaut (Partie XXX).
  */
 export function GroupedSheet({
   children, translateY, contentStyle, onLayout, handle = true, style,
@@ -195,7 +211,7 @@ export function GroupedSheet({
           if (i === last) {
             edge.borderBottomLeftRadius = 0;
             edge.borderBottomRightRadius = 0;
-            edge.paddingBottom = 20 + insets.bottom; // py:20 des maquettes + zone sûre
+            edge.paddingBottom = 16 + insets.bottom; // padding 16 de la maquette + zone sûre
           }
           return React.cloneElement(child, { style: [child.props.style, edge] });
         })}
@@ -224,8 +240,7 @@ const groupedStyles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
     borderRadius: CARD_RADIUS,
-    paddingHorizontal: 16,
-    paddingVertical: 20,
+    padding: 16,
     gap: 12,
   },
 });

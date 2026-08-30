@@ -488,14 +488,14 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   flex1: { flex: 1 },
 
-  mapScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(17, 24, 39, 0.22)' },
+  mapScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: Colors.scrim },
   mapCenterOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
   radarWrap: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
   ring: {
     position: 'absolute',
     width: 80, height: 80, borderRadius: 40,
     borderWidth: Strokes.thick, borderColor: Colors.primary,
-    backgroundColor: 'rgba(0, 102, 255, 0.06)',
+    backgroundColor: Colors.primaryGhost,
   },
 
   banner: {
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
   totalCard: {
     flexDirection: 'row', alignItems: 'center', gap: 16,
     backgroundColor: Colors.primarySubtle,
-    borderRadius: 20,
+    borderRadius: Radii.card,
     paddingHorizontal: 16, paddingVertical: 12,
   },
   breakdown: { marginTop: 4, lineHeight: 21 },

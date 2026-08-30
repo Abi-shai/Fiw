@@ -1,6 +1,6 @@
 {
   "$generated": "GENERE — ne pas editer a la main. Source de verite : apps/fiw/constants/*.ts. Regenerer : python3 scripts/gen-style-guide-tokens.py",
-  "$generatedOn": "2026-08-24",
+  "$generatedOn": "2026-08-25",
   "color": {
     "primary": "#0066FF",
     "primaryHover": "#0676FF",
@@ -45,7 +45,13 @@
     "success": "#10B981",
     "successSubtle": "#D1FAE5",
     "warningInk": "#B45309",
-    "successInk": "#047857"
+    "successInk": "#047857",
+    "surfaceInverse": "#1A1A1A",
+    "onInverseSubtle": "rgba(255, 255, 255, 0.18)",
+    "onInverseMuted": "rgba(255, 255, 255, 0.25)",
+    "textOnInverseSecondary": "rgba(255, 255, 255, 0.70)",
+    "scrim": "rgba(17, 24, 39, 0.22)",
+    "primaryGhost": "rgba(0, 102, 255, 0.06)"
   },
   "typography": {
     "font-family": "Outfit",

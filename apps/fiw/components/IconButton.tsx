@@ -25,7 +25,8 @@ const GLYPH: Record<IconButtonSize, number> = { lg: 24, md: 22, sm: 18 };
 /** Bouton rond à icône, taille et style unifiés.
  *  `floating` pour les commandes flottant sur la carte (menu, retour,
  *  recentrage) — icône grise neutre par défaut, pour ne pas tirer l'œil ;
- *  `flat` pour les actions intégrées à une feuille (fermer), icône bleu marque ;
+ *  `flat` pour les actions intégrées à une feuille (fermer) — glyphe `gray700`,
+ *  et non le bleu de marque : la croix d'une feuille ferme, elle n'appelle pas ;
  *  `secondary` pour une action de second rang qui doit rester lisible sur un
  *  fond teinté (bouton carte d'un `PlaceField`) ; `link` pour les actions
  *  inline d'un champ (effacer, afficher le mot de passe) — aucune empreinte
