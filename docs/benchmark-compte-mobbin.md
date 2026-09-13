@@ -172,6 +172,55 @@ entrer en collision avec le « Gagner de l'argent » de l'Affiliation. Renvoie v
 **Fiw Pro**. Libellé canonique **« Devenir prestataire »** (pas chauffeur/livreur).
 Vit dans la **sidebar** (le lanceur), pas dans la page Compte.
 
+> _Amendement du 4 septembre 2026 — la prémisse a changé, la décision tient._ La
+> sidebar a disparu : c'est une page de la pile, nommée **Menu**. D4 disait « pied
+> de sidebar » ; on a donc rejugé la **prémisse** et pas seulement la conclusion —
+> les deux blocs d'argent (« Gagner de l'argent » et « Devenir prestataire »)
+> ont-ils leur place sur une page de compte ?
+>
+> **Oui, et le critère qui dit non est le mauvais critère.** Le test « est-ce un
+> réglage ? » les élimine, mais il élimine aussi **Historique, Fidélité et
+> Affiliation** : ce qui resterait est précisément ce que « Mon compte &
+> Sécurité » contient déjà, et la page s'effondrerait dans sa propre page fille.
+> Or cette page n'est pas un écran de réglages, c'est le **menu** du modèle
+> hybride décrit plus haut — celui dont Historique, Fidélité, Affiliation et Aide
+> sont les *frères* du portrait. Dans le tableau des rubriques, « Devenir
+> prestataire » figure chez **six des sept** apps étudiées, et toujours là.
+>
+> Deux faits qui pèsent, relevés dans le code : « Devenir prestataire » est la
+> **seule porte de toute l'app Fiw vers Fiw Pro** ; et « Gagner de l'argent » est
+> le seul accès permanent à l'Affiliation pour un Client non affilié — la
+> bannière `AffiliePromo` de l'accueil, elle, est **refermable**.
+>
+> Ce qui a bougé, c'est le **nom** : la page a porté « Paramètres » quelques
+> heures, un nom qui désignait une rubrique qu'elle ne contient pas. Elle reprend
+> **« Menu »**, le mot du modèle.
+
+> _Second amendement, 6 septembre 2026 — la distinction change de porteur._ Les
+> deux propositions d'argent descendent **en pied**, dans une zone « Gagner de
+> l'argent » **sans titre**, et « Devenir prestataire » y perd sa carte bleue
+> pour redevenir une rangée. D4 exigeait un « élément séparé de la liste, de
+> style distinct » : il l'est toujours, mais c'est désormais **la zone** qui
+> porte la distinction, pas la carte seule. Lui laisser son aplat aurait fait de
+> la proposition **secondaire** le bloc le plus fort du pied, devant
+> l'Affiliation — qui est le différenciateur de Fiw.
+>
+> Trois choses tiennent cette forme. **Le bench** : six des huit apps relevées
+> placent leur proposition d'argent en bas ou en milieu de liste — Bolt en pied
+> et refermable, inDrive en bouton de pied, Freenow en carte isolée, Bird en
+> pied, Uber et Lyft en milieu de liste ; seuls Grab et Check poussent en tête.
+> **La permanence** : la rangée Affiliation du pied est la porte, jamais
+> fermable — la bannière du haut n'est que sa promotion, et ce sont **deux
+> éléments distincts**, pas deux états d'un seul, ce qui garantit qu'aucun
+> Client ne se retrouve sans chemin après avoir tout fermé. **La fermeture** :
+> elle met en sourdine, elle ne supprime pas — la bannière revient après un
+> nombre croissant de Commandes terminées (5, 10, 15, 20…), sans plafond.
+>
+> ⚠️ **Dette assumée** : sans titre, cette zone doit se distinguer par son
+> **traitement**, et ce traitement n'est pas fait. Elle atterrit en deux rangées
+> grises — le contraire du but. C'est la première chose à reprendre à la passe
+> de caractère du Menu.
+
 **D5 — Langue / thème / unités : différés de la v1.** L'app est en **français**,
 F CFA, km. Préférences = **notifications seules**. Le **Wolof** est marqué comme le
 déclencheur qui rouvrira la question langue — levier d'**accessibilité**, pas
@@ -376,7 +425,16 @@ connexion), `preferences` (notifications). À placer sous `apps/fiw/app/compte/`
 ## Périmètre v1
 
 **Inclus** : page « Mon compte & Sécurité » (en-tête avec **Note du Client** +
-rubriques + bas de page) → `profil` · `paiement` (Mobile Money + Espèces) · `lieux`
+rubriques + bas de page)
+> _Amendement du 4 septembre 2026 : l'en-tête d'identité de « Mon compte &
+> Sécurité » est retiré. Le portrait (avatar + nom + téléphone) vit **une fois**
+> dans le flux, en tête du **Menu** — la page d'atterrissage, où il
+> confirme de qui on parle ; sur la page fille il n'était que la cinquième
+> porte, et la seule à ne pas être une rangée. « Profil » y devient donc une
+> rangée ordinaire, et la **Note du Client** en est le sous-titre. **D3 tient**
+> : deux entrées mènent toujours à la page Compte depuis le Menu, le portrait
+> et la rangée « Mon compte & sécurité ». Règle générale dans `style-guide.md`,
+> « Un portrait par flux »._ → `profil` · `paiement` (Mobile Money + Espèces) · `lieux`
 (Maison/Travail + libres) · `securite` (Contacts de confiance à 2 niveaux + OTP) ·
 `preferences` (notifications) · Déconnexion · Supprimer mon compte · CGU + version.
 Sidebar : pied épinglé **Devenir prestataire** → Fiw Pro (style distinct).
