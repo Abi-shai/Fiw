@@ -221,6 +221,63 @@ Vit dans la **sidebar** (le lanceur), pas dans la page Compte.
 > grises — le contraire du but. C'est la première chose à reprendre à la passe
 > de caractère du Menu.
 
+> _Troisième amendement, 14 septembre 2026 — la dette est soldée, et « Devenir
+> prestataire » retrouve une carte._ Le traitement de la zone, c'est la **paire**
+> : deux blocs jumeaux, une seule anatomie (rayon `radius-lg`, vignette illustrée
+> de 64, même hauteur au pixel), deux illustrations, et **un cran de bleu
+> d'écart** — `blue-100` à l'Affiliation, `color-primary-subtle` à « Devenir
+> prestataire ». La règle générale est écrite dans `style-guide.md`
+> (« Deux propositions voisines sont des jumelles »).
+>
+> D4 exigeait pour « Devenir prestataire » un « élément séparé de la liste, de
+> style distinct ». Il l'est de nouveau **par sa carte**, comme au premier jour —
+> mais la carte ne le distingue plus **seul** : elle le range dans une paire dont
+> l'écart interne se lit. Le second amendement craignait qu'un aplat propre ne
+> fasse de la proposition secondaire le bloc le plus fort du pied ; deux blocs
+> clairs séparés d'un palier écartent ce risque sans renoncer à la distinction.
+>
+> **La bannière promotionnelle du Menu est supprimée.** L'argument qui la tenait
+> — « l'Affiliation n'est annoncée nulle part ailleurs » — était **faux** :
+> l'accueil la porte déjà, dans la carte principale de sa feuille, sous « De quoi
+> avez-vous besoin ? » et au-dessus des deux tuiles de service (`home.tsx`,
+> `AffiliePromo`). C'est l'emplacement le plus vu de l'app ; la bannière du Menu
+> n'y ajoutait presque aucune portée, et faisait dire deux fois la même chose à
+> une seule page. En tiroir, elle se lisait comme un prolongement de l'accueil
+> sur lequel le panneau était posé ; sur une page de destination, comme une
+> publicité en tête d'un endroit où l'on est venu exprès.
+>
+> ⚠️ **À ne pas perdre : la règle de sourdine croissante déménage sur l'accueil.**
+> Fermer met en sourdine, ça ne supprime pas — la bannière revient après un
+> nombre **croissant** de **Commandes terminées** depuis le dernier refus (5, 10,
+> 15, 20… sans plafond, sans jamais s'éteindre). Une Commande **annulée** ne fait
+> pas avancer le compteur ; les **livraisons comptent** comme les courses ; et le
+> premier refus ne compte qu'à partir de la **première Commande terminée** — à
+> l'ouverture initiale, fermer c'est ranger, pas refuser. Cette règle appartient
+> désormais à la bannière de l'**accueil**, la seule qui intercepte et qui ne
+> persiste rien aujourd'hui. **Elle n'y est pas implémentée** : l'accueil n'a pas
+> été touché, par décision explicite.
+
+> _Quatrième amendement, 14 septembre 2026 (quelques heures après le
+> troisième) — « Devenir prestataire » ne reprend finalement PAS sa carte._ La
+> paire de cartes jumelles annoncée juste au-dessus a été construite, regardée
+> à l'écran, puis écartée : un cran de bleu d'écart disait « presque pareil »
+> entre deux propositions qui ne sont pas de même nature. Trois formes ont été
+> comparées sur planches — carte pleine, carte détourée, texte-lien ; c'est le
+> **texte-lien** qui est retenu (`Button variant="link"`, centré sous le bloc
+> Affiliation).
+>
+> D4 exigeait un « élément séparé de la liste, de style distinct » : un lien
+> centré sous un bloc illustré l'est autant qu'une carte l'était — il
+> n'appartient à aucune liste et ne ressemble à rien d'autre sur la page. Ce
+> qu'il abandonne, c'est le **poids**, et c'est le but : Devenir prestataire est
+> une décision unique et lourde, elle se gagne par la trouvabilité et non par la
+> répétition. La règle générale est écrite dans `style-guide.md` (« le poids
+> d'une proposition suit la fréquence de sa décision »).
+>
+> ⚠️ **Ce que le lien fait perdre** : son sous-titre, et donc la seule mention
+> écrite dans toute l'app Fiw que cette porte mène à une **autre application**.
+> Elle ne survit plus que dans l'alerte affichée au tap — à ne pas alléger.
+
 **D5 — Langue / thème / unités : différés de la v1.** L'app est en **français**,
 F CFA, km. Préférences = **notifications seules**. Le **Wolof** est marqué comme le
 déclencheur qui rouvrira la question langue — levier d'**accessibilité**, pas

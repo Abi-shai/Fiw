@@ -491,6 +491,24 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > désignait une rubrique qu'elle ne contient pas — les réglages vivent un cran
 > plus bas, dans « Mon compte & Sécurité »._
 >
+> _Amendement du 14 septembre 2026 — l'exception qui existait sans être écrite._
+> Une **proposition** n'est pas une porte de réglage, et elle a droit à sa carte.
+> La règle disait « une rangée de réglage ne représente rien, c'est une porte » ;
+> une proposition, elle, représente bien quelque chose — une offre, avec ses
+> conditions et son gain. Le cadre y livre donc une information que la rangée à
+> plat ne livre pas : *ceci n'est pas un réglage de plus*.
+>
+> Ce n'est pas un revirement, c'est la mise par écrit d'une exception qui
+> tournait déjà : « Devenir prestataire » portait cette carte dans le tiroir
+> depuis des mois, et la règle du 11 août ne l'a jamais visée. Le motif est celui
+> que `colors.ts` nomme — fond `color-primary-subtle`, liseré `blue-100`,
+> pastille `color-primary`.
+>
+> **La portée est étroite, et c'est voulu** : les deux propositions d'argent du
+> pied du Menu. Un écran de réglages reste à plat sur fond blanc ; une porte qui
+> ouvre une rubrique aussi. Le test : si l'élément a quelque chose à **proposer**
+> plutôt qu'un endroit où **mener**, il peut prendre la carte.
+
 > ⚠️ **Précision sur le benchmark.** `benchmark-compte-mobbin.md` décrit la carte de
 > réglages comme le « motif unanime » de Bolt / Careem / Réglages iOS. Cette
 > unanimité est celle d'un **échantillon iOS** : toutes les recherches Mobbin ont été
@@ -498,6 +516,63 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > des Réglages iOS. L'idiome natif Android — la plateforme dominante du marché
 > dakarois — est l'inverse : rangées à plat, filets pleine largeur, en-têtes de
 > section. _(Décidé en rendant le 11 août 2026, todo P5.)_
+
+> **Un portrait confirme, il n'appelle à rien : il se vide de son aplat.** Le
+> bloc avatar + nom + téléphone d'une page d'atterrissage répond à « de qui
+> parle-t-on ? ». Ce n'est pas une action, pas un objet qu'on possède, pas un
+> état : rien qui justifie une masse de couleur. `Avatar` porte donc les deux
+> familles que `Button` distingue déjà — **plein** et **contour** :
+>
+> | Variante | Fond | Liseré | Initiales |
+> |---|---|---|---|
+> | `plein` (défaut) | `color-primary-subtle` | `color-surface` (détourage) | `color-primary-pressed` |
+> | `contour` | `color-surface` | `color-border-subtle` | `color-gray-700` |
+>
+> **Ce n'est pas un axe de ton mais de remplissage**, et c'est ce qui fait
+> qu'il marche : ce n'était pas la couleur qui tirait l'œil, c'était la MASSE.
+> En `contour` il ne reste que les lettres, et elles ne sont pas bleues non
+> plus : `color-gray-700` est le gris foncé des glyphes neutres du système —
+> celui de l'icône de retour de `ScreenHeader`. Des initiales sont un glyphe
+> plus qu'un texte courant, d'où ce palier plutôt que `color-text-primary` ou
+> `color-text-secondary`. Le liseré, jusque-là blanc et invisible sauf en
+> chevauchement, devient le contour du cercle puisqu'il n'y a plus d'aplat pour
+> le dessiner ; son épaisseur ne change pas (`stroke-thick`).
+>
+> **Où va chacune.** `plein` reste le défaut, et c'est le bon pour un
+> **prestataire** : on attend quelque chose de lui, la couleur le désigne.
+> `contour` est celle du **portrait du Client sur le Menu**, page dont la seule
+> chose à mettre en avant est la proposition du pied.
+>
+> _(Décidé le 14 septembre 2026, en regardant le Menu à l'écran, en deux temps :
+> d'abord vider l'aplat, puis retirer le bleu des initiales. Une version en deux
+> gris pleins — fond `color-bg`, initiales `color-text-secondary`, empruntée à
+> l'axe `Ton` de `Medallion` — avait été écrite puis écartée en chemin.)_
+
+> **Le poids d'une proposition suit la FRÉQUENCE de sa décision, pas
+> l'importance de sa rubrique.** Quand deux propositions vivent côte à côte —
+> le pied du Menu en a deux, l'Affiliation et « Devenir prestataire » — c'est le
+> rythme auquel on dit oui qui règle leur poids visuel, pas leur poids au
+> business.
+>
+> Une proposition **récurrente** se gagne par la répétition : on dit oui à la
+> cinquième exposition, donc elle a besoin d'une présence tenue — un bloc à son
+> identité, illustré. Une décision **unique et lourde** ne se prend pas deux
+> fois et ne se prend pas parce qu'une carte l'a rappelée : elle se gagne par la
+> **trouvabilité** au moment où l'idée vient. Un texte-lien la rend trouvable
+> sans lui donner un poids qu'elle n'utilisera jamais. D'où, sur le Menu : un
+> bloc `blue-100` illustré pour l'Affiliation, un `Button variant="link"` centré
+> pour « Devenir prestataire ».
+>
+> _Amendement du 14 septembre 2026, le même jour que la règle qu'il remplace._
+> Ce paragraphe disait d'abord l'inverse : deux **jumelles**, une seule anatomie,
+> séparées d'un seul cran de bleu. Cette forme a été construite, mise à l'écran,
+> et écartée — l'écart d'un palier disait « presque pareil » là où les deux
+> propositions ne sont pas de même nature. L'erreur est instructive et vaut
+> d'être gardée : elle vient d'avoir repris au tiroir la phrase « deux blocs de
+> la même famille, seul le **poids** les sépare » **sans reprendre son écart**.
+> Le tiroir opposait un aplat PLEIN à une carte claire ; en ramenant les deux au
+> clair, on a gardé la formule et perdu ce qu'elle mesurait. Citer une intention
+> ne suffit pas — il faut vérifier de quelle amplitude elle parlait.
 
 > **Toute porte porte son résumé ; une rangée qui agit n'en a pas.** Une rangée
 > qui **ouvre un écran** dit en `subtitle` ce qu'il y a derrière : c'est ce qui

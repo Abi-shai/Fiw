@@ -481,7 +481,14 @@ function AffiliePromo({ onPress, onDismiss }: { onPress: () => void; onDismiss: 
         </View>
         <View style={styles.promoText}>
           <Text variant="bodyMedium">Gagnez de l’argent avec Fiw !</Text>
-          <Text variant="body" color={Colors.textSecondary}>
+          {/* Une SEULE ligne, ellipse comprise (14 septembre 2026). La phrase
+              fait 38 signes là où la colonne en tient une trentaine : elle se
+              coupe donc, et c'est assumé — la bannière gagne en compacité ce
+              qu'elle perd en fin de phrase, et le point d'interrogation suffit
+              à dire que c'en est une.
+              ⚠️ Cette ligne est PARTAGÉE avec la bannière du Menu
+              (`app/menu.tsx`) : toute retouche se fait des deux côtés. */}
+          <Text variant="body" color={Colors.textSecondary} numberOfLines={1}>
             Et si vous deveniez un affilié réseau ?
           </Text>
         </View>

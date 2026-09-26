@@ -4,7 +4,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Avatar, { AVATAR_CARD } from '@/components/Avatar';
+import HandWithCash from '@/components/HandWithCash';
 import Badge from '@/components/Badge';
+import Button from '@/components/Button';
 import Icon from '@/components/Icon';
 import List from '@/components/List';
 import ListRow from '@/components/ListRow';
@@ -13,12 +15,15 @@ import Text from '@/components/Text';
 import { Colors, Radii, Shadows, Strokes } from '@/constants/tokens';
 import { CLIENT, COURSE_HISTORY } from '@/constants/data';
 
+/** Côté de la vignette illustrée. 64, la valeur de `promoTile` sur l'accueil :
+ *  ce bloc EST la bannière de l'accueil, reprise à l'identique. */
+const PROMO_TILE = 64;
+
 // Proto : statut d'affiliation du Client, piloté par l'interrupteur de démo
 // (facilitateur) — invisible en production, même langage que le « Démo · … » de
 // l'écran searching. Cycle les deux états de l'Affiliation :
-//  · none  → non affilié : la bannière promotionnelle vit en haut de page
-//  · actif → Affilié Réseau actif : plus de bannière, la rangée du pied porte
-//            les chiffres du réseau.
+//  · none  → non affilié : le bloc du pied annonce la commission
+//  · actif → Affilié Réseau actif : le même bloc porte les chiffres du réseau.
 type AffiliationState = 'none' | 'actif';
 const AFFILIATION_ORDER: AffiliationState[] = ['none', 'actif'];
 const AFFILIATION_DEMO_LABEL: Record<AffiliationState, string> = {
@@ -56,8 +61,38 @@ const AFFILIATION_DEMO_LABEL: Record<AffiliationState, string> = {
  *
  *  **Les deux propositions d'argent vivent en PIED**, dans une zone « Gagner de
  *  l'argent » sans titre : c'est son traitement qui doit la distinguer, pas un
- *  libellé — et ce traitement reste à faire. Six des huit apps du bench placent
- *  leur proposition d'argent en bas ou en milieu de liste. */
+ *  libellé. Six des huit apps du bench les placent en bas ou en milieu de liste.
+ *
+ *  ── Ce que la session du 14 septembre 2026 a tranché ───────────────────────
+ *  **Le traitement, c'est UN BLOC ET UN LIEN.** L'Affiliation garde un bloc
+ *  illustré à son identité ; « Devenir prestataire » descend au texte-lien. Le
+ *  poids suit la FRÉQUENCE de la décision, pas l'importance de la rubrique :
+ *  l'Affiliation se gagne par la répétition, Devenir prestataire par la seule
+ *  trouvabilité au moment où l'idée vient. Voir le commentaire de la zone, plus
+ *  bas — une paire de cartes jumelles a été construite et écartée en chemin.
+ *
+ *  **La bannière promotionnelle du haut est SUPPRIMÉE.** L'argument qui la
+ *  tenait était faux : on écrivait « l'Affiliation n'est annoncée nulle part
+ *  ailleurs », alors que l'accueil la porte déjà — `AffiliePromo` vit dans la
+ *  carte principale de la feuille, sous « De quoi avez-vous besoin ? », au-dessus
+ *  des deux tuiles de service. C'est l'emplacement le plus vu de l'app ; la
+ *  bannière du Menu n'y ajoutait presque aucune portée, et disait deux fois la
+ *  même chose sur une page (promotion en haut, porte permanente en pied). En
+ *  tiroir, elle se lisait comme un prolongement de l'accueil sur lequel le
+ *  panneau était posé ; sur une page de destination, elle se lit comme une
+ *  publicité en tête d'un endroit où l'on est venu exprès.
+ *
+ *  ⚠️ **La règle de sourdine croissante n'est pas morte, elle DÉMÉNAGE.** Fermer
+ *  mettait en sourdine sans supprimer : la bannière revenait après un nombre
+ *  croissant de **Commandes terminées** depuis le dernier refus — 5, puis 10,
+ *  puis 15, puis 20… sans plafond et sans jamais s'éteindre ; une Commande
+ *  annulée ne faisait pas avancer le compteur (sinon fermer puis annuler trois
+ *  fois l'aurait fait revenir sans que le Client ait rien vécu) ; les livraisons
+ *  comptaient comme les courses ; et le premier refus ne comptait qu'à partir de
+ *  la première Commande terminée — à l'ouverture initiale, fermer c'est ranger,
+ *  pas refuser. Cette règle appartient désormais à la bannière de l'ACCUEIL, qui
+ *  est celle qui intercepte et qui ne persiste rien aujourd'hui. Elle n'est pas
+ *  implémentée là-bas : l'accueil n'a pas été touché (décision explicite). */
 export default function MenuScreen() {
   const insets = useSafeAreaInsets();
 
@@ -68,26 +103,6 @@ export default function MenuScreen() {
     Haptics.selectionAsync();
     const next = AFFILIATION_ORDER[(AFFILIATION_ORDER.indexOf(affiliation) + 1) % AFFILIATION_ORDER.length];
     setAffiliation(next);
-  };
-
-  // Fermeture de la bannière. Le proto ne persiste rien : elle ne disparaît que
-  // pour la session.
-  //
-  // La RÈGLE, elle, ne se voit pas ici — le prototype n'a pas de quoi la jouer.
-  // Fermer met en SOURDINE, ça ne supprime pas : la bannière revient après un
-  // nombre croissant de **Commandes terminées** depuis le dernier refus — 5,
-  // puis 10, puis 15, puis 20… sans plafond et sans jamais s'éteindre. Une
-  // Commande annulée ne fait pas avancer le compteur (sinon fermer puis annuler
-  // trois fois la ferait revenir sans que le Client ait rien vécu), et les
-  // livraisons comptent comme les courses : « Commande » couvre tous les
-  // services. Le premier refus ne compte qu'à partir de la première Commande
-  // terminée — à l'ouverture initiale, fermer c'est ranger, pas refuser.
-  // Concrètement, un Client qui la ferme systématiquement la voit six fois sur
-  // ses 75 premières courses.
-  const [bannerDismissed, setBannerDismissed] = useState(false);
-  const dismissBanner = () => {
-    Haptics.selectionAsync();
-    setBannerDismissed(true);
   };
 
   // Résumé lu depuis la SOURCE RÉELLE, comme sur « Mon compte & sécurité ».
@@ -113,54 +128,24 @@ export default function MenuScreen() {
   // spécification (18, tertiaire).
   const chevron = <Icon name="chevronRight" size={18} color={Colors.textTertiary} />;
 
-  // Écart au DS assumé : c'est le seul bloc en BLEU PLEIN de l'app hors bouton.
-  // Le plein est le registre du CTA — c'est ce qui fait que la bannière peut
-  // occuper le haut de page sans avoir à intercepter par sa seule place. Le
-  // glyphe suit la règle du style guide sur les aplats : sur un fond plein,
-  // c'est la pastille claire qui porte le glyphe de couleur, jamais l'inverse.
-  //
-  // La copie a changé le 6 septembre 2026, sur deux points.
-  //  · Le REGISTRE : « des personnes que vous RECRUTEZ » mettait le Client en
-  //    position de recruteur, et faisait glisser un différenciateur produit vers
-  //    le registre du plan de recrutement — cher à Dakar, où les arnaques au
-  //    mobile money sont un vrai sujet. Ce sont les autres qui s'inscrivent.
-  //  · Le FOND : la réunion du 30 août (`meeting-recaps/08-30.md`, qui fait foi)
-  //    restreint la commission — 2 % sur les courses des **Prestataires**
-  //    inscrits avec le code, PAS sur celles des Clients recrutés. « Personnes »
-  //    était donc devenu faux. Et « prestataires », pas « chauffeurs » :
-  //    l'Affiliation est multi-services, tout Prestataire compte, livreurs
-  //    inclus — l'exception de copie du flux Transport ne vaut pas ici.
-  const earnBanner = isAffiliate || bannerDismissed ? null : (
-    <View style={styles.bannerWrap}>
-      <TouchableOpacity style={styles.earnBanner} activeOpacity={0.85} onPress={goAffiliation}>
-        <View style={styles.earnIcon}>
-          <Icon name="group" size={20} color={Colors.primary} weight="bold" />
-        </View>
-        <View style={styles.earnText}>
-          <Text variant="label" color={Colors.primaryOn}>Gagnez de l&apos;argent avec Fiw !</Text>
-          <Text variant="caption" color={Colors.primaryOn} style={styles.earnBody}>
-            2 % sur chaque course des prestataires inscrits avec votre code.
-          </Text>
-        </View>
-        <Icon name="chevronRight" size={18} color={Colors.primaryOn} />
-      </TouchableOpacity>
-      {/* Pastille de fermeture posée À CÔTÉ de la carte, pas dedans : un enfant
-          qui dépasse d'une vue à coins arrondis se fait rogner sur Android.
-          Même parade que la bannière de l'accueil. */}
-      <TouchableOpacity
-        style={styles.bannerClose}
-        activeOpacity={0.85}
-        onPress={dismissBanner}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Icon name="close" size={16} color={Colors.primary} />
-      </TouchableOpacity>
-    </View>
-  );
-
   return (
     <View style={styles.page}>
-      <ScreenHeader title="Menu" />
+      {/* Interrupteur de démo (facilitateur) : dans le slot d'action DROIT de
+          `ScreenHeader`, sur la ligne du titre. Invisible en production. Il
+          flottait au-dessus du pied ; il y disputait l'attention à la seule
+          chose que cette zone doit vendre. Il garde sa pilule blanche à liseré
+          et son ombre — le même objet que le « Démo · … » de `searching`, et
+          c'est cette constance qui le fait reconnaître comme un facilitateur
+          plutôt que comme un élément de l'app. */}
+      <ScreenHeader
+        title="Menu"
+        right={
+          <TouchableOpacity style={styles.demoChip} onPress={cycleAffiliation} activeOpacity={0.85}>
+            <Icon name="lightning" size={12} weight="bold" color={Colors.textSecondary} />
+            <Text variant="caption" color={Colors.textSecondary}>Démo · Affiliation : {AFFILIATION_DEMO_LABEL[affiliation]}</Text>
+          </TouchableOpacity>
+        }
+      />
 
       {/* `flexGrow` : c'est lui qui donne au spacer de quoi pousser le pied en
           bas de l'écran quand le contenu ne remplit pas la page. */}
@@ -174,19 +159,18 @@ export default function MenuScreen() {
             cinq, la seule à ne pas être une rangée ; il y est redevenu une
             rangée « Profil ». La Note du Client l'a suivi. */}
         <TouchableOpacity style={styles.identity} activeOpacity={0.7} onPress={goCompte}>
-          <Avatar name={CLIENT.name} size={AVATAR_CARD} />
+          {/* Portrait en CONTOUR : fond `surface`, liseré `borderSubtle`,
+              initiales `gray700`. Plus aucune couleur de marque — ni l'aplat,
+              ni les lettres. Il en faisait l'élément le plus coloré d'une page
+              dont la seule chose à mettre en avant est la proposition du pied,
+              et il ne confirme qu'une identité. _(14 septembre 2026.)_ */}
+          <Avatar name={CLIENT.name} size={AVATAR_CARD} variant="contour" />
           <View style={styles.identityText}>
             <Text variant="heading2" numberOfLines={1}>{CLIENT.name}</Text>
             <Text variant="bodySmall" color={Colors.textSecondary}>{CLIENT.phone}</Text>
           </View>
           <Icon name="chevronRight" size={20} color={Colors.textTertiary} />
         </TouchableOpacity>
-
-        {/* La bannière est un objet PROMOTIONNEL, distinct de la porte
-            permanente du pied. Fermer n'a donc rien à rétrograder : elle
-            s'efface, la rangée « Affiliation » du pied n'a jamais bougé et
-            reste le chemin de qui la cherche. */}
-        {earnBanner}
 
         {/* Chaque porte porte son résumé en SOUS-TITRE : le titre nomme la
             rubrique, le sous-titre dit ce qu'il y a derrière. Jamais en valeur
@@ -222,52 +206,125 @@ export default function MenuScreen() {
         {/* Pousse la zone d'argent tout en bas */}
         <View style={styles.spacer} />
 
-        {/* Interrupteur de démo (facilitateur) : flotte au-dessus du pied, hors
-            du flux de la liste. Invisible en production. Celui qui cyclait la
-            PLACE de la bannière a disparu : sa question est tranchée. */}
-        <View style={styles.demoRow}>
-          <TouchableOpacity style={styles.demoChip} onPress={cycleAffiliation} activeOpacity={0.85}>
-            <Icon name="lightning" size={12} weight="bold" color={Colors.textSecondary} />
-            <Text variant="caption" color={Colors.textSecondary}>Démo · Affiliation : {AFFILIATION_DEMO_LABEL[affiliation]}</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* ── Zone « Gagner de l'argent » ────────────────────────────────────
-            Les deux propositions de Fiw, en permanence, jamais fermables. La
-            rangée Affiliation est la PORTE ; la bannière du haut n'est que sa
-            promotion — deux éléments distincts, pas deux états d'un seul. C'est
-            ce qui garantit qu'aucun Client ne se retrouve sans chemin, même
-            après avoir tout fermé : `/affilie/presentation` n'a que ces portes
-            dans toute l'app.
+            Les deux propositions de Fiw, en permanence, jamais fermables.
+            `/affilie/presentation` n'a que cette porte dans toute l'app, et
+            « Devenir prestataire » est la seule de Fiw vers Fiw Pro.
 
-            Zone SANS TITRE, par décision : elle doit se distinguer par son
-            TRAITEMENT. Ce traitement n'est pas fait — elle atterrit donc en deux
-            rangées grises, exactement ce qu'on veut éviter. C'est la première
-            chose à reprendre à la passe de caractère.
+            Zone SANS TITRE, par décision : elle se distingue par son TRAITEMENT.
+            Ce traitement, c'est **un bloc et un lien** — pas deux blocs.
 
-            Ce que ça change à D4 : « Devenir prestataire » y perd sa carte
-            bleue. La décision demandait qu'elle soit « séparée de la liste, de
-            style distinct » — elle l'est toujours, mais c'est désormais la ZONE
-            qui porte cette distinction, pas la carte seule. Lui laisser son
-            aplat aurait fait de la proposition secondaire le bloc le plus fort
-            du pied, devant le différenciateur de Fiw. */}
-        <List style_="plat" bleed={20}>
-          <ListRow
-            icon="group"
-            title="Affiliation"
-            subtitle={isAffiliate ? '12 prestataires dans votre réseau' : '2 % sur les courses de votre réseau'}
-            subtitleAccent={!isAffiliate}
-            onPress={goAffiliation}
-            style={styles.row}
-          />
-          <ListRow
-            icon="wheel"
-            title="Devenir prestataire"
-            subtitle="Conduisez ou livrez avec Fiw Pro"
-            onPress={onBecomePro}
-            style={styles.row}
-          />
-        </List>
+            Une paire de cartes jumelles a été construite, regardée, puis
+            écartée le 14 septembre 2026 : elles ne diffèraient que d'un cran de
+            bleu, et cet écart-là disait « presque pareil » alors que les deux
+            propositions ne sont pas du tout de même nature. Le tiroir posait
+            pourtant la bonne intuition — « deux blocs de la même famille, seul
+            le POIDS les sépare » — mais il la posait d'un aplat PLEIN contre une
+            carte claire : un écart de famille, pas de nuance. En ramenant les
+            deux au clair, on avait gardé la phrase et perdu l'écart.
+
+            **L'Affiliation seule garde le bloc, et il est à son identité.**
+            `blue100` est déjà le fond de sa bannière sur l'accueil (`home.tsx`,
+            `promoCard`) et `HandWithCash` son illustration : on ne lui invente
+            pas une identité, on la reconnaît d'un écran à l'autre. Elle est le
+            différenciateur de Fiw face à Yango, c'est sur elle que le client
+            veut l'accent, et elle se gagne par la RÉPÉTITION — donc par une
+            présence visuelle tenue.
+
+            Ce que ça change à D4 : « Devenir prestataire » ne reprend PAS sa
+            carte. D4 exigeait un « élément séparé de la liste, de style
+            distinct » ; un texte-lien centré sous un bloc illustré l'est autant
+            qu'une carte l'était — il n'appartient à aucune liste et ne ressemble
+            à rien d'autre sur la page. Ce qu'il abandonne, c'est le POIDS, et
+            c'est le but. */}
+        <TouchableOpacity style={styles.promoCard} activeOpacity={0.85} onPress={goAffiliation}>
+          <View style={styles.promoTile}>
+            {/* Position du carré NON pivoté : la rotation RN se fait autour du
+                centre, on vise donc le centre (25.52 ; 40.71) relevé sur la
+                maquette. Valeurs de `home.tsx`, au centième près. */}
+            <View style={styles.promoIllo}><HandWithCash width={52} /></View>
+          </View>
+          {/* Deux copies, parce que le bloc ne s'adresse pas au même Client.
+              Au NON-AFFILIÉ il propose, et il le fait avec les mots EXACTS de
+              la bannière de l'accueil — titre et sous-titre. À l'AFFILIÉ il n'a
+              plus rien à proposer : il redevient la porte de son tableau de
+              bord et reprend son nom de rubrique.
+
+              Le bloc a porté sa propre phrase jusqu'au 14 septembre 2026
+              (« 2 % sur les courses des prestataires inscrits avec votre
+              code. »), construite pour ouvrir sur le chiffre — l'hameçon d'une
+              offre. Elle est abandonnée au profit de l'alignement des deux
+              écrans : une même proposition, une même phrase, reconnaissable
+              sans relecture. Si elle devait revenir, se souvenir qu'elle ne
+              descend pas sous la soixantaine de signes sans perdre l'un de ses
+              trois faits porteurs — le 2 %, les **Prestataires** (le recap du
+              30 août a retiré les Clients recrutés du périmètre) et le **code**
+              comme mécanisme.
+
+              ⚠️ `CONTEXT.md` : `Affilié Réseau` ne s'abrège JAMAIS en
+              « Affilié » — le mot seul désigne la personne recrutée, soit le
+              rôle inverse. Et `parrain`/`parrainé` sont proscrits. */}
+          <View style={styles.promoText}>
+            {/* Titre et sous-titre vont chacun jusqu'à deux lignes. La
+                troncature à une ligne est la règle de `ListRow`, faite pour que
+                des rangées voisines gardent la même hauteur ; ce bloc n'est pas
+                une rangée, et il n'a plus de voisin depuis que « Devenir
+                prestataire » est passé au lien. */}
+            <Text variant="bodyMedium" numberOfLines={2}>
+              {isAffiliate ? 'Affiliation' : 'Gagnez de l’argent avec Fiw !'}
+            </Text>
+            {/* Le sous-titre est celui de l'ACCUEIL, mot pour mot : les deux
+                bannières disent désormais exactement la même chose, titre et
+                sous-titre (14 septembre 2026). Le bloc portait jusque-là sa
+                propre phrase — « 2 % sur les courses des prestataires inscrits
+                avec votre code. » — qui donnait le chiffre là où l'accueil pose
+                la question ; l'alignement des deux écrans l'emporte.
+
+                Une SEULE ligne, ellipse comprise. ⚠️ Ligne PARTAGÉE avec
+                `app/home.tsx` : toute retouche se fait des deux côtés.
+
+                L'état AFFILIÉ garde ses deux lignes : ce n'est plus une
+                proposition mais un état, « 12 prestataires dans votre réseau »
+                n'a pas à se couper sur le mot « réseau ». */}
+            <Text
+              variant="body"
+              color={Colors.textSecondary}
+              numberOfLines={isAffiliate ? 2 : 1}
+            >
+              {isAffiliate
+                ? '12 prestataires dans votre réseau'
+                : 'Et si vous deveniez un affilié réseau ?'}
+            </Text>
+          </View>
+          <Icon name="chevronRight" size={18} color={Colors.textTertiary} />
+        </TouchableOpacity>
+
+        {/* « Devenir prestataire » descend au TEXTE-LIEN (14 septembre 2026).
+            Testé sur planches contre une carte pleine et une carte détourée,
+            à empreinte égale ; c'est la forme la plus légère qui a été retenue.
+
+            **Le poids suit la fréquence de la décision, pas l'importance de la
+            rubrique.** Devenir prestataire est une décision unique et lourde :
+            on ne la prend pas deux fois, et on ne la prend pas parce qu'une
+            carte l'a rappelée — elle se gagne par la TROUVABILITÉ au moment où
+            l'idée vient. L'Affiliation, elle, se gagne par la répétition. Deux
+            cartes jumelles donnaient à la décision rare le poids de la
+            proposition récurrente ; le lien rend l'écart à sa vraie mesure.
+
+            `Button variant="link"` du système, jamais un `Text` bleu fait main :
+            il porte la typo `buttonMdLink` (15/20 Medium — le lien se lit comme
+            du texte, pas comme un plein) et l'opacité 0,55 au pressé.
+
+            ⚠️ Le sous-titre s'en va avec la carte — un lien n'en porte pas. La
+            mention « Fiw Pro » ne survit donc plus que dans l'alerte au tap,
+            juste en dessous : c'est elle, désormais, qui prévient le Client
+            qu'il s'agit d'une AUTRE application. Ne pas l'alléger. */}
+        <Button
+          label="Devenir prestataire"
+          variant="link"
+          onPress={onBecomePro}
+          style={styles.proLink}
+        />
       </ScrollView>
     </View>
   );
@@ -296,41 +353,65 @@ const styles = StyleSheet.create({
   row: { paddingHorizontal: 20 },
   trailingGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 
-  // Bannière « Gagnez de l'argent avec Fiw ! ».
-  bannerWrap: { marginBottom: 28 },
-  earnBanner: {
+  // ── Le bloc du pied ────────────────────────────────────────────────────
+  // C'est `promoCard` de l'accueil, repris À L'IDENTIQUE — pas « inspiré de ».
+  // Rayon, fond, paddings, gouttière, vignette, gap du texte, couleur du
+  // chevron : tout vient de `home.tsx`. Seul le CONTENU du sous-titre change,
+  // l'accueil posant la question (« Et si vous deveniez un affilié réseau ? »)
+  // là où le Menu donne le chiffre.
+  //
+  // **Pourquoi à l'identique et non « adapté ».** C'est la MÊME proposition sur
+  // deux écrans. Un habitué qui la reconnaît du premier coup d'œil n'a pas à
+  // relire ; deux variantes proches auraient coûté cette reconnaissance sans
+  // rien apporter. Corollaire de tenue : toute retouche ici se fait des deux
+  // côtés, sinon les deux bannières se remettent à diverger.
+  //
+  // ⚠️ Rayon `Radii.card` (20) et non `lg` (16), alors que `card` est écrit
+  // « cartes de FEUILLE » et que le Menu est une page. Écart assumé
+  // (14 septembre 2026) : l'identité visuelle entre les deux écrans passe
+  // devant la cohérence de rayon entre les blocs d'une même page. C'est le seul
+  // rayon de 20 de cette page.
+  //
+  // AUCUN LISERÉ — comme `promoCard`. La règle « jamais un `subtle` sans son
+  // liseré » a pour raison écrite qu'il se fondrait sur le gris `bg` ; la page
+  // est blanche, et `blue100` y tient seul.
+  promoCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: Colors.primary,
-    borderRadius: Radii.lg,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
+    borderRadius: Radii.card,
+    backgroundColor: Colors.blue100,
+    paddingLeft: 6,
+    paddingRight: 14,
+    paddingVertical: 6,
+    // N'existe pas sur l'accueil : l'air qui sépare le bloc du lien en dessous.
+    // 20 (`Spacing[5]`) et non 10 — le lien n'est pas la suite du bloc, c'est
+    // l'autre proposition. À 10 il se lisait comme une légende de la bannière.
+    // Son propre `linkBox` ajoute 4, l'écart optique est donc de 24.
+    marginBottom: 20,
   },
-  earnIcon: {
-    width: 36, height: 36, borderRadius: 18,
+  promoTile: {
+    width: PROMO_TILE, height: PROMO_TILE,
+    borderRadius: Radii.md,
     backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
   },
-  earnText: { flex: 1 },
-  // Le corps de la bannière respire un peu moins que le titre : deux lignes
-  // blanches collées se liraient comme un pavé.
-  earnBody: { marginTop: 3, lineHeight: 15, opacity: 0.92 },
-  bannerClose: {
+  // Position du carré NON pivoté : la rotation RN se fait autour du centre, on
+  // vise donc le centre (25.52 ; 40.71) relevé sur la maquette.
+  promoIllo: {
     position: 'absolute',
-    top: -8, right: -8,
-    width: 28, height: 28, borderRadius: 14,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: Strokes.thin,
-    borderColor: Colors.blue100,
+    left: -0.48, top: 8.71,
+    width: 52, height: 64,
+    transform: [{ rotate: '30deg' }],
   },
+  promoText: { flex: 1, gap: 3, overflow: 'hidden' },
+  // Le lien se cale au centre et ne prend que la largeur de son libellé : une
+  // action discrète n'a pas à offrir toute la largeur en zone de frappe.
+  proLink: { alignSelf: 'center' },
 
-  // Interrupteur de démo : flotte au-dessus de la zone d'argent, aligné sur son
-  // bord droit (la gouttière de page).
-  demoRow: { alignItems: 'flex-end', marginBottom: 10 },
+  // Interrupteur de démo : posé dans le slot droit de l'en-tête. Il n'a plus de
+  // conteneur à lui — c'est `ScreenHeader` qui l'aligne, et le titre en `flex: 1`
+  // lui laisse sa largeur naturelle.
   demoChip: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: Colors.surface,
