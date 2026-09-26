@@ -74,7 +74,7 @@ export default function CompteScreen() {
             pas de taxonomie, et les titres répétaient le nom de leurs rangées. */}
         <List style_="plat" bleed={20}>
           {/* Le portrait (avatar + nom + téléphone) a quitté cet écran : il vit
-              une fois, en tête du Menu, la page d'atterrissage où il
+              une fois, en tête du Menu, la surface d'atterrissage où il
               confirme de qui on parle. Ici il n'était qu'une PORTE parmi cinq,
               et la seule à ne pas être une rangée — alors qu'il ouvre `profil`
               comme « Moyens de paiement » ouvre `paiement`. Il redevient donc

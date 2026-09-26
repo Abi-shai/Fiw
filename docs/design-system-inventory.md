@@ -6130,3 +6130,81 @@ Trois tableaux, tous construits d'instances réelles du design system.
 ## État
 
 `npx tsc --noEmit` propre.
+
+---
+
+# Partie LXXV — Le Menu redevient un tiroir, et pourquoi (26 septembre 2026)
+
+**Fusion de `origin/main` dans la branche. Deux travaux justes séparément — la
+passe d'identité de mouvement ici, la conversion du tiroir en page là-bas — dont
+la rencontre révèle un trou.**
+
+## Ce que la fusion a mis au jour
+
+Le tiroir de menu portait l'asymétrie de l'identité en propre : ouverture
+`container-morph` + `Hold / Anchor`, fermeture `container-exit`. « Un tiroir
+qu'on referme dégage la place tout de suite, il ne se retire pas avec la même
+componction qu'il a mise à venir. »
+
+Devenu la page `app/menu` le 4 septembre, il l'a perdue — et **la pile ne peut
+pas la lui rendre**. `native-stack` n'expose ni courbe ni durée par direction ;
+son `animationDuration` est **iOS seulement** et ne couvre même pas
+`slide_from_right`. Le constat déborde le Menu : la recette « Transitions de
+page · Primary Ease · 300 ms » de la planche n'est **appliquée nulle part**, et
+la pile est le seul mouvement du produit qui échappe à l'identité.
+
+## La décision
+
+**Le Menu redevient un tiroir** (`components/MenuDrawer.tsx`), et `app/menu.tsx`
+est supprimé avec sa route.
+
+⚠️ **Le contenant seul change.** Tout ce que la page avait gagné est porté dans
+le tiroir : la grammaire de rangées (`List style_="plat"` + `ListRow`, et non la
+rangée maison d'origine à gouttière 24), le résumé sous chaque porte, l'ordre
+Bolt, le portrait en tête, la zone « Gagner de l'argent », et la copie de
+commission corrigée par la réunion du 30 août — 2 % sur les courses des
+**Prestataires** inscrits avec le code.
+
+Le seul câblage qui diffère : une porte **ferme le tiroir avant** de pousser sa
+route, sinon il resterait ouvert derrière la page qui arrive.
+
+## La règle qu'on en tire
+
+**Le contenant se choisit aussi sur le mouvement, pas seulement sur la grammaire
+de son contenu.** La conversion en page était juste côté grammaire — et elle l'est
+restée, puisque le tiroir a gardé `List style_="plat"`. Ce qui manquait à la
+décision, c'est le prix en mouvement. Une surface qui doit **s'installer puis
+être renvoyée** est un conteneur, et un conteneur vit dans la page, pas dans la
+pile.
+
+L'autre sortie existait : passer la pile au navigateur JS
+(`@react-navigation/stack`, dont le `transitionSpec` distingue `open` et
+`close`), ce qui donnerait l'identité à **toutes** les transitions de page.
+Écartée pour l'instant — une dépendance de plus et l'abandon des transitions
+natives de plateforme, retour prédictif d'Android compris, pour un prototype qui
+part en test utilisateur.
+
+## Les documents, recousus
+
+`MenuDrawer.tsx` était cité par **six** documents ; main n'en avait mis à jour
+que deux. Les six sont désormais justes : `style-guide.md` (paire fond+liseré,
+réglages à plat, gouttière de listing, niveau de voile, les deux 200 ms,
+Transitions & navigation), `components/Scrim.tsx`, `components/Callout.tsx`,
+`benchmark-compte-mobbin.md` (dont le renvoi D3 « à documenter au câblage », qui
+est fait), et `adr/0008`. Aucun ne pointe plus vers un fichier qui n'existe pas.
+
+## Ce qui reste ouvert
+
+- **La transition de pile reste hors identité.** Écrit dans le style guide, non
+  tranché — le Menu n'est simplement plus dessus.
+- **L'ombre du panneau est un écart au DS**, hérité et signalé dans le code :
+  aucun jeton n'est orienté (`shadow-float` est diffuse, `shadow-sheet` monte).
+  Un `shadow-side` serait à poser dans la planche le jour d'un deuxième élément
+  latéral.
+- **La zone « Gagner de l'argent » n'a toujours pas son traitement** : deux
+  rangées grises, exactement ce que la décision voulait éviter.
+- **Rien n'a été vu tourner.**
+
+## État
+
+`npx tsc --noEmit` propre.

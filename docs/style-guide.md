@@ -60,7 +60,7 @@
 > Valeurs reprises de la piste **B** de la planche « Devenir prestataire ».
 
 > **Paire fond + liseré.** Fond `subtle` + liseré au palier **`100`** (le clair —
-> **pas** le plein), motif de la carte « Devenir prestataire » (page `app/menu`). Ne
+> **pas** le plein), motif de la carte « Devenir prestataire » (`MenuDrawer`). Ne
 > jamais poser un `subtle` sans son liseré : seul, il se fondrait sur le gris
 > `color-bg`. Le **plein** porte les accents — pastille pleine (carte sidebar) ou
 > glyphe d'icône (`Callout`).
@@ -546,7 +546,7 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > Donc : **les écrans de réglages sont à plat sur fond blanc** (`color-surface`),
 > rangées séparées par un filet 1 px `color-border` de bord à bord, sections
 > séparées par un label en capitales et de l'air. C'est la géométrie déjà retenue
-> pour la **page Menu** (`app/menu`) — même nature de liste, même traitement — et le
+> pour le **Menu** (`MenuDrawer`) — même nature de liste, même traitement — et le
 > contraste gris-sur-blanc résiste mieux à une lecture en plein soleil que le
 > gris-sur-gris d'une carte posée sur `color-bg`.
 >
@@ -560,6 +560,13 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > « Paramètres » quelques heures le même jour, le temps de voir que ce nom
 > désignait une rubrique qu'elle ne contient pas — les réglages vivent un cran
 > plus bas, dans « Mon compte & Sécurité »._
+>
+> _Amendement du 26 septembre 2026 : le Menu **redevient un tiroir**
+> (`components/MenuDrawer.tsx`), et `app/menu.tsx` est supprimé. Rien de ce qui
+> précède ne change — la grammaire de rangées, les résumés, l'ordre des portes et
+> le nom « Menu » ont été portés tels quels dans le tiroir, qui passe lui aussi
+> par `List style_="plat"` + `ListRow`. **Seul le contenant change, et pour une
+> raison de mouvement** : cf. § Transitions & navigation._
 >
 > ⚠️ **Précision sur le benchmark.** `benchmark-compte-mobbin.md` décrit la carte de
 > réglages comme le « motif unanime » de Bolt / Careem / Réglages iOS. Cette
@@ -642,9 +649,11 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > de la maquette, qui collait encore ses rangées, a été aligné le même jour.
 > Exception assumée jusqu'au 4 septembre 2026 : le tiroir de menu gardait son
 > rythme dense à 14, n'étant pas une liste de `ListRow` mais la sidebar, ses
-> filets séparant des GROUPES. **L'exception est levée** — le tiroir est devenu
-> la page `app/menu`, qui passe par `List style_="plat"` et prend donc les 8
-> comme le reste. Il ne reste aucune liste hors de la règle.)_
+> filets séparant des GROUPES. **L'exception est levée** — le Menu passe par
+> `List style_="plat"` et prend donc les 8 comme le reste. Elle l'est restée
+> quand il est redevenu un tiroir le 26 septembre : ce qui l'a levée est sa
+> grammaire de rangées, pas son contenant. Il ne reste aucune liste hors de la
+> règle.)_
 
 > **Le filet d'une liste en feuille file d'un bord à l'autre.** Une liste posée
 > dans une `BottomSheet` sépare ses rangées d'un filet **pleine largeur**
@@ -845,11 +854,9 @@ deux modales Livraison ont été alignées et le code a suivi.)_
 >
 > **Une feuille à position unique** — modale, tiroir, feuille figée — n'a aucun
 > cran à suivre : elle prend le **niveau nommé** qui lui correspond. Une modale
-> mesure 44 à 47 % dans la maquette, donc `half` (`BottomSheet`) ; une feuille
-> figée haute prend `full` (`transport/configure`). Un tiroir, qui couvre 82 % de
-> la largeur, prendrait `full` — la règle le prévoit toujours, mais le produit
-> n'en a plus : le tiroir de menu est devenu une page le 4 septembre 2026, et une
-> page n'a pas de voile. Le nombre de crans ne suffit pas à choisir
+> mesure 44 à 47 % dans la maquette, donc `half` (`BottomSheet`) ; un tiroir
+> couvre 82 % de la largeur, donc `full` (`MenuDrawer`) ; une feuille figée haute
+> prend `full` (`transport/configure`). Le nombre de crans ne suffit pas à choisir
 > le niveau, d'où deux écritures et non une abstraction de plus :
 > `sheetScrimOpacity(ty, snaps, offscreen)` pour les feuilles à trois crans, une
 > interpolation en clair vers `ScrimLevels.*` pour les autres.
@@ -1200,8 +1207,8 @@ nom du jeton qui dit lequel on est en train d'écrire.
 n'est pas une nuance de la planche, c'est sa mécanique principale.
 
 - `BottomSheet` : ouverture `container-morph`, fermeture `container-exit`.
-- `BottomSheet` modal, `Sheet`, `Scrim` : même couple, partout où une surface
-  s'installe puis se retire.
+- `MenuDrawer` : idem — et sa fermeture n'est **pas** sa fenêtre d'ouverture jouée
+  à l'envers.
 - `useSnapSheet`, snap programmatique : la **direction** tranche. La feuille monte
   → elle s'installe (`container-morph`, avec son maintien de 50) ; elle descend →
   elle rend la place (`container-exit`, sans maintien). Le sens suffit, ce qui
@@ -1235,20 +1242,34 @@ Tout passage **d'une page à une autre** (nouvelle route) utilise la transition 
 > Ease · 300 ms » de la planche n'est **appliquée nulle part** — elle décrit une
 > intention que la pile native ne sait pas recevoir.
 >
-> **Question ouverte, et elle a un coût des deux côtés.** Le tiroir de menu
-> portait l'asymétrie en propre — ouverture `container-morph` + `Hold / Anchor`,
+> **Corollaire tranché le 26 septembre 2026 : ce qui a besoin de l'asymétrie ne
+> devient pas une page.** Le Menu l'a appris en aller-retour. Tiroir, il portait
+> l'asymétrie en propre — ouverture `container-morph` + `Hold / Anchor`,
 > fermeture `container-exit`, « un tiroir qu'on referme dégage la place tout de
 > suite, il ne se retire pas avec la même componction qu'il a mise à venir ».
-> En devenant la page `app/menu` le 4 septembre 2026, il a perdu ce mouvement :
-> la pile native ne peut pas le rejouer. Le récupérer — pour cette page comme
-> pour toutes les autres — demande de passer la pile au navigateur **JS**
+> Devenu la page `app/menu` le 4 septembre, il l'a perdue : la pile native ne
+> sait pas la rejouer. Il **redevient un tiroir**, en gardant tout le contenu
+> gagné entre-temps — les résumés de portes, l'ordre, le portrait, la zone
+> « Gagner de l'argent ».
+>
+> La leçon n'est pas « le tiroir est mieux ». C'est que **le contenant se choisit
+> aussi sur le mouvement**, pas seulement sur la grammaire de son contenu : la
+> conversion en page était juste côté grammaire — et elle l'est restée, puisque
+> le tiroir a gardé `List style_="plat"` — mais le prix en mouvement n'avait pas
+> été posé sur la table. Une surface qui doit s'installer puis être renvoyée est
+> un **conteneur**, et un conteneur vit dans la page, pas dans la pile.
+>
+> L'autre sortie existait : passer la pile au navigateur **JS**
 > (`@react-navigation/stack`, dont le `transitionSpec` distingue `open` et
-> `close`), donc une dépendance de plus et l'abandon des transitions natives de
-> plateforme, retour prédictif d'Android compris. **Non tranché.**
+> `close`) donnerait l'identité à **toutes** les transitions de page. Écartée
+> pour l'instant — une dépendance de plus et l'abandon des transitions natives
+> de plateforme, retour prédictif d'Android compris, pour un prototype qui part
+> en test utilisateur. Le trou décrit plus haut reste donc ouvert : il est réel,
+> il n'est simplement plus sur le chemin du Menu.
 >
 > _(Écrit le 26 septembre 2026, en fusionnant la passe d'identité de mouvement
-> avec la conversion du tiroir en page. Les deux travaux sont justes séparément ;
-> c'est leur rencontre qui révèle le trou.)_
+> avec la conversion du tiroir en page. Les deux travaux étaient justes
+> séparément ; c'est leur rencontre qui a révélé le trou.)_
 
 ### Intra-page (états & feuilles)
 

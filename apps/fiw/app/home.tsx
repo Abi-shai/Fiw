@@ -12,6 +12,7 @@ import { useScreenHeight } from '@/hooks/useScreenHeight';
 import * as Haptics from 'expo-haptics';
 import LeafletMap, { LeafletMapHandle } from '@/components/LeafletMap';
 import { useKeyboardState } from 'react-native-keyboard-controller';
+import MenuDrawer from '@/components/MenuDrawer';
 import IconButton from '@/components/IconButton';
 import ListRow from '@/components/ListRow';
 import Medallion from '@/components/Medallion';
@@ -979,6 +980,7 @@ export default function HomeScreen() {
 
   // Mode de l'écran : grille de services ↔ recherche d'itinéraire (morph
   // in-place) ↔ choix d'un point sur la carte (pin fixe, carte mobile dessous).
+  const [menuOpen, setMenuOpen] = useState(false);
   // Bannière Affilié refermée : le proto ne la persiste pas d'un lancement à l'autre.
   const [promoDismissed, setPromoDismissed] = useState(false);
   const [mode, setMode] = useState<'services' | 'search' | 'mappick'>('services');
@@ -1072,17 +1074,19 @@ export default function HomeScreen() {
   const modeRef = useRef(mode);
   modeRef.current = mode;
 
-  // Zone de bord gauche : le swipe gauche → droite ouvrait le drawer ; il pousse
-  // maintenant la page Menu. Le geste est conservé — c'est le raccourci que le
-  // Client connaît — mais il ne suit plus le doigt : il déclenche la transition
-  // de pile, comme le bouton. Sur la page ouverte, c'est le geste de bord
-  // inverse qui ramène ici (cf. style-guide, « Transitions & navigation »).
+  const menuOpenRef = useRef(menuOpen);
+  menuOpenRef.current = menuOpen;
+  const openMenu = useRef(() => setMenuOpen(true));
+
+  // Zone de bord gauche : swipe gauche → droite pour ouvrir le tiroir. La garde
+  // sur `menuOpenRef` évite qu'un geste vers la droite, tiroir déjà ouvert, ne
+  // relance une ouverture — c'est le tiroir lui-même qui gère alors le doigt.
   const edgePan = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => false,
     onMoveShouldSetPanResponder: (_, g) =>
-      g.dx > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      !menuOpenRef.current && g.dx > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
     onPanResponderRelease: (_, g) => {
-      if (g.dx > 20) router.push('/menu');
+      if (g.dx > 20) openMenu.current();
     },
   })).current;
 
@@ -1265,7 +1269,7 @@ export default function HomeScreen() {
           style={[styles.topRow, { paddingTop: insets.top + 8, opacity: controlsFade }]}
           pointerEvents="box-none"
         >
-          <IconButton name="menu" onPress={() => router.push('/menu')} />
+          <IconButton name="menu" onPress={() => setMenuOpen(true)} />
         </Animated.View>
       )}
 
@@ -1464,6 +1468,9 @@ export default function HomeScreen() {
           </>
         ) : null}
       </Animated.View>
+
+      {/* Tiroir latéral — au-dessus de tout */}
+      <MenuDrawer visible={menuOpen} onClose={() => setMenuOpen(false)} />
     </View>
   );
 }

@@ -42,14 +42,9 @@ const LEVELS = [ScrimLevels.full, ScrimLevels.half, ScrimLevels.collapsed];
  * Une feuille à **position unique** — modale, tiroir, feuille figée — n'a pas de
  * cran à suivre : elle interpole vers le niveau nommé qui lui correspond
  * (`ScrimLevels.half` pour une modale, `ScrimLevels.full` pour un tiroir ou une
- * feuille figée haute), cf. `BottomSheet` et `transport/configure`. Le nombre de
- * crans ne suffit pas à choisir le niveau, d'où deux écritures et non une
- * abstraction de plus.
- *
- * _(Le troisième exemple était le tiroir de menu, qui portait `full` parce qu'il
- * couvrait 82 % de la largeur. Il est devenu la page `app/menu` le 4 septembre
- * 2026 : une page n'a pas de voile. La règle est inchangée — c'est un exemple
- * qu'elle a perdu, pas un cas.)_
+ * feuille figée haute), cf. `BottomSheet`, `MenuDrawer` et `transport/configure`.
+ * Le nombre de crans ne suffit pas à choisir le niveau, d'où deux écritures et
+ * non une abstraction de plus.
  */
 export function sheetScrimOpacity(
   ty: Animated.Value,

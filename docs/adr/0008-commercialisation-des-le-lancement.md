@@ -48,9 +48,8 @@ départ**. Il n'y a pas de phase pilote à paiement différé.
 - Docs recalés : `feature-list.md`, `conceptual-model.md`, `breadboard-affilie-reseau.md`,
   `MEMORY.md`.
 - Proto recalé : `constants/affilie.ts` (`AffilieState = 'actif' | 'gele'`),
-  `app/affilie/{dashboard,conditions}.tsx`, le tiroir de menu — devenu la page
-  `app/menu.tsx` le 4 septembre 2026, qui porte toujours le toggle démo à
-  2 états (note « Retrait bientôt disponible » supprimée).
+  `app/affilie/{dashboard,conditions}.tsx`, `components/MenuDrawer.tsx` (toggle démo
+  à 2 états, note « Retrait bientôt disponible » supprimée).
 - **Seuil minimum de retrait** : le proto utilise **1 000 F CFA** (convention de
   conception, cohérente sur tout le proto) ; la valeur définitive reste à confirmer
   (Blaise & Daniel). Non tranchée par cet ADR.

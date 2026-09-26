@@ -97,7 +97,6 @@ export default function RootLayout() {
           <Stack.Screen name="index" />
           <Stack.Screen name="otp" />
           <Stack.Screen name="home" />
-          <Stack.Screen name="menu" />
           <Stack.Screen name="transport/configure" />
           <Stack.Screen name="transport/searching" />
           <Stack.Screen name="transport/course-active" />
