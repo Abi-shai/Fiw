@@ -1,12 +1,19 @@
 # Benchmark Mobbin — Mon compte & Sécurité (Fiw Client)
 
 > Passe UX/UI menée le 14 juillet 2026 avant la conception de l'écran atteint en
-> tapant l'**en-tête profil du drawer** (`apps/fiw/components/MenuDrawer.tsx`).
+> tapant l'**en-tête profil du drawer** (alors `apps/fiw/components/MenuDrawer.tsx`).
 > Objectif de la recherche : **quelles informations le Client doit pouvoir
 > atteindre en tapant sur son profil**. Point d'entrée aujourd'hui tappable mais
 > sans destination. Le sitemap (§8) rattache l'en-tête profil ET l'item « Mon
 > compte & sécurité » à la **même section 7** — donc le profil ouvre le **hub
 > « Mon compte & Sécurité »**. Le benchmark valide/complète la liste du §7.
+>
+> _**Amendement du 26 septembre 2026 — le drawer n'existe plus.** Le tiroir
+> latéral est devenu la page `app/menu` le 4 septembre 2026, et
+> `components/MenuDrawer.tsx` est supprimé. Ce document reste le relevé de
+> juillet et n'est pas réécrit : ses constats et ses décisions Dx valent
+> toujours, seul le support a changé. Les renvois au fichier ont été repointés
+> vers ce qui les porte aujourd'hui._
 
 ## Apps étudiées
 
@@ -162,8 +169,10 @@ aujourd'hui `SAVED_PLACES` (`data.ts`) est codé en dur, éditable nulle part. T
 ET la rangée « Mon compte & sécurité » mènent au même écran — **redondance
 volontaire**, pas un oubli : elle guide les Clients qui suivent les **mots** plutôt
 que l'affordance (invisible) de l'avatar tappable — enjeu d'**accessibilité** pour
-l'audience Dakar. À documenter par un commentaire dans `MenuDrawer.tsx` au câblage,
-pour qu'un futur dev ne « nettoie » pas la rangée.
+l'audience Dakar. À documenter par un commentaire au câblage, pour qu'un futur
+dev ne « nettoie » pas la rangée. _(Fait : le commentaire vit dans
+`app/menu.tsx`, au-dessus de `goCompte`. La redondance a survécu à la conversion
+du tiroir en page — deux entrées mènent toujours au hub Compte.)_
 
 **D4 — « Devenir prestataire » inclus, épinglé en pied de sidebar, style distinct.**
 Élément séparé de la liste (couleur différente, motif [Bolt](https://mobbin.com/screens/40d88928-1105-4207-a140-22d601cdd548) /
@@ -316,7 +325,8 @@ pour loger « Retirer » : deux affordances invisibles de plus. « Retirer » et
 d'écran : le **bleu marque un état** (ici : la carte par défaut), le **jaune appelle
 l'attention**. Un encart bleu serait entré en concurrence avec la carte élue qu'il
 surplombe. Il reprend la paire de la carte **« Devenir prestataire »** (D4,
-`MenuDrawer`) transposée en jaune : fond `brand-yellow-subtle` + liseré
+alors dans le tiroir — aujourd'hui une rangée de la zone « Gagner de l'argent »
+de `app/menu`) transposée en jaune : fond `brand-yellow-subtle` + liseré
 `brand-yellow-100` (le palier clair, pas le plein), **pastille `brand-yellow` à glyphe
 sombre**. Teintes **et structure** reprises de la **piste B** de la planche « Devenir
 prestataire » (P1), restée sans emploi depuis que la carte a été tranchée en bleu
@@ -395,7 +405,7 @@ lieu d'une absence de rangée. **Logos** tirés du registre partagé
 ## Décisions UI (design system)
 
 **Réutilisés tels quels** : `ScreenHeader`, `Avatar`, `Button` (4 variantes),
-`PlaceRow` / rangées d'item façon `MenuDrawer` (icône + label + sous-titre + chevron),
+`PlaceRow` / rangées d'item façon `ListRow` (icône + label + sous-titre + chevron),
 `Sheet`/`ChipGroup` si besoin, tokens couleur/typo existants.
 
 **Nouveaux composants candidats (à confirmer à la conception)** :
