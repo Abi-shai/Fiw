@@ -207,7 +207,7 @@ export default function LivraisonConfigureScreen() {
         tintWater
         declutter
         fitPadding={{ top: insets.top + 64, bottom: Math.round(SCREEN_H * 0.5), left: 56, right: 56 }}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
 
       <Animated.View

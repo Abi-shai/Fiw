@@ -76,7 +76,7 @@ export default function DashboardScreen() {
         center={DAKAR_CENTER}
         zoom={13}
         markers={[{ lat: DAKAR_CENTER.lat, lng: DAKAR_CENTER.lng, type: 'prestataire' }]}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
 
       <SafeAreaView style={styles.overlay} pointerEvents="box-none">

@@ -2,3 +2,7 @@ node_modules/
 .expo/
 dist/
 web-build/
+
+# Dossiers natifs — régénérés par prebuild (CNG)
+/ios
+/android

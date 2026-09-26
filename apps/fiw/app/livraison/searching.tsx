@@ -295,7 +295,7 @@ export default function LivraisonSearchingScreen() {
         declutter
         providers={providers}
         providerSprite={providerSprite}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
 
       <Animated.View style={[styles.mapScrim, { opacity: scrimFade }]} pointerEvents="none" />
@@ -488,8 +488,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   flex1: { flex: 1 },
 
-  mapScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: Colors.scrim },
-  mapCenterOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  mapScrim: { ...StyleSheet.absoluteFill, backgroundColor: Colors.scrim },
+  mapCenterOverlay: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   radarWrap: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
   ring: {
     position: 'absolute',

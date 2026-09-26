@@ -423,7 +423,7 @@ function IlloPanel({ art, anim }: { art: ServiceArt; anim: CardAnim }) {
           gardent leurs coordonnées absolues à l'intérieur. */}
       <Animated.View
         pointerEvents="none"
-        style={[StyleSheet.absoluteFillObject, {
+        style={[StyleSheet.absoluteFill, {
           opacity: fade(x.groupOp),
           transform: [
             { translateX: x.groupDrift.interpolate({ inputRange: [0, 1], outputRange: [0, art.exitDrift.x] }) },

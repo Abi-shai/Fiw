@@ -39,7 +39,7 @@ export default function ArrivedScreen() {
           { lat: PICKUP.lat, lng: PICKUP.lng, type: 'prestataire' },
           { lat: PICKUP.lat + 0.0003, lng: PICKUP.lng + 0.0003, type: 'client' },
         ]}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
 
       <SafeAreaView style={styles.overlay} pointerEvents="box-none">

@@ -30,7 +30,7 @@ export default function InProgressScreen() {
           { lat: MISSION_INCOMING.pickup.lat, lng: MISSION_INCOMING.pickup.lng, type: 'prestataire' },
           { lat: DEST.lat, lng: DEST.lng, type: 'destination' },
         ]}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
 
       <SafeAreaView style={styles.overlay} pointerEvents="box-none">

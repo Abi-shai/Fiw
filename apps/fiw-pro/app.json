@@ -7,11 +7,6 @@
     "scheme": "fiwpro",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#073D23"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.fiw.pro"
@@ -25,7 +20,16 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#073D23"
+        }
+      ],
+      "expo-status-bar"
     ]
   }
 }

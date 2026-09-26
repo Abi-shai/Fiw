@@ -256,7 +256,7 @@ export default function CourseActiveScreen() {
         tintWater
         declutter
         fitPadding={{ top: insets.top + 40, bottom: SHEET_MID_H, left: 48, right: 48 }}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
 
       {/* Retour à l'accueil — la Course continue, l'accueil la reprend en

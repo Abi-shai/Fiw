@@ -31,7 +31,7 @@ export default function NavigatingScreen() {
           { lat: PRESTA_START.lat, lng: PRESTA_START.lng, type: 'prestataire' },
           { lat: MISSION_INCOMING.pickup.lat, lng: MISSION_INCOMING.pickup.lng, type: 'client' },
         ]}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
 
       <SafeAreaView style={styles.overlay} pointerEvents="box-none">

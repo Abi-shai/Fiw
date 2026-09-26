@@ -161,7 +161,7 @@ export default function ConfigureScreen() {
         providers={providers}
         providerSprite={initialProviderSprite}
         fitPadding={{ top: insets.top + 64, bottom: (sheetH || 420) + 24, left: 56, right: 56 }}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
 
       {/* Contrôles flottants (retour + recentrage) juste au-dessus de la feuille. */}

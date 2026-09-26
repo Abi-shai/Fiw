@@ -30,7 +30,7 @@ export default function BrandSplash() {
 
 const styles = StyleSheet.create({
   root: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

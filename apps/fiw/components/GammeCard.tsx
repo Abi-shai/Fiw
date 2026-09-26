@@ -75,7 +75,7 @@ export default function GammeCard({
       onPress={onPress}
       activeOpacity={0.9}
     >
-      <Animated.View style={[StyleSheet.absoluteFillObject, styles.cardBg, { backgroundColor: cardBg }]} />
+      <Animated.View style={[StyleSheet.absoluteFill, styles.cardBg, { backgroundColor: cardBg }]} />
       <Animated.View style={[styles.content, { opacity: cardOpacity }]}>
         <Animated.View style={[styles.platform, { backgroundColor: platformBg, transform: [{ scale: platformScale }] }]}>
           <Image source={gammeIllustration(illu)} style={illoSize(illu)} resizeMode="contain" />
@@ -109,7 +109,7 @@ export default function GammeCard({
                 {fmt(price)} FCFA
               </Text>
             </Animated.View>
-            <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: progress }]}>
+            <Animated.View style={[StyleSheet.absoluteFill, { opacity: progress }]}>
               <Text variant="heading2Bold" align="center" style={styles.priceWidth} color={Colors.primaryInk}>
                 {fmt(price)} FCFA
               </Text>
