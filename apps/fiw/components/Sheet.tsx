@@ -213,7 +213,13 @@ export function GroupedSheet({
             edge.borderBottomRightRadius = 0;
             edge.paddingBottom = 16 + insets.bottom; // padding 16 de la maquette + zone sûre
           }
-          return React.cloneElement(child, { style: [child.props.style, edge] });
+          // Clé explicite : `flattenCards` déplie les fragments, et un enfant
+          // écrit littéralement dans un `<>…</>` n'en porte aucune. Rendus en
+          // tableau ici, ils déclencheraient l'avertissement de clé manquante et
+          // React les réconcilierait par position sans pouvoir les distinguer.
+          // La position EST l'identité d'une carte de feuille, d'où l'index en
+          // repli — on garde la clé d'origine quand l'écran en a posé une.
+          return React.cloneElement(child, { key: child.key ?? i, style: [child.props.style, edge] });
         })}
       </Animated.View>
 
