@@ -7,8 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import LeafletMap, { LeafletMapHandle } from '@/components/LeafletMap';
 import BottomSheet from '@/components/BottomSheet';
-import IconButton from '@/components/IconButton';
 import Scrim, { ScrimLevels } from '@/components/Scrim';
+import MapControls from '@/components/MapControls';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
 import Button from '@/components/Button';
@@ -193,13 +193,12 @@ export default function ConfigureScreen() {
           s'assombrit, les boutons restent nets. */}
       <Scrim opacity={scrimOpacity} />
 
-      {/* Contrôles flottants (retour + recentrage) juste au-dessus de la feuille. */}
-      {sheetH > 0 && (
-        <View style={[styles.mapControls, { bottom: sheetH + 12 }]} pointerEvents="box-none">
-          <IconButton name="back" onPress={() => router.back()} />
-          <IconButton name="navigate" onPress={() => mapRef.current?.recenter(mapCenter, 13)} />
-        </View>
-      )}
+      <MapControls
+        sheetH={sheetH}
+        translateY={ty}
+        onBack={() => router.back()}
+        onRecenter={() => mapRef.current?.recenter(mapCenter, 13)}
+      />
 
       <GroupedSheet
         translateY={ty}
@@ -319,14 +318,6 @@ export default function ConfigureScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   flex1: { flex: 1 },
-
-  mapControls: {
-    position: 'absolute',
-    left: 0, right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-  },
 
   // En-tête « Votre course » + fermeture.
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

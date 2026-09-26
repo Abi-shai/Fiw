@@ -6005,3 +6005,128 @@ que le code emploie. Deux champs sur trois ont hérité du placeholder du premie
 ## État
 
 `npx tsc --noEmit` propre.
+
+---
+
+# Partie LXXIII — Les contrôles de carte, enfin un composant (30 août 2026)
+
+**Signalement à l'écran, capture annotée à l'appui : la barre flottante posée
+au-dessus de la feuille n'existe que sur `transport/configure`, alors qu'elle
+devrait être là aussi pendant la course et pendant la livraison.**
+
+Exact, et l'inventaire est pire que le signalement :
+
+| Écran | Retour | Recentrage |
+|---|---|---|
+| `transport/configure` · `livraison/configure` | ✓ | ✓ |
+| `transport/searching` · `livraison/searching` | ✓ | **✗** |
+| **`course-active` · `livraison/suivi`** | **✗** | **✗** |
+
+Pendant une course et pendant une livraison, **on ne pouvait pas recentrer la carte
+du tout** — précisément les deux moments où la carte suit le véhicule et où on veut
+revenir sur sa propre position.
+
+## Pourquoi c'est arrivé
+
+Le motif était réimplémenté **quatre fois, de quatre façons** : `mapControls`
+ancré en `bottom`, `floatControls` posé en `top: -60` **dans** la feuille,
+`controls` réduit au seul retour, et le cadre animé de l'accueil.
+
+**Une chose qui n'est pas un composant finit par manquer quelque part sans que
+personne s'en aperçoive.** Il n'y avait rien à oublier — donc on a oublié.
+
+## `components/MapControls.tsx`
+
+Un seul composant : `sheetH` (il se pose 12 au-dessus de l'arête), `translateY`
+optionnel (il suit la feuille d'un cran à l'autre), `onBack` et `onRecenter`
+optionnels. Il ne rend rien tant que la feuille n'est pas mesurée — les poser
+avant serait les poser n'importe où.
+
+⚠️ **Frères de la feuille, jamais ses enfants.** C'est le seul point de conception
+non évident : `livraison/configure` les mettait **dans** la feuille en `top: -60`,
+ce qui les fait rogner sur Android dès que le parent a des coins arrondis — le
+même piège que la pastille de la bannière Affilié (Partie LXXI). Ancrés en `bottom`
+comme la feuille, les deux partagent un repère et le 12 tient sur les deux OS.
+
+## Appliqué aux six écrans
+
+`course-active` et `livraison/suivi` reçoivent le recentrage — et **pas** de
+retour : une course en cours ne se quitte pas en arrière. Les deux `searching`
+gagnent le recentrage qui leur manquait. Les deux `configure` passent au composant.
+
+Quatre `IconButton` importés directement et trois styles locaux disparaissent.
+
+## Ce qui reste ouvert
+
+- **L'accueil garde son propre cadre** (`recenterFrame`) : sa feuille fait toute la
+  hauteur de l'écran, elle n'a pas de `sheetH` mesurée, donc le `bottom: sheetH + 12`
+  du composant ne s'y applique pas. À unifier le jour où l'accueil passe à une
+  feuille mesurée.
+- **`compte/lieu`** a sa propre géométrie (carte plein écran, pas de feuille) —
+  laissé tel quel.
+- **Le composant n'est pas dans la maquette.** Il y existe en pièces (`IconButton`
+  variante `floating`) mais pas comme rangée. À poser côté Figma pour que les deux
+  côtés disent la même chose.
+- **Rien n'a été vu tourner.**
+
+## État
+
+`npx tsc --noEmit` propre.
+
+---
+
+# Partie LXXIV — Le retour à l'accueil, et l'exploration de la bannière (30 août 2026)
+
+## Le retour, complété
+
+`course-active` et `livraison/suivi` reçoivent le retour qui leur manquait encore.
+Il fait `router.replace('/home')` et **ne remonte pas la pile** : derrière, il y a
+la configuration et la recherche, des étapes déjà consommées où l'on ne veut pas
+retomber.
+
+Ce choix ouvre une question de produit qu'il fallait traiter : **si on peut revenir
+à l'accueil pendant une course, l'accueil doit le dire.**
+
+## L'exploration (page `Current riding exploration`)
+
+Trois tableaux, tous construits d'instances réelles du design system.
+
+1. **Course active — trois lectures de la même feuille** : l'ETA en titre · la
+   progression en tête · la carte d'abord au cran 50 %.
+2. **Course en cours, vue depuis l'accueil** : la carte en tête de feuille · une
+   bannière flottante · la course qui prend la feuille.
+3. **B explorée** : les six états de la bannière (Transport ×3, Livraison ×3), plus
+   l'écran Livraison et le cas « une course ET une livraison ».
+
+## Ce que l'exploration rapporte au système
+
+- ⚠️ **Le plafond de 85 % est la contrainte qui gouverne toutes les feuilles
+  actives.** Chaque piste a dû **payer** ce qu'elle ajoutait : la progression a
+  coûté le bloc véhicule, la course-en-tête a coûté les lieux récents. Une feuille
+  active ne se complète pas, elle s'arbitre.
+- ⚠️ **`Transport / En cours` porte un « N° de suivi » de LIVRAISON**
+  (`LIV-20260815-482`). Retiré dans les explorations, à corriger dans la variante.
+- ⚠️ **`StepProgress` est spécifique à la Livraison** : ses libellés (« Collecte »,
+  « Remis ») sont figés, il n'expose que l'axe `Étape`. L'employer en Transport
+  demande des propriétés de texte ou une variante.
+- **Au dernier jalon d'une livraison, le titre change de NATURE.** Ce n'est plus
+  une heure qu'on veut lire mais le **code de remise** — la bannière passe de
+  `heading1` à `codeCell`. C'est le seul état des six où la hiérarchie s'inverse,
+  et ça vaut d'être une règle le jour où la bannière entre au système.
+- **Seule la bannière flottante encaisse deux commandes simultanées.** Elles
+  s'empilent sur la carto sans toucher à la feuille — la carte-en-tête les
+  pousserait hors de l'écran, la course-qui-mène n'aurait pas de réponse. ⚠️ Deux
+  bannières coûtent tout de même ~200 de carto : au-delà de deux, il faudrait
+  autre chose.
+
+## Ce qui reste ouvert
+
+- **Rien de tout ça n'est décidé** : ce sont des pistes, pas une conclusion.
+- **La question de domaine n'est pas tranchée** : le produit autorise-t-il une
+  course ET une livraison en même temps ? L'écran existe, la règle non.
+- Aucun de ces composants n'est posé dans la maquette — l'exploration vit sur sa
+  page, elle n'a rien publié.
+
+## État
+
+`npx tsc --noEmit` propre.

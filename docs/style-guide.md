@@ -403,6 +403,38 @@ Tout élément posé **par-dessus le fond cartographique** (boutons flottants, b
 
 > Règle : ne jamais poser un élément interactif directement sur la carte sans **liseré + ombre**. Tout nouvel élément flottant réutilise `color-hairline` + `shadow-float`.
 
+### Les contrôles de carte au-dessus d'une feuille
+
+**Tout écran qui pose une feuille sur la carto porte des contrôles flottants**,
+via **`MapControls`** — retour à gauche, recentrage à droite, 12 au-dessus de
+l'arête de la feuille. Ce n'est pas une décoration d'écran : **le recentrage est
+la seule façon de revenir sur sa position** quand la carte a suivi le véhicule ou
+qu'on l'a fait glisser.
+
+| Écran | Retour | Recentrage |
+|---|---|---|
+| `configure` (Transport, Livraison) | ✓ | ✓ |
+| `searching` (Transport, Livraison) | ✓ (il annule la recherche) | ✓ |
+| **`course-active`, `livraison/suivi`** | **✗ — une course en cours ne se quitte pas en arrière** | ✓ |
+
+> ⚠️ **Les contrôles sont FRÈRES de la feuille, jamais ses enfants.** Un enfant
+> posé en `top` négatif déborde d'une vue à coins arrondis, et Android le rogne —
+> le même piège que la pastille de fermeture de la bannière Affilié. Ancrés en
+> `bottom` comme la feuille, les deux vivent dans le même repère et le décalage de
+> 12 tient sur les deux OS (§ Les deux OS, « un repère, pas deux »).
+>
+> Pour une feuille à crans, leur passer son `translateY` : ils la suivent d'un cran
+> à l'autre sans que l'écran recalcule quoi que ce soit.
+>
+> _(Composant écrit le 30 août 2026, sur signalement à l'écran. Le motif était
+> réimplémenté de **quatre** façons dans quatre écrans — ancré en `bottom`, posé en
+> `top: -60` dans la feuille, réduit au seul retour, et le cadre animé de
+> l'accueil. Conséquence : `course-active` et `livraison/suivi` n'en avaient
+> **aucun**, donc on ne pouvait pas recentrer la carte pendant une course ni
+> pendant une livraison. **Une chose qui n'est pas un composant finit par manquer
+> quelque part sans que personne s'en aperçoive.**)_
+
+
 ---
 
 ## Boutons

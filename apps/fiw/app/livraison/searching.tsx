@@ -10,8 +10,8 @@ import LeafletMap, { LeafletMapHandle } from '@/components/LeafletMap';
 import Text from '@/components/Text';
 import Button from '@/components/Button';
 import Icon from '@/components/Icon';
-import IconButton from '@/components/IconButton';
 import { GroupedSheet, SheetCard } from '@/components/Sheet';
+import MapControls from '@/components/MapControls';
 import AltSuggestCard from '@/components/AltSuggestCard';
 import AvatarStack from '@/components/AvatarStack';
 import InfoBanner from '@/components/InfoBanner';
@@ -351,10 +351,14 @@ export default function LivraisonSearchingScreen() {
         </View>
       )}
 
-      {phase === 'searching' && sheetH > 0 && (
-        <View style={[styles.controls, { bottom: sheetH + 12 }]} pointerEvents="box-none">
-          <IconButton name="back" onPress={cancel} />
-        </View>
+      {/* Contrôles carte : le retour annule la recherche, le recentrage ramène
+          sur le point de départ. Le recentrage MANQUAIT ici — cf. `MapControls`. */}
+      {phase === 'searching' && (
+        <MapControls
+          sheetH={sheetH}
+          onBack={cancel}
+          onRecenter={() => mapRef.current?.recenter(DAKAR_CENTER, 14)}
+        />
       )}
 
       {/* Interrupteur de démo (facilitateur) : cycle les 4 issues ; pendant
@@ -548,7 +552,6 @@ const styles = StyleSheet.create({
   bannerImg: { width: 44, height: 44 },
   bannerText: { flex: 1 },
 
-  controls: { position: 'absolute', left: 16 },
 
   head: { gap: 8 },
   actionCard: { gap: 12 },

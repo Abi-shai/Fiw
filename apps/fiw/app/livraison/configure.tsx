@@ -9,8 +9,8 @@ import { useScreenHeight } from '@/hooks/useScreenHeight';
 import * as Haptics from 'expo-haptics';
 import LeafletMap, { LeafletMapHandle } from '@/components/LeafletMap';
 import BottomSheet from '@/components/BottomSheet';
-import IconButton from '@/components/IconButton';
 import Field from '@/components/Field';
+import MapControls from '@/components/MapControls';
 import Scrim, { sheetScrimOpacity } from '@/components/Scrim';
 import Text from '@/components/Text';
 import Icon from '@/components/Icon';
@@ -218,16 +218,20 @@ export default function LivraisonConfigureScreen() {
           contrôles flottants (portés par la feuille) restent nets. */}
       <Scrim opacity={scrimOpacity} />
 
+      {/* Contrôles carte — FRÈRES de la feuille et non ses enfants : un enfant
+          posé en `top` négatif déborde d'une vue à coins arrondis, et Android le
+          rogne. Cf. `components/MapControls`. */}
+      <MapControls
+        sheetH={sheetH}
+        translateY={ty}
+        onBack={() => router.back()}
+        onRecenter={() => mapRef.current?.recenter(mapCenter, 13)}
+      />
+
       <Animated.View
         style={[groupedSheetSurface, styles.snapSheet, { transform: [{ translateY: ty }] }]}
         onLayout={(e) => setSheetH(e.nativeEvent.layout.height)}
       >
-        {/* Contrôles carte — suivent la feuille (visibles quand elle est rétractée). */}
-        <View style={styles.floatControls} pointerEvents="box-none">
-          <IconButton name="back" onPress={() => router.back()} />
-          <IconButton name="navigate" onPress={() => mapRef.current?.recenter(mapCenter, 13)} />
-        </View>
-
         {/* EN-TÊTE — zone de glissement (rétracte/étend la feuille). */}
         <View
           style={styles.headerZone}
@@ -499,15 +503,6 @@ const styles = StyleSheet.create({
   snapSheet: {
     position: 'absolute',
     left: 0, right: 0, bottom: 0,
-  },
-  // Contrôles flottants ancrés au-dessus de la feuille : ils la suivent quand
-  // elle se rétracte (hors écran quand elle est étendue).
-  floatControls: {
-    position: 'absolute',
-    top: -60, left: 0, right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
   },
   headerZone: { zIndex: 1 },
   handleFloat: {

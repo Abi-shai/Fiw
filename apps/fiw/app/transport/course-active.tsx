@@ -11,6 +11,7 @@ import { CARD_GAP, Handle, SHEET_LEVELS, SHEET_RADIUS, SheetCard, firstCardEdge,
 import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 import Scrim, { sheetScrimOpacity } from '@/components/Scrim';
+import MapControls from '@/components/MapControls';
 import Button from '@/components/Button';
 import BottomSheet from '@/components/BottomSheet';
 import ActionPill from '@/components/ActionPill';
@@ -238,6 +239,18 @@ export default function CourseActiveScreen() {
 
       {/* Voile — posé entre la carte et la feuille. */}
       <Scrim opacity={scrimOpacity} />
+
+      {/* Retour et recentrage. Le retour ne REMONTE PAS la pile — il ramène à
+          l'accueil (`replace`), parce que la pile derrière contient la
+          configuration et la recherche, des étapes déjà consommées où l'on ne veut
+          pas retomber. La course, elle, continue : l'accueil doit alors montrer
+          qu'elle est en cours. */}
+      <MapControls
+        sheetH={sheetH}
+        translateY={ty}
+        onBack={() => router.replace('/home')}
+        onRecenter={() => mapRef.current?.recenter(mapConfig.center, 15)}
+      />
 
       <Animated.View
         style={[groupedSheetSurface, styles.snapSheet, { transform: [{ translateY: ty }] }]}
