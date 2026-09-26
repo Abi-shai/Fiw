@@ -131,6 +131,11 @@ _Avoid_ : point, crédit fidélité
 Terme canonique interne désignant toute demande de service (transport, livraison, Yobanté, assistance, location). Affiché comme « Course » dans Fiw (Client) et dans la section Affilié Partenaire de Fiw Pro (l'Affilié Partenaire commande *pour* des clients — il se place côté demande, pas côté offre). Affiché comme « Mission » dans Fiw Pro pour le Prestataire qui exécute. Réservé aux APIs, base de données et échanges techniques. « Course » et « Mission » sont des étiquettes UI, pas des concepts distincts.
 _Avoid_ : course (terme interne), mission (terme interne), order, request
 
+**Commande en cours** :
+Commande engagée et pas encore close, du côté du Client. **Règle : une Commande en cours par service** (13 septembre 2026) — une Course et une Livraison peuvent tourner ensemble, jamais deux Courses ni deux Livraisons. Le plafond est donc de deux.
+Conséquence d'interface : **on ne refuse jamais une seconde Commande par un message**. La tuile du service occupé cesse d'être une porte vers la commande et devient une porte vers la Commande en cours — la règle se tient par la navigation, pas par un garde-fou (motif unanime du corpus : Careem réduit son menu à quatre entrées pendant la course, Waymo renomme son premier onglet « My trip » ; aucune app de la catégorie n'affiche « vous avez déjà une commande »).
+_Avoid_ : commande active, course en cours (étiquette UI du seul Transport — le terme de domaine couvre les deux services)
+
 **ÉvaluationClient** :
 Évaluation **individuelle** (1–5) donnée par le Prestataire sur le Client à la fin d'une Commande. L'acte individuel est **privé** : le Client ne voit jamais qui l'a noté ni combien. Seule sa moyenne — la **Note du Client** — lui est affichée. Distincte de l'**Avis** (Client → Prestataire).
 _Avoid_ : note client, rating client (ambigus : dire **ÉvaluationClient** pour l'acte, **Note du Client** pour la moyenne)

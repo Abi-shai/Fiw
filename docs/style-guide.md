@@ -361,9 +361,34 @@ Tout élément posé **par-dessus le fond cartographique** (boutons flottants, b
 | Élément | Liseré | Ombre |
 |---|---|---|
 | `IconButton` `floating` (menu, recentrage) | contour complet `color-hairline` | `shadow-float` |
+| `CommandeBanner` (Commande en cours, accueil) | contour complet `color-hairline` | `shadow-float` |
 | Bottom sheet (`sheetSurface`) | arête **haute** uniquement `color-hairline` | `shadow-sheet` (montante) |
 
 > Règle : ne jamais poser un élément interactif directement sur la carte sans **liseré + ombre**. Tout nouvel élément flottant réutilise `color-hairline` + `shadow-float`.
+
+### Une carte flottante prend `radius-lg`, pas `radius-card` (13 septembre 2026)
+
+`radius-card` (20) est le palier des cartes **posées dans une feuille** —
+`SheetCard`, `VehicleGroup`, `InfoBanner` : il épouse le rayon 28 de la feuille
+sans le répéter. Une carte qui flotte **sur la carto** n'a pas de feuille à
+épouser et reprend `radius-lg` (16), comme le bandeau de recherche de
+`transport/searching` et la `CommandeBanner` de l'accueil.
+
+### Les éléments flottants suivent le cran de la feuille
+
+Un élément posé sur la carto au-dessus d'une feuille déplaçable n'est **pas**
+ancré à l'écran : il suit la feuille, par la même valeur animée (`translateY:
+ty − décalage`). Sinon il traverse la feuille au premier glissement.
+
+Ils s'empilent alors dans un ordre fixe, du plus bas au plus haut : la feuille,
+puis la `CommandeBanner` (une par service en cours), puis le recentrage. Chaque
+étage retranche la hauteur de celui du dessous — d'où `BANNER_HEIGHT` exporté en
+constante **calculée** plutôt que mesurée au `onLayout` : une mesure vaut 0 au
+premier rendu et fait sauter le bloc.
+
+> ⚠️ Ils vivent **hors** de la feuille, jamais dedans : `sheetSurface` est en
+> `overflow: hidden` (c'est ce qui donne son arête au motif), donc tout enfant
+> volontairement hors bornes s'y ferait couper.
 
 ---
 

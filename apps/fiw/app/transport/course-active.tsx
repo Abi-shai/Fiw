@@ -19,7 +19,9 @@ import InfoBanner from '@/components/InfoBanner';
 import InfoRow from '@/components/InfoRow';
 import RouteCard from '@/components/RouteCard';
 import VehicleGroup from '@/components/VehicleGroup';
+import IconButton from '@/components/IconButton';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
+import { setCommande, clearCommande, heureEcheance } from '@/stores/commandes';
 import { Colors, Radii, Outfit } from '@/constants/tokens';
 import { PRESTATAIRE, PRESTATAIRE_MOTO, DAKAR_CENTER, WAIT_FEE_PER_MIN } from '@/constants/data';
 import { payIllustration, topviewSprite, type IlluKey } from '@/constants/illustrations';
@@ -46,6 +48,10 @@ const STEPS: { key: StepKey; duration: number }[] = [
 ];
 
 const PRESTATAIRE_START = { lat: 14.7100, lng: -17.4500 };
+// Heure d'arrivée annoncée par la bannière de l'accueil. Le proto la fige au
+// montage : la simulation compresse ~45 min de course en ~2 min, une heure
+// recalculée sur le minuteur dériverait de ce que montre la carte.
+const ARRIVEE_MINUTES = 25;
 // Délai gratuit COMPRESSÉ pour la démo (règle réelle : WAIT_GRACE_MINUTES).
 const GRACE_SECONDS_SIM = 3;
 
@@ -120,6 +126,28 @@ export default function CourseActiveScreen() {
 
   const mapRef = useRef<LeafletMapHandle>(null);
 
+  // La Course devient une Commande en cours : l'accueil la montre en bannière et
+  // ferme la tuile Course (une Commande par service, cf. `stores/commandes`).
+  // Elle est déclarée au montage et retirée à la clôture comme à l'annulation —
+  // c'est le seul endroit qui sait que la course existe.
+  useEffect(() => {
+    setCommande({
+      service: 'transport',
+      etat: 'Course en cours',
+      titre: `Arrivée vers ${heureEcheance(ARRIVEE_MINUTES)}`,
+      prestataire: prestataire.name,
+      vehicule: prestataire.vehicle,
+      href: '/transport/course-active',
+      params: params as Record<string, string>,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Quitter le suivi sans annuler : la Course continue, la bannière la porte.
+  // Sans cette porte l'écran est un cul-de-sac — le Client ne pourrait pas
+  // commander la Livraison que la règle l'autorise à mener en parallèle.
+  const retourAccueil = () => router.dismissTo('/home');
+
   // Actions de comm/sécurité — aucun numéro brut du prestataire n'est exposé.
   const onCall = () => router.push({ pathname: '/transport/call', params: { name: prestataire.name } });
   const onChat = () => router.push({ pathname: '/transport/chat', params: { name: prestataire.name } });
@@ -191,6 +219,7 @@ export default function CourseActiveScreen() {
 
   useEffect(() => {
     if (step.key === 'finished') {
+      clearCommande('transport'); // la Course est terminée : plus de bannière
       setTimeout(() => {
         router.replace({
           pathname: '/transport/cloture',
@@ -229,6 +258,13 @@ export default function CourseActiveScreen() {
         fitPadding={{ top: insets.top + 40, bottom: SHEET_MID_H, left: 48, right: 48 }}
         style={StyleSheet.absoluteFillObject}
       />
+
+      {/* Retour à l'accueil — la Course continue, l'accueil la reprend en
+          bannière. Même empreinte que le retour de `configure`/`searching` :
+          `IconButton floating`, gouttière de 16, sous la zone sûre. */}
+      <View style={[styles.topLeft, { top: insets.top + 8 }]} pointerEvents="box-none">
+        <IconButton name="back" onPress={retourAccueil} />
+      </View>
 
       <Animated.View
         style={[groupedSheetSurface, styles.snapSheet, { transform: [{ translateY: ty }] }]}
@@ -341,7 +377,7 @@ export default function CourseActiveScreen() {
               <Button
                 label="Annuler la course"
                 variant="destructive"
-                onPress={() => { close(); router.replace('/home'); }}
+                onPress={() => { clearCommande('transport'); close(); router.replace('/home'); }}
                 style={styles.cancelBtn}
               />
             </View>
@@ -372,6 +408,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   payIllu: { width: 24, height: 16 },
   flex1: { flex: 1 },
+  topLeft: { position: 'absolute', left: 16 },
 
   // Feuille de suivi à 3 crans — géométrie GroupedSheet (fond track, aucun padding
   // de feuille, cartes pleine largeur), HUG-CONTENT (pas de hauteur fixe → aucun

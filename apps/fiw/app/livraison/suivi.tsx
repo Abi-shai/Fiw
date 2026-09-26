@@ -21,7 +21,9 @@ import InfoBanner from '@/components/InfoBanner';
 import InfoRow from '@/components/InfoRow';
 import RouteCard from '@/components/RouteCard';
 import VehicleGroup from '@/components/VehicleGroup';
+import IconButton from '@/components/IconButton';
 import { useSnapSheet } from '@/hooks/useSnapSheet';
+import { setCommande, clearCommande, heureEcheance } from '@/stores/commandes';
 import { Colors, Radii, Outfit } from '@/constants/tokens';
 import { VELO_LIVREUR, MOTO_LIVREUR, DAKAR_CENTER, livraisonGamme } from '@/constants/data';
 import { payIllustration, topviewSprite } from '@/constants/illustrations';
@@ -84,6 +86,9 @@ const SEG_PLAN: Record<StepKey, { from: number; to: number } | null> = {
 };
 
 const PRESTATAIRE_START = { lat: 14.7100, lng: -17.4500 };
+// Heure de remise annoncée par la bannière de l'accueil — collecte puis trajet.
+// Figée au montage, comme côté Transport : la simulation compresse le temps.
+const REMISE_MINUTES = 40;
 const SCREEN_H = Dimensions.get('window').height;
 // Hauteur que la feuille occupe à son cran milieu — marge basse du cadrage
 // carte (le trajet doit tenir dans la zone visible, au-dessus de la feuille).
@@ -163,6 +168,24 @@ export default function LivraisonSuiviScreen() {
 
   const mapRef = useRef<LeafletMapHandle>(null);
 
+  // La Livraison devient une Commande en cours — même mécanique que la Course,
+  // et les deux peuvent tourner ensemble : la règle est « une par service ».
+  useEffect(() => {
+    setCommande({
+      service: 'livraison',
+      etat: 'Livraison en cours',
+      titre: `Remise vers ${heureEcheance(REMISE_MINUTES)}`,
+      prestataire: prestataire.name,
+      vehicule: prestataire.vehicle,
+      href: '/livraison/suivi',
+      params: params as Record<string, string>,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** Quitter le suivi sans annuler : le colis continue sa route. */
+  const retourAccueil = () => router.dismissTo('/home');
+
   const onCall = () => router.push({ pathname: '/transport/call', params: { name: prestataire.name } });
   const onChat = () => router.push({ pathname: '/transport/chat', params: { name: prestataire.name } });
   const onShare = () => {
@@ -240,6 +263,7 @@ export default function LivraisonSuiviScreen() {
 
   useEffect(() => {
     if (step.key === 'finished') {
+      clearCommande('livraison'); // colis remis : plus de bannière
       setTimeout(() => {
         router.replace({
           pathname: '/livraison/cloture',
@@ -288,6 +312,11 @@ export default function LivraisonSuiviScreen() {
         fitPadding={{ top: insets.top + 40, bottom: SHEET_MID_H, left: 48, right: 48 }}
         style={StyleSheet.absoluteFillObject}
       />
+
+      {/* Retour à l'accueil — la Livraison continue, l'accueil la reprend. */}
+      <View style={[styles.topLeft, { top: insets.top + 8 }]} pointerEvents="box-none">
+        <IconButton name="back" onPress={retourAccueil} />
+      </View>
 
       <Animated.View
         style={[groupedSheetSurface, styles.snapSheet, { transform: [{ translateY: ty }] }]}
@@ -419,7 +448,7 @@ export default function LivraisonSuiviScreen() {
               <Button
                 label="Annuler la livraison"
                 variant="destructive"
-                onPress={() => { close(); router.replace('/home'); }}
+                onPress={() => { clearCommande('livraison'); close(); router.replace('/home'); }}
                 style={styles.cancelBtn}
               />
             </View>
@@ -450,6 +479,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   payIllu: { width: 24, height: 16 },
   flex1: { flex: 1 },
+  topLeft: { position: 'absolute', left: 16 },
 
   snapSheet: {
     position: 'absolute',

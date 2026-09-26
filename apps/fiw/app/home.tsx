@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import LeafletMap, { LeafletMapHandle } from '@/components/LeafletMap';
 import MenuDrawer from '@/components/MenuDrawer';
+import CommandeBanner, { BANNER_HEIGHT, BANNER_GAP } from '@/components/CommandeBanner';
 import IconButton from '@/components/IconButton';
 import ListRow from '@/components/ListRow';
 import Medallion from '@/components/Medallion';
@@ -25,6 +26,7 @@ import { useSnapSheet, SHEET_SPRING } from '@/hooks/useSnapSheet';
 import { Colors, Radii, SectionLabel, Shadows, Strokes } from '@/constants/tokens';
 import { DAKAR_CENTER, SUGGESTIONS, RECENT_PLACES } from '@/constants/data';
 import { usePlaces } from '@/stores/places';
+import { useCommandes, orderedCommandes, type CommandeEnCours } from '@/stores/commandes';
 
 
 type Place = { name: string; detail: string; lat: number; lng: number };
@@ -502,10 +504,21 @@ function AffiliePromo({ onPress, onDismiss }: { onPress: () => void; onDismiss: 
 
 // Tuile de service : titre + chevron, panneau illustré, phrase en pied.
 // L'en-tête descend, le pied remonte, les deux en fondu — comme la maquette.
-function ServiceCard({ service, onPress, anim }: {
+//
+// `etat` : une Commande tourne sur CE service. Le pied cesse alors de vendre le
+// service (« Déplacez-vous en toute sécurité. ») pour dire ce qui se passe —
+// l'échéance en bleu de texte, le prestataire dessous. La tuile reste tappable :
+// la porte n'est pas fermée, elle mène ailleurs. On ne barre rien et on
+// n'affiche aucun message de refus — le corpus ne le fait nulle part.
+//
+// Le pied passe de 48 à 50 de haut (deux lignes de 20 + gouttière 2 + padding 8,
+// contre une phrase de deux lignes à 40 + 8) ; le panneau illustré, en `flex: 1`,
+// rend les 2 px. La tuile garde donc exactement ses 228.
+function ServiceCard({ service, onPress, anim, etat }: {
   service: Service;
   onPress: () => void;
   anim: CardAnim;
+  etat?: CommandeEnCours;
 }) {
   const art = SERVICE_ART[service.id];
   return (
@@ -536,9 +549,20 @@ function ServiceCard({ service, onPress, anim }: {
           }],
         }]}
       >
-        <Text variant="body" color={Colors.textSecondary} style={styles.cardBlurb} numberOfLines={2}>
-          {service.blurb}
-        </Text>
+        {etat ? (
+          <View style={styles.cardEtat}>
+            <Text variant="bodySemibold" color={Colors.primaryInk} numberOfLines={1}>
+              {etat.titre}
+            </Text>
+            <Text variant="body" color={Colors.textSecondary} numberOfLines={1}>
+              {etat.prestataire}
+            </Text>
+          </View>
+        ) : (
+          <Text variant="body" color={Colors.textSecondary} style={styles.cardBlurb} numberOfLines={2}>
+            {service.blurb}
+          </Text>
+        )}
       </Animated.View>
     </TouchableOpacity>
   );
@@ -587,6 +611,17 @@ export default function HomeScreen() {
   const [departureQuery, setDepartureQuery] = useState('');
   const [destinationQuery, setDestinationQuery] = useState('');
   const [kbHeight, setKbHeight] = useState(0);
+
+  // Commandes en cours — au plus une par service (cf. `stores/commandes`).
+  // Elles changent deux choses sur cet écran : la ou les bannières qui flottent
+  // au-dessus de la feuille, et le pied de la tuile du service occupé.
+  const commandes = useCommandes();
+  const actives = orderedCommandes(commandes);
+  // Hauteur du bloc de bannières — calculée, pas mesurée (cf. `BANNER_HEIGHT`).
+  // C'est elle qui pose le bloc au-dessus de l'arête de la feuille, et qui
+  // remonte le bouton de recentrage au-dessus du bloc.
+  const bannerLift = actives.length === 0 ? 0
+    : actives.length * BANNER_HEIGHT + (actives.length - 1) * BANNER_GAP + 12;
 
   // Paramètres reçus quand configure renvoie ici pour éditer l'itinéraire.
   const editParams = useLocalSearchParams<{
@@ -705,8 +740,21 @@ export default function HomeScreen() {
   // feuille, pas sur une tuile. On joue donc la sortie complète, puis on bascule
   // en mode recherche — l'inverse (basculer puis animer) démonterait les tuiles
   // avant qu'elles aient bougé.
+  // Reprise d'une Commande — la bannière et la tuile du service occupé mènent
+  // toutes les deux ici. Le suivi rejoue sa simulation depuis le début : le
+  // proto n'a pas de back, l'écran ne sait pas où en était la course.
+  const reprendre = (c: CommandeEnCours) => {
+    Haptics.selectionAsync();
+    router.push({ pathname: c.href, params: c.params });
+  };
+
   const exiting = useRef(false);
   const onService = (s: Service) => {
+    // Une Commande tourne déjà sur ce service : la tuile ne commande plus, elle
+    // ramène à la Commande en cours. C'est la règle « une par service » rendue
+    // par la navigation plutôt que par un message de refus.
+    const active = commandes[s.id];
+    if (active) { reprendre(active); return; }
     // « Réduire les animations » : on passe directement, sans jouer la sortie.
     if (reduceMotion.current) { openSearch(s.id); return; }
     // Un second tap pendant la sortie relancerait la timeline et empilerait deux
@@ -893,10 +941,33 @@ export default function HomeScreen() {
         <Animated.View
           style={[
             styles.recenterWrap,
-            { opacity: controlsFade, transform: [{ translateY: Animated.subtract(ty, 60) }] },
+            {
+              opacity: controlsFade,
+              // Le recentrage cède la place aux bannières : il remonte de la
+              // hauteur du bloc quand une Commande tourne.
+              transform: [{ translateY: Animated.subtract(ty, bannerLift + 60) }],
+            },
           ]}
         >
           <IconButton name="navigate" onPress={() => mapRef.current?.recenter(DAKAR_CENTER, 15)} />
+        </Animated.View>
+      )}
+
+      {/* Bannière(s) de Commande en cours — posées SUR la carto, au-dessus de
+          l'arête de la feuille, dont elles suivent le cran comme le bouton de
+          recentrage. Elles vivent HORS de la feuille : celle-ci recadre son
+          contenu (`overflow: hidden`), un enfant placé au-dessus s'y ferait
+          couper. La pile grandit vers le haut, Livraison au-dessus de Course. */}
+      {mode === 'services' && actives.length > 0 && (
+        <Animated.View
+          style={[
+            styles.bannerWrap,
+            { opacity: controlsFade, transform: [{ translateY: Animated.subtract(ty, bannerLift) }] },
+          ]}
+        >
+          {actives.map((c) => (
+            <CommandeBanner key={c.service} commande={c} onPress={() => reprendre(c)} />
+          ))}
         </Animated.View>
       )}
 
@@ -985,8 +1056,8 @@ export default function HomeScreen() {
 
                 {/* Les deux services ouverts, à parts égales */}
                 <View style={styles.grid}>
-                  <ServiceCard service={course} onPress={() => onService(course)} anim={cardAnims[0]} />
-                  <ServiceCard service={livraison} onPress={() => onService(livraison)} anim={cardAnims[1]} />
+                  <ServiceCard service={course} onPress={() => onService(course)} anim={cardAnims[0]} etat={commandes.transport} />
+                  <ServiceCard service={livraison} onPress={() => onService(livraison)} anim={cardAnims[1]} etat={commandes.livraison} />
                 </View>
               </SheetCard>
             </View>
@@ -1055,6 +1126,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     right: 16,
+  },
+  // Bloc de bannières : même gouttière que le reste des éléments flottants (16),
+  // empilées avec 8 d'écart. `top: 0` — c'est la translation animée qui le pose
+  // au-dessus de l'arête de la feuille, comme le recentrage.
+  bannerWrap: {
+    position: 'absolute',
+    top: 0, left: 16, right: 16,
+    gap: BANNER_GAP,
   },
   // Zone de glissement : la première carte. Elle porte le `zIndex` pour que la
   // poignée flottante passe au-dessus.
@@ -1159,6 +1238,10 @@ const styles = StyleSheet.create({
   // Pas de surcharge d'interligne : le style `body` porte 20, et le pied de 48
   // (padding 4 + 40) tient exactement deux lignes de 20.
   cardBlurb: { flex: 1 },
+  // Pied en état « Commande en cours » : deux lignes de 20 séparées de 2, soit
+  // 50 avec le padding de 4 du pied. Gouttière en dur — sous 4 px le style guide
+  // ne pose pas de jeton.
+  cardEtat: { flex: 1, gap: 2 },
 
   // Panneau illustré : fond blanc, calques positionnés en absolu et clipés.
   illoPanel: {
