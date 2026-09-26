@@ -1,13 +1,11 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/tokens';
 import ScreenHeader from '@/components/ScreenHeader';
 import List from '@/components/List';
 import ListRow from '@/components/ListRow';
-import Avatar, { AVATAR_CARD } from '@/components/Avatar';
-import Icon from '@/components/Icon';
 import Text from '@/components/Text';
 import { CLIENT } from '@/constants/data';
 import { usePlaces } from '@/stores/places';
@@ -37,6 +35,9 @@ export default function CompteScreen() {
   // question qu'on ne peut pas deviner de l'extérieur — le partage est-il en
   // marche ? (Tranché le 20 août 2026, question 4.)
   const securiteSummary = safetySummary(useSafety());
+  // La Note du Client tient lieu de résumé de la rangée « Profil » : c'est la
+  // seule matière que la fiche porte et que le Client ne connaît pas déjà.
+  const profilSummary = `${CLIENT.note.toLocaleString('fr-FR')} · Note du Client`;
 
   const logout = () =>
     Alert.alert('Se déconnecter', 'Voulez-vous vous déconnecter de Fiw ?', [
@@ -62,23 +63,6 @@ export default function CompteScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 28 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Bloc identité — tap → édition du profil. Affiche la Note du Client
-            (moyenne ; le détail par course reste privé — décision D1). */}
-        <TouchableOpacity style={styles.identity} activeOpacity={0.7} onPress={() => router.push('/compte/profil')}>
-          <Avatar name={CLIENT.name} size={AVATAR_CARD} />
-          <View style={styles.identityText}>
-            <Text variant="heading2" numberOfLines={1}>{CLIENT.name}</Text>
-            <Text variant="bodySmall" color={Colors.textSecondary}>{CLIENT.phone}</Text>
-            <View style={styles.noteRow}>
-              <Icon name="star" size={14} color={Colors.brandYellow} weight="fill" />
-              <Text variant="caption" color={Colors.textSecondary}>
-                {CLIENT.note.toLocaleString('fr-FR')} · Note du Client
-              </Text>
-            </View>
-          </View>
-          <Icon name="chevronRight" size={20} color={Colors.textTertiary} />
-        </TouchableOpacity>
-
         {/* Toutes les rangées portent leur résumé en SOUS-TITRE, jamais en valeur
             alignée à droite : la valeur de droite dispute sa largeur au label et
             le fait passer à la ligne, ce qui donne des rangées de hauteurs
@@ -86,9 +70,19 @@ export default function CompteScreen() {
             « Sécurité » et non « Contacts de confiance » : l'écran couvre aussi
             le partage de trajet — la rangée portait le nom d'une seule de ses
             sections (réunion du 16 août 2026). */}
-        {/* Une seule liste, sans titres de section : quatre portes ne demandent
+        {/* Une seule liste, sans titres de section : cinq portes ne demandent
             pas de taxonomie, et les titres répétaient le nom de leurs rangées. */}
         <List style_="plat" bleed={20}>
+          {/* Le portrait (avatar + nom + téléphone) a quitté cet écran : il vit
+              une fois, en tête du Menu, la page d'atterrissage où il
+              confirme de qui on parle. Ici il n'était qu'une PORTE parmi cinq,
+              et la seule à ne pas être une rangée — alors qu'il ouvre `profil`
+              comme « Moyens de paiement » ouvre `paiement`. Il redevient donc
+              une rangée, et la Note du Client (moyenne ; le détail par course
+              reste privé — décision D1) passe en résumé, comme le résumé de
+              toutes les autres rangées dit ce qu'il y a derrière la porte.
+              _(4 septembre 2026.)_ */}
+          <ListRow icon="account" title="Profil" subtitle={profilSummary} subtitleIcon="star" onPress={() => router.push('/compte/profil')} style={styles.row} />
           <ListRow icon="card" title="Moyens de paiement" subtitle={paymentSummary} onPress={() => router.push('/compte/paiement')} style={styles.row} />
           <ListRow icon="location" title="Lieux enregistrés" subtitle={placesSummary} onPress={() => router.push('/compte/lieux')} style={styles.row} />
           <ListRow icon="shield" title="Sécurité" subtitle={securiteSummary} onPress={() => router.push('/compte/securite')} style={styles.row} />
@@ -118,23 +112,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.surface },
   content: { paddingHorizontal: 20, paddingTop: 8 },
 
-  // Le bloc identité n'a pas de carte non plus : ce serait la seule surface
-  // encadrée d'une page qui n'en a plus.
-  identity: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 12,
-    // Même respiration que celle qui sépare deux listes, pour que le bloc
-    // identité entre dans le rythme de la page au lieu d'avoir son propre écart.
-    marginBottom: 28,
-  },
   // La gouttière de page, reprise par chaque rangée : le débord de la liste
   // fait filer les filets aux bords, le texte reste aligné sous le titre.
   row: { paddingHorizontal: 20 },
-  identityText: { flex: 1, gap: 2 },
-  noteRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 },
-
   legal: { marginTop: 4 },
   version: { marginTop: 6 },
 });

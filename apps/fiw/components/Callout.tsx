@@ -18,7 +18,7 @@ import Icon, { type IconName } from '@/components/Icon';
  *
  *  Fond `subtle` + liseré `100` (le palier clair, pas le plein) + **pastille
  *  `brandYellow` portant un glyphe sombre** — structure de la carte « Devenir
- *  prestataire » (`MenuDrawer`).
+ *  prestataire » (page `app/menu`).
  *
  *  **Le jaune plein remplit, il ne dessine pas.** `brandYellow` sur
  *  `brandYellowSubtle` ne fait que 1.2:1 : un glyphe *tracé* en jaune plein est

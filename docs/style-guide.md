@@ -60,7 +60,7 @@
 > Valeurs reprises de la piste **B** de la planche « Devenir prestataire ».
 
 > **Paire fond + liseré.** Fond `subtle` + liseré au palier **`100`** (le clair —
-> **pas** le plein), motif de la carte « Devenir prestataire » (`MenuDrawer`). Ne
+> **pas** le plein), motif de la carte « Devenir prestataire » (page `app/menu`). Ne
 > jamais poser un `subtle` sans son liseré : seul, il se fondrait sur le gris
 > `color-bg`. Le **plein** porte les accents — pastille pleine (carte sidebar) ou
 > glyphe d'icône (`Callout`).
@@ -546,9 +546,20 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > Donc : **les écrans de réglages sont à plat sur fond blanc** (`color-surface`),
 > rangées séparées par un filet 1 px `color-border` de bord à bord, sections
 > séparées par un label en capitales et de l'air. C'est la géométrie déjà retenue
-> pour la **sidebar** (`MenuDrawer`) — même nature de liste, même traitement — et le
+> pour la **page Menu** (`app/menu`) — même nature de liste, même traitement — et le
 > contraste gris-sur-blanc résiste mieux à une lecture en plein soleil que le
 > gris-sur-gris d'une carte posée sur `color-bg`.
+>
+> _Amendement du 4 septembre 2026 : le code de `app/menu` ne l'appliquait pas.
+> La page portait encore la rangée maison héritée du drawer — gouttière 24,
+> gap 14, aucun filet entre rangées — et divergeait donc de sa propre page
+> fille. Elle passe par `List style_="plat"` + `ListRow` comme le reste des
+> réglages. Elle garde le nom **« Menu »** : c'est le mot du modèle
+> « profil-mince + menu » du benchmark, et Historique, Fidélité, Affiliation et
+> Aide y sont les FRÈRES du portrait, pas des réglages. Elle a porté
+> « Paramètres » quelques heures le même jour, le temps de voir que ce nom
+> désignait une rubrique qu'elle ne contient pas — les réglages vivent un cran
+> plus bas, dans « Mon compte & Sécurité »._
 >
 > ⚠️ **Précision sur le benchmark.** `benchmark-compte-mobbin.md` décrit la carte de
 > réglages comme le « motif unanime » de Bolt / Careem / Réglages iOS. Cette
@@ -557,6 +568,24 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > des Réglages iOS. L'idiome natif Android — la plateforme dominante du marché
 > dakarois — est l'inverse : rangées à plat, filets pleine largeur, en-têtes de
 > section. _(Décidé en rendant le 11 août 2026, todo P5.)_
+
+> **Toute porte porte son résumé ; une rangée qui agit n'en a pas.** Une rangée
+> qui **ouvre un écran** dit en `subtitle` ce qu'il y a derrière : c'est ce qui
+> évite d'avoir à ouvrir la porte pour savoir si on avait besoin de l'ouvrir. Une
+> rangée qui **agit** — « Se déconnecter », « Supprimer mon compte » — n'ouvre
+> rien : son titre est déjà l'acte entier, et lui coller une seconde ligne
+> reviendrait à commenter un bouton.
+>
+> Le sous-titre **ajoute, il ne redit pas** : il n'énumère pas la rubrique que le
+> titre nomme déjà (« Mon compte & sécurité » ne se résume pas par « …sécurité »)
+> et il ne réécrit pas ce qu'un `trailing` affiche à dix pixels de là (sous
+> « Fidélité », la pastille porte les 240 pts, le sous-titre dit ce qu'ils
+> achètent). Quand une **source réelle** existe, il s'y lit plutôt que d'être
+> écrit en dur — un lieu ajouté, une course de plus, un compte retiré s'y voient
+> aussitôt. Le reste de la mécanique — jamais une valeur alignée à droite,
+> troncature à une ligne — est dans la fiche de rangée ci-dessus.
+> _(Confirmé le 4 septembre 2026, en donnant son résumé à chaque porte de la page
+> Menu.)_
 
 > **Une liste d'objets porte la pastille ; un groupe de réglages porte l'icône
 > nue.** Dans une liste d'**éléments que le Client possède** — un Lieu
@@ -611,8 +640,11 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > maquette — `Lignes` et `Frame 27`, toutes deux en `space/2` — puis **étendue à
 > tous les blocs de listing**, l'espace paramètres compris. Le composant `List`
 > de la maquette, qui collait encore ses rangées, a été aligné le même jour.
-> Exception assumée : le `MenuDrawer` garde son rythme dense à 14 — ce n'est pas
-> une liste de `ListRow` mais la sidebar, et ses filets séparent des GROUPES.)_
+> Exception assumée jusqu'au 4 septembre 2026 : le tiroir de menu gardait son
+> rythme dense à 14, n'étant pas une liste de `ListRow` mais la sidebar, ses
+> filets séparant des GROUPES. **L'exception est levée** — le tiroir est devenu
+> la page `app/menu`, qui passe par `List style_="plat"` et prend donc les 8
+> comme le reste. Il ne reste aucune liste hors de la règle.)_
 
 > **Le filet d'une liste en feuille file d'un bord à l'autre.** Une liste posée
 > dans une `BottomSheet` sépare ses rangées d'un filet **pleine largeur**
@@ -658,6 +690,28 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > pour montrer un état, occupé à afficher ce que personne ne relit.
 > _(Tranché le 20 août 2026 ; variante carte à trois lignes construite,
 > comparée, écartée.)_
+
+> **Un portrait par flux : la page d'atterrissage le porte, ses filles en font
+> une rangée.** Le bloc avatar + nom + téléphone confirme **de qui on parle** —
+> un travail qui ne se fait qu'une fois, à l'entrée. Répété sur la page fille il
+> ne confirme plus rien : il redit à un tap d'intervalle ce qu'on vient de lire,
+> et il y est la seule **porte** qui ne soit pas une rangée, alors qu'il ouvre un
+> écran exactement comme les autres en ouvrent un.
+>
+> Donc : le **Menu** porte le portrait (`Avatar` 64, nom `heading2`, téléphone
+> `bodySmall`), et **Mon compte & Sécurité** ouvre sa liste par une rangée
+> « Profil ». Ce que le portrait portait en propre — la **Note du Client** —
+> passe en **résumé de cette rangée** (`subtitle` + `subtitleIcon="star"`), au
+> même titre que « Espèces, Wave, Orange Money » résume Moyens de paiement : le
+> sous-titre dit ce qu'il y a derrière la porte, et la Note est la seule matière
+> de la fiche Profil que le Client ne connaisse pas déjà par cœur.
+>
+> La redondance de **D3** n'est pas touchée : deux entrées mènent toujours à la
+> page Compte depuis le Menu — le portrait et la rangée « Mon compte &
+> sécurité ». C'est la répétition du portrait **d'un écran à l'autre** qui tombe,
+> pas la double entrée **d'un même écran**.
+> _(Décidé le 4 septembre 2026, en alignant le Menu sur la grammaire de sa
+> page fille.)_
 
 ### Axes de taille : `sm|md|lg` ou pixels ?
 
@@ -791,9 +845,11 @@ deux modales Livraison ont été alignées et le code a suivi.)_
 >
 > **Une feuille à position unique** — modale, tiroir, feuille figée — n'a aucun
 > cran à suivre : elle prend le **niveau nommé** qui lui correspond. Une modale
-> mesure 44 à 47 % dans la maquette, donc `half` (`BottomSheet`) ; un tiroir
-> couvre 82 % de la largeur, donc `full` (`MenuDrawer`) ; une feuille figée haute
-> prend `full` (`transport/configure`). Le nombre de crans ne suffit pas à choisir
+> mesure 44 à 47 % dans la maquette, donc `half` (`BottomSheet`) ; une feuille
+> figée haute prend `full` (`transport/configure`). Un tiroir, qui couvre 82 % de
+> la largeur, prendrait `full` — la règle le prévoit toujours, mais le produit
+> n'en a plus : le tiroir de menu est devenu une page le 4 septembre 2026, et une
+> page n'a pas de voile. Le nombre de crans ne suffit pas à choisir
 > le niveau, d'où deux écritures et non une abstraction de plus :
 > `sheetScrimOpacity(ty, snaps, offscreen)` pour les feuilles à trois crans, une
 > interpolation en clair vers `ScrimLevels.*` pour les autres.
@@ -851,6 +907,21 @@ deux modales Livraison ont été alignées et le code a suivi.)_
   23 août 2026 après relevé Mobbin — Wolt, PayPal, Google Home, Grab Driver, Alan
   marquent tous l'erreur au champ **et** sous le champ. Un CTA grisé sans explication
   ne dit pas **lequel** des champs bloque.)_
+- **Deux notes, deux portées — et c'est l'icône qui les sépare, pas la taille ni
+  la couleur.** Une note qui commente **un champ** est un `Hint` **avec son
+  icône**, collé sous le champ. Une note qui commente **une liste entière** est
+  le `footnote` de `List` : même caption tertiaire, **sans icône**. Les deux
+  partagent taille et gris — l'icône est le seul signal, et elle suffit : elle
+  dit « ceci se rapporte à la chose juste au-dessus », là où la note nue couvre
+  tout le bloc.
+- **Une note de liste passe par le slot `footnote`, jamais par un `Hint` posé
+  après la liste.** Libre, elle hérite de la marge basse de la liste (28 px en
+  `plat`) et se retrouve **plus près de ce qui suit que de ce qu'elle
+  commente** — sur Lieux enregistrés elle flottait à 36 px de ses rangées pour
+  16 px du CTA, et se lisait comme la légende du bouton. Dans le slot, elle est
+  tenue contre sa liste, et elle ne peut pas lui survivre : elle est dans le
+  composant, pas à côté. _(20 août 2026 — point 5 de l'audit de cohérence de la
+  partie Compte ; transposé sur `List`/`Hint` après la migration.)_
 
 ---
 
@@ -1129,8 +1200,8 @@ nom du jeton qui dit lequel on est en train d'écrire.
 n'est pas une nuance de la planche, c'est sa mécanique principale.
 
 - `BottomSheet` : ouverture `container-morph`, fermeture `container-exit`.
-- `MenuDrawer` : idem — et sa fermeture n'est **pas** sa fenêtre d'ouverture jouée
-  à l'envers.
+- `BottomSheet` modal, `Sheet`, `Scrim` : même couple, partout où une surface
+  s'installe puis se retire.
 - `useSnapSheet`, snap programmatique : la **direction** tranche. La feuille monte
   → elle s'installe (`container-morph`, avec son maintien de 50) ; elle descend →
   elle rend la place (`container-exit`, sans maintien). Le sens suffit, ce qui
@@ -1153,6 +1224,31 @@ Tout passage **d'une page à une autre** (nouvelle route) utilise la transition 
 - **Animation** : glissement horizontal `slide_from_right` — la nouvelle page entre par la droite, l'ancienne fait son parallaxe.
 - **Geste de retour** : swipe **bord gauche → droite** interactif (`gestureEnabled: true`), comportement natif iOS. Sur Android, c'est le retour système qui joue ce rôle (pas d'edge-swipe natif).
 - **Règle** : c'est le comportement **par défaut de toute nouvelle page / tout nouveau flow**. Ne pas réinventer de transition de page ad hoc.
+
+> ⚠️ **La transition de pile est le seul mouvement du produit qui ne passe PAS
+> par l'identité.** C'est une conséquence de la pile native, pas un choix :
+> `native-stack` n'expose ni courbe, ni durée par direction — son
+> `animationDuration` est **iOS seulement** et ne couvre même pas
+> `slide_from_right`. Une page entre et sort donc à la vitesse de la plateforme,
+> quand tout le reste du produit tient l'asymétrie « entrée 500 / sortie 200 »
+> (§ Motion, « Les deux 200 ms »). La recette « Transitions de page · Primary
+> Ease · 300 ms » de la planche n'est **appliquée nulle part** — elle décrit une
+> intention que la pile native ne sait pas recevoir.
+>
+> **Question ouverte, et elle a un coût des deux côtés.** Le tiroir de menu
+> portait l'asymétrie en propre — ouverture `container-morph` + `Hold / Anchor`,
+> fermeture `container-exit`, « un tiroir qu'on referme dégage la place tout de
+> suite, il ne se retire pas avec la même componction qu'il a mise à venir ».
+> En devenant la page `app/menu` le 4 septembre 2026, il a perdu ce mouvement :
+> la pile native ne peut pas le rejouer. Le récupérer — pour cette page comme
+> pour toutes les autres — demande de passer la pile au navigateur **JS**
+> (`@react-navigation/stack`, dont le `transitionSpec` distingue `open` et
+> `close`), donc une dépendance de plus et l'abandon des transitions natives de
+> plateforme, retour prédictif d'Android compris. **Non tranché.**
+>
+> _(Écrit le 26 septembre 2026, en fusionnant la passe d'identité de mouvement
+> avec la conversion du tiroir en page. Les deux travaux sont justes séparément ;
+> c'est leur rencontre qui révèle le trou.)_
 
 ### Intra-page (états & feuilles)
 

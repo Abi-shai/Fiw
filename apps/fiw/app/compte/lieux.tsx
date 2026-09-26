@@ -7,9 +7,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import List from '@/components/List';
 import ListRow from '@/components/ListRow';
 import Medallion from '@/components/Medallion';
-import Hint from '@/components/Hint';
 import Button from '@/components/Button';
-import Text from '@/components/Text';
 import { usePlaces, type Place } from '@/stores/places';
 import type { IconName } from '@/components/Icon';
 
@@ -41,7 +39,17 @@ export default function LieuxScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
-        <List style_="plat" bleed={20} inset={56}>
+        {/* La note passe par le slot `footnote` de la liste, pas par un `Hint`
+            posé après elle : libre, elle héritait de la marge basse de la liste
+            (28) et se retrouvait à 36 px des rangées pour 16 du bouton — plus
+            près du CTA que de ce qu'elle commente. Le slot la tient contre sa
+            liste. */}
+        <List
+          style_="plat"
+          bleed={20}
+          inset={56}
+          footnote="Maison et Travail sont toujours présents ; ajoutez autant de lieux libres que vous voulez."
+        >
           {places.map((p) => (
             <ListRow
               key={p.id}
@@ -57,10 +65,6 @@ export default function LieuxScreen() {
             />
           ))}
         </List>
-
-        <Hint style={styles.hint}>
-          Maison et Travail sont toujours présents ; ajoutez autant de lieux libres que vous voulez.
-        </Hint>
 
         {/* Seule action de l'écran, donc `primary` sous la liste — pas une
             rangée d'ajout dans la liste (cf. style-guide, 20 août 2026). */}
@@ -83,6 +87,5 @@ const styles = StyleSheet.create({
   // 20 est celui que la liste annule par son débord, pour que les filets filent
   // aux bords sans désaligner le texte.
   row: { paddingHorizontal: 20 },
-  hint: { marginTop: 8, marginLeft: 4, lineHeight: 16 },
   add: { marginTop: 16 },
 });

@@ -19,7 +19,7 @@ export const Colors = {
   // Jaune de marque (logo Fiw, accents ponctuels). Seuls jaunes autorisés — à ne
   // pas confondre avec `warning` (#F59E0B, ambre fonctionnel « ça cloche »).
   // Échelle calquée sur le bleu, mêmes rôles (cf. carte « Devenir prestataire »,
-  // MenuDrawer : fond `primarySubtle` + liseré `blue100` + pastille `primary`) :
+  // page Menu : fond `primarySubtle` + liseré `blue100` + pastille `primary`) :
   // même teinte (h 51°) et même saturation (100%) partout, seule la luminosité
   // change — les trois se lisent comme une seule couleur.
   // Le jaune est une couleur *lumineuse* : à luminosité égale il paraît bien plus
