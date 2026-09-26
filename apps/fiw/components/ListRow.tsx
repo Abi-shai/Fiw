@@ -17,7 +17,13 @@ type Props = {
   icon?: IconName;
   title: string;
   subtitle?: string;
-  /** Glyphe 14 posé devant le sous-titre (l'étoile d'une note, par exemple). */
+  /** Glyphe 14 posé devant le sous-titre (l'étoile d'une note, par exemple).
+   *  Teinté en **jaune de marque** : une note n'est pas une alerte. Il était
+   *  peint en `warning` — l'ambre fonctionnel qui dit « ça cloche » — ce qui
+   *  donnait à l'étoile d'une Note du Client la couleur d'un avertissement.
+   *  _(Corrigé le 4 septembre 2026, en voyant la rangée « Profil » à l'écran.)_
+   *  Le jaune plein REMPLIT ici une forme, il ne trace pas : l'étoile est
+   *  décorative, le sens est porté par le texte du sous-titre à côté. */
   subtitleIcon?: IconName;
   /** Sous-titre en bleu marque : la seconde ligne n'est plus un fait mais une
    *  invitation (« Ajouter une adresse » sous un emplacement encore vide).
@@ -98,7 +104,7 @@ export default function ListRow({
                 name={subtitleIcon}
                 size={14}
                 weight="fill"
-                color={disabled ? Colors.textDisabled : Colors.warning}
+                color={disabled ? Colors.textDisabled : Colors.brandYellow}
               />
             ) : null}
             <Text
