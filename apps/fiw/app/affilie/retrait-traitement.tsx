@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import Text from '@/components/Text';
 import Spinner from '@/components/Spinner';
 import { Colors, Spacing } from '@/constants/tokens';
@@ -9,8 +9,16 @@ import { Colors, Spacing } from '@/constants/tokens';
 // (succès) ou Échec. Proto : toujours succès après un court délai.
 
 export default function RetraitTraitement() {
+  // Le montant et le numéro traversent l'écran d'attente : sans eux, la
+  // confirmation affichait le solde ENTIER et le numéro par défaut, quel que
+  // soit le retrait demandé.
+  const params = useLocalSearchParams<{ number?: string; amount?: string }>();
+
   useEffect(() => {
-    const t = setTimeout(() => router.replace('/affilie/retrait-confirmation'), 1800);
+    const t = setTimeout(
+      () => router.replace({ pathname: '/affilie/retrait-confirmation', params }),
+      1800,
+    );
     return () => clearTimeout(t);
   }, []);
 

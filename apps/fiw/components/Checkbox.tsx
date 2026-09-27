@@ -23,6 +23,13 @@ type Props = {
  * qui est le liseré des surfaces, pas des contrôles.
  *
  * N'est pas tappable en propre : c'est la rangée qui porte l'action.
+ *
+ * ⚠️ **Sans emploi dans l'app depuis le 27 septembre 2026**, et c'est voulu :
+ * ses deux sites étaient les deux acceptations du contrat d'affiliation, qui
+ * n'en font plus qu'une, portée par le CTA et annoncée par une mention (cf.
+ * `affilie/presentation.tsx`). Le composant reste — il est dans la maquette, et
+ * la case à cocher garde sa place le jour où un écran EST un contrat à
+ * signer — mais il ne faut pas le reprendre pour un consentement promotionnel.
  */
 export default function Checkbox({ checked, disabled, style }: Props) {
   return (

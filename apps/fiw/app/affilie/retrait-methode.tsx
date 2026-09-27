@@ -1,50 +1,79 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import ScreenHeader from '@/components/ScreenHeader';
-import Button from '@/components/Button';
 import ScreenFooter from '@/components/ScreenFooter';
+import Button from '@/components/Button';
 import Text from '@/components/Text';
-import Icon from '@/components/Icon';
-import { Colors, Outfit, Radii, SectionLabel, Shadows, Spacing, Strokes } from '@/constants/tokens';
-import { AMBASSADEUR, WITHDRAW_MIN, fcfa } from '@/constants/affilie';
+import List from '@/components/List';
+import ListRow from '@/components/ListRow';
+import Radio from '@/components/Radio';
+import PayLogo from '@/components/PayLogo';
+import { Colors, Outfit, SectionLabel, Spacing } from '@/constants/tokens';
+import { AFFILIE_RESEAU, WITHDRAW_MIN, fcfa } from '@/constants/affilie';
 
-type Method = { id: string; name: string; color: string };
+/** Retrait du filet pour une tête de `PayLogo` : 16 (padding de carte) + 56
+ *  (logo) + 12 (gouttière). Et non 0 : le filet pleine largeur est réservé aux
+ *  listes posées DANS UNE FEUILLE — celle de `PaymentSheet` l'est, celle-ci est
+ *  sur un écran et garde son retrait, aligné sous le texte. */
+const INSET_PAYLOGO = 84;
 
-const METHODS: Method[] = [
-  { id: 'orange', name: 'Orange Money', color: '#FF6200' },
-  { id: 'wave',   name: 'Wave',         color: '#009FE3' },
-  { id: 'free',   name: 'Free Money',   color: '#00B050' },
+type Operator = { id: string; name: string };
+
+/** Les trois opérateurs Mobile Money du marché dakarois. Plus de `color` : le
+ *  logo porte la marque, et Free Money — qui n'a pas encore d'asset — prend le
+ *  médaillon de repli de `PayLogo`. */
+const OPERATORS: Operator[] = [
+  { id: 'orange', name: 'Orange Money' },
+  { id: 'wave',   name: 'Wave' },
+  { id: 'free',   name: 'Free Money' },
 ];
 
+// JS3 — Combien, et vers quel opérateur.
+//
+// ── Passe du 27 septembre 2026 ─────────────────────────────────────────────
+// · **La rangée élue n'est plus peinte en `primarySubtle`.** C'est la règle la
+//   plus explicite du style guide sur ce point : « un bleu clair ne sert jamais
+//   de fond de mise en avant — il se fond au lieu de ressortir, et se lit comme
+//   un trou dans la carte plutôt que comme l'élu ». L'élu se dit ici par le
+//   `Radio` du système, comme dans la feuille de paiement.
+// · **Les pastilles de couleur de 12 px cèdent la place aux LOGOS.** « Moyens de
+//   paiement = logos en assets » est écrit au §Icônes ; le composant existait
+//   déjà dans `PaymentSheet`, il est simplement devenu partageable (`PayLogo`).
+// · **« Tout retirer » devient un `Button variant="link"`** au lieu d'un
+//   `TouchableOpacity` + texte bleu en `caption` 12 — une action-lien inline,
+//   exactement le rôle de cette variante.
+// · Le `letterSpacing: -1` de la saisie de montant disparaît. La TAILLE, elle,
+//   reste hors échelle et assumée : le style guide la liste déjà (« saisies de
+//   montant `affilie` »), une saisie de montant n'est pas du texte courant.
 export default function RetraitMethode() {
-  const { balance, defaultNumber } = AMBASSADEUR;
-  const [method, setMethod] = useState<Method>(METHODS[0]);
+  const { balance, defaultNumber } = AFFILIE_RESEAU;
+  const [operator, setOperator] = useState<Operator>(OPERATORS[0]);
   const [raw, setRaw] = useState('');
 
   const amount = parseInt(raw.replace(/\D/g, '') || '0', 10);
-  const tooLow  = raw.length > 0 && amount > 0 && amount < WITHDRAW_MIN;
+  const tooLow = raw.length > 0 && amount > 0 && amount < WITHDRAW_MIN;
   const tooHigh = amount > balance;
-  const valid   = amount >= WITHDRAW_MIN && amount <= balance;
+  const valid = amount >= WITHDRAW_MIN && amount <= balance;
 
   const onContinue = () => {
     router.push({
       pathname: '/affilie/retrait-recap',
-      params: { method: method.name, number: defaultNumber, amount: String(amount) },
+      params: { method: operator.name, number: defaultNumber, amount: String(amount) },
     });
   };
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={styles.page}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScreenHeader title="Retirer" />
 
       <View style={styles.content}>
-        {/* Montant — hero éditable, miroir du recap */}
         <View style={styles.hero}>
-          <Text variant="caption" color={Colors.textTertiary} style={styles.kicker}>MONTANT</Text>
+          <Text variant="caption" color={Colors.textTertiary} style={styles.kicker}>Montant</Text>
           <View style={styles.amountRow}>
             <TextInput
               style={[styles.amountInput, (tooLow || tooHigh) && styles.amountInputError]}
@@ -64,42 +93,37 @@ export default function RetraitMethode() {
             <Text variant="caption" color={Colors.textTertiary}>
               Disponible : <Text variant="caption" color={Colors.textPrimary}>{fcfa(balance)}</Text>
             </Text>
-            <TouchableOpacity activeOpacity={0.7} onPress={() => setRaw(String(balance))}>
-              <Text variant="caption" color={Colors.primary}>Tout retirer</Text>
-            </TouchableOpacity>
+            <Button
+              label="Tout retirer"
+              variant="link"
+              size="sm"
+              onPress={() => setRaw(String(balance))}
+            />
           </View>
 
           {tooLow && (
-            <Text variant="caption" color={Colors.error} style={styles.errorText}>
-              Minimum {fcfa(WITHDRAW_MIN)}
-            </Text>
+            <Text variant="caption" color={Colors.error}>Minimum {fcfa(WITHDRAW_MIN)}</Text>
           )}
           {tooHigh && (
-            <Text variant="caption" color={Colors.error} style={styles.errorText}>
-              Solde insuffisant
-            </Text>
+            <Text variant="caption" color={Colors.error}>Solde insuffisant</Text>
           )}
         </View>
 
-        {/* Méthode — carte identique aux détails du récap */}
-        <Text variant="caption" color={Colors.textTertiary} style={styles.sectionLabel}>MÉTHODE</Text>
-        <View style={styles.details}>
-          {METHODS.map((m, i) => {
-            const selected = method.id === m.id;
-            return (
-              <TouchableOpacity
-                key={m.id}
-                style={[styles.detailRow, i > 0 && styles.detailBorder, selected && styles.detailRowSelected]}
-                activeOpacity={0.7}
-                onPress={() => setMethod(m)}
-              >
-                <View style={[styles.methodDot, { backgroundColor: m.color }]} />
-                <Text variant="label" style={styles.flex1}>{m.name}</Text>
-                {selected && <Icon name="tick" size={16} color={Colors.primary} weight="bold" />}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        {/* Choix d'opérateur : même grammaire que la feuille de paiement des
+            flux Transport et Livraison — logo en tête, `Radio` en fin de
+            rangée, filet pleine largeur. Deux endroits où l'on choisit par quoi
+            l'argent passe, un seul dessin. */}
+        <List title="Opérateur" style_="carte" inset={INSET_PAYLOGO} style={styles.operators}>
+          {OPERATORS.map((o) => (
+            <ListRow
+              key={o.id}
+              leading={<PayLogo id={o.id} />}
+              title={o.name}
+              trailing={<Radio selected={operator.id === o.id} />}
+              onPress={() => { Haptics.selectionAsync(); setOperator(o); }}
+            />
+          ))}
+        </List>
       </View>
 
       <ScreenFooter>
@@ -110,19 +134,19 @@ export default function RetraitMethode() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
-  flex1: { flex: 1 },
-
+  page: { flex: 1, backgroundColor: Colors.bg },
   content: { flex: 1, paddingHorizontal: Spacing[4] },
 
   hero: { alignItems: 'center', paddingTop: Spacing[8], gap: 6 },
   kicker: { ...SectionLabel },
   amountRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing[2] },
+  // Hors échelle et assumé (§« Ce qui reste hors échelle ») : c'est une saisie
+  // de montant, pas du texte courant. Sans `letterSpacing` : l'échelle
+  // typographique n'a plus d'interlettrage nulle part.
   amountInput: {
     fontFamily: Outfit.semibold,
     fontSize: 48,
     color: Colors.textPrimary,
-    letterSpacing: -1,
     padding: 0,
     minWidth: 80,
   },
@@ -134,32 +158,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    paddingHorizontal: Spacing[2],
-  },
-  errorText: { marginTop: -2 },
-
-  sectionLabel: {
-    ...SectionLabel,
-    marginTop: Spacing[8],
-    marginBottom: Spacing[3],
   },
 
-  details: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
-    borderWidth: Strokes.thin,
-    borderColor: Colors.borderSubtle,
-    paddingHorizontal: Spacing[4],
-    ...Shadows.sm,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing[3],
-    paddingVertical: Spacing[4],
-  },
-  detailBorder: { borderTopWidth: Strokes.thin, borderTopColor: Colors.borderSubtle },
-  detailRowSelected: { backgroundColor: Colors.primarySubtle },
-  methodDot: { width: 12, height: 12, borderRadius: 6 },
-
+  operators: { marginTop: Spacing[8] },
 });

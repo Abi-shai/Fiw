@@ -6,6 +6,13 @@ import Button from '@/components/Button';
 import ResultState from '@/components/ResultState';
 import Icon from '@/components/Icon';
 import { Colors, Radii, Spacing } from '@/constants/tokens';
+import { MEMBERS } from '@/constants/affilie';
+
+/** Le dernier entré dans le réseau. Lu depuis la source, comme le décompte :
+ *  l'écran annonçait « Fatou » et « 12 affiliés » en dur, deux faits que le jeu
+ *  de données ne portait pas — et Fatou était une Cliente, sortie du périmètre
+ *  au recap du 30 août 2026. */
+const DERNIER = MEMBERS[MEMBERS.length - 1];
 
 // JS2 — Écran de célébration : quelqu'un a rejoint avec le code de l'Affilié Réseau.
 // Atteint depuis une notification push (non câblée dans le proto).
@@ -19,12 +26,15 @@ export default function Celebration() {
         <ResultState
           ton="marque"
           titre="Votre réseau grandit !"
-          corps="Fatou vient de rejoindre Fiw avec votre code. Vous comptez maintenant 12 affiliés."
+          corps={`${DERNIER.name} vient de rejoindre Fiw avec votre code. Vous comptez maintenant ${MEMBERS.length} affiliés.`}
         />
       </View>
 
       <View style={styles.footer}>
-        <Button label="Voir mon réseau" variant="secondary" onPress={() => router.replace('/affilie/reseau')} />
+        {/* `inverse` et non `secondary` : l'écran est un aplat `primary`, et un
+            contour gris à encre `textPrimary` y tombait à ~3:1. C'est le
+            pendant rempli de `linkInverse`, que porte déjà « Fermer ». */}
+        <Button label="Voir mon réseau" variant="inverse" onPress={() => router.replace('/affilie/reseau')} />
         <Button
           label="Fermer"
           variant="linkInverse"

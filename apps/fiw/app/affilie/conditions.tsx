@@ -1,70 +1,55 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+import React from 'react';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import ScreenHeader from '@/components/ScreenHeader';
-import Button from '@/components/Button';
-import ScreenFooter from '@/components/ScreenFooter';
 import Text from '@/components/Text';
-import Icon from '@/components/Icon';
-import Checkbox from '@/components/Checkbox';
+import StepList, { type StepItem } from '@/components/StepList';
 import { Colors, Spacing } from '@/constants/tokens';
 
-// JS1 — Conditions d'utilisation (contrat d'affiliation).
-// « J'accepte et je commence » → tableau de bord (premier accès).
-
-const CLAUSES = [
-  'Vous touchez 2 % du montant brut de chaque course réalisée par les personnes inscrites avec votre code.',
-  'Les commissions sont créditées sur votre Wallet et retirables vers Mobile Money à partir de 1 000 F.',
-  'Fiw peut suspendre les retraits en cas d’usage frauduleux du programme.',
-  'Le programme peut évoluer ; vous serez notifié de tout changement des règles de commission.',
+// JS1 — Le contrat d'affiliation, atteint depuis la mention du pied de
+// `presentation`. Page de LECTURE : on en revient par la flèche.
+//
+// ── Ce qui a changé (27 septembre 2026) ───────────────────────────────────
+// Elle portait sa propre case à cocher et son propre « J'accepte et je
+// commence » qui activait le profil — alors que `presentation` avait déjà une
+// case (pré-cochée) et un bouton qui activait, lui aussi. Un même contrat était
+// donc accepté à deux endroits, par deux chemins, avec deux libellés.
+// L'acceptation est désormais portée UNE fois, par le CTA de `presentation`, et
+// annoncée par la mention qui mène ici. Cette page n'active plus rien.
+//
+// Vocabulaire : « les personnes inscrites avec votre code » devient « les
+// prestataires » — la commission ne tombe que sur leurs courses (recap du
+// 30 août 2026), et `CONTEXT.md` proscrit « chauffeur » hors Transport.
+const CLAUSES: StepItem[] = [
+  { icon: 'check', body: 'Vous touchez 2 % du montant brut de chaque course réalisée par les prestataires inscrits avec votre code.' },
+  { icon: 'check', body: 'Les commissions sont créditées sur votre Wallet et retirables vers Mobile Money à partir de 1 000 F.' },
+  { icon: 'check', body: 'Fiw peut suspendre les retraits en cas d’usage frauduleux du programme.' },
+  { icon: 'check', body: 'Le programme peut évoluer ; vous serez notifié de tout changement des règles de commission.' },
 ];
 
 export default function Conditions() {
-  const [accepted, setAccepted] = useState(false);
-
-  const start = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.replace('/affilie/dashboard');
-  };
-
   return (
-    <View style={styles.container}>
+    <View style={styles.page}>
       <ScreenHeader title="Conditions d’utilisation" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <Text variant="body" color={Colors.textSecondary} style={styles.intro}>
-          En activant votre profil Affilié Réseau, vous acceptez le contrat d’affiliation Fiw :
+          En activant votre profil Affilié Réseau, vous acceptez le contrat
+          d’affiliation Fiw :
         </Text>
 
-        {CLAUSES.map((c, i) => (
-          <View key={i} style={styles.clause}>
-            <Icon name="check" size={20} color={Colors.primary} weight="fill" />
-            <Text variant="bodySmall" style={styles.clauseText}>{c}</Text>
-          </View>
-        ))}
+        {/* Médaillons en ton `neutre` : les clauses ne sont pas la matière
+            qu'on vient vendre, elles déroulent un texte déjà annoncé. Quatre
+            pastilles bleues auraient donné à un contrat le poids d'une
+            proposition. Les coches étaient jusqu'ici des glyphes `check` nus en
+            `fill` — un cercle plein Phosphor, soit la pastille dessinée par
+            l'icône plutôt que par le système. */}
+        <StepList items={CLAUSES} ton="neutre" />
       </ScrollView>
-
-      <ScreenFooter rule>
-        <TouchableOpacity style={styles.checkRow} activeOpacity={0.7} onPress={() => setAccepted((v) => !v)}>
-          <Checkbox checked={accepted} />
-          <Text variant="bodySmall" style={styles.checkLabel}>
-            J’ai lu et j’accepte le contrat d’affiliation.
-          </Text>
-        </TouchableOpacity>
-        <Button label="J’accepte et je commence" disabled={!accepted} onPress={start} />
-      </ScreenFooter>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+  page: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingHorizontal: Spacing[4], paddingBottom: Spacing[8] },
   intro: { marginBottom: Spacing[6] },
-
-  clause: { flexDirection: 'row', gap: Spacing[3], alignItems: 'flex-start', marginBottom: Spacing[4] },
-  clauseText: { flex: 1, paddingTop: 1 },
-
-  checkRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing[3] },
-  checkLabel: { flex: 1 },
 });

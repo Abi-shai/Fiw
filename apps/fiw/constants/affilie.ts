@@ -1,15 +1,37 @@
 // Données factices pour le parcours Affilié Réseau.
 // Proto de calage visuel — voir docs/breadboard-affilie-reseau.md.
 
-export type AffilieState = 'actif' | 'gele';
-export type MemberKind = 'chauffeur' | 'livreur' | 'client';
+import { type IconName } from '@/components/Icon';
 
-/** État global du compte. 'actif' par défaut (retrait ouvert dès le lancement —
- *  l'app est commercialisée dès le départ) ; 'gele' = suspension (retrait
- *  bloqué, contacter le support). */
-export const AMBASSADEUR = {
+export type AffilieState = 'actif' | 'gele';
+
+/**
+ * Service par lequel un Affilié travaille.
+ *
+ * ⚠️ Remplace `MemberKind = 'chauffeur' | 'livreur' | 'client'`
+ * (27 septembre 2026), pour deux raisons :
+ *
+ * 1. **« chauffeur » est proscrit comme terme de domaine** (`CONTEXT.md`) — il
+ *    n'est toléré que dans les intitulés d'interface du flux Transport. On nomme
+ *    donc le **service**, pas la personne : un Affilié fait du Transport ou de la
+ *    Livraison, et reste un **Prestataire** dans les deux cas.
+ * 2. **`client` sort du périmètre** : depuis le recap du 30 août 2026, la
+ *    commission de 2 % ne tombe que sur les courses réalisées par les
+ *    **Prestataires** inscrits avec le code. Un Client recruté ne rapporte rien,
+ *    il n'a donc plus à figurer dans le réseau.
+ */
+export type MemberService = 'transport' | 'livraison';
+
+/** Le Client qui porte le rôle Affilié Réseau — c'est-à-dire l'utilisateur.
+ *  ⚠️ Nommé `AMBASSADEUR` jusqu'au 27 septembre 2026, alors que `CONTEXT.md`
+ *  proscrit « ambassadeur » jusque dans le code. Et pas `AFFILIE` tout court :
+ *  le mot seul désigne la personne RECRUTÉE, soit le rôle inverse. */
+export const AFFILIE_RESEAU = {
   name: 'Awa Diop',
   code: 'AWA2024',
+  /** 'actif' par défaut (retrait ouvert dès le lancement — l'app est
+   *  commercialisée dès le départ) ; 'gele' = suspension (retrait bloqué,
+   *  contacter le support). */
   state: 'actif' as AffilieState,
   balance: 12400,
   defaultNumber: '77 123 45 67',
@@ -17,49 +39,62 @@ export const AMBASSADEUR = {
 
 export const WITHDRAW_MIN = 1000;
 
+/** Le message envoyé quand l'Affilié Réseau partage son code.
+ *  ⚠️ Il visait un CLIENT (« commande ta première course ») alors que la
+ *  commission ne tombe que sur les courses des **Prestataires** inscrits avec le
+ *  code (recap du 30 août 2026) — il s'adressait donc à quelqu'un qui ne
+ *  rapporterait rien. Ici et pas dans l'écran : `outils` et `qr` le partagent,
+ *  et un fichier de `app/` n'exporte qu'un écran. */
+export const SHARE_MESSAGE = `Rejoins Fiw comme prestataire avec mon code ${AFFILIE_RESEAU.code}.`;
+
+export type Member = {
+  id: string;
+  name: string;
+  service: MemberService;
+  active: boolean;
+  courses: number;
+};
+
+/** Le réseau : les Prestataires inscrits avec le code. */
+export const MEMBERS: Member[] = [
+  { id: 'm1', name: 'Modou Fall',   service: 'transport', active: true,  courses: 27 },
+  { id: 'm2', name: 'Ibrahima Sow', service: 'livraison', active: true,  courses: 14 },
+  { id: 'm3', name: 'Awa Camara',   service: 'transport', active: true,  courses: 9 },
+  { id: 'm4', name: 'Pape Ndoye',   service: 'livraison', active: true,  courses: 6 },
+  { id: 'm5', name: 'Cheikh Diouf', service: 'transport', active: false, courses: 0 },
+];
+
 export type Commission = {
   id: string;
   name: string;
-  kind: MemberKind;
+  service: MemberService;
   date: string;
   courses: number;
   amount: number;
 };
 
 export const COMMISSIONS: Commission[] = [
-  { id: 'c1', name: 'Modou Fall',   kind: 'chauffeur', date: '24 juin 2026', courses: 5, amount: 3200 },
-  { id: 'c2', name: 'Fatou Ndiaye', kind: 'client',    date: '23 juin 2026', courses: 3, amount: 1850 },
-  { id: 'c3', name: 'Ibrahima Sow', kind: 'livreur',   date: '22 juin 2026', courses: 4, amount: 2400 },
-  { id: 'c4', name: 'Modou Fall',   kind: 'chauffeur', date: '20 juin 2026', courses: 6, amount: 3600 },
-  { id: 'c5', name: 'Aïssatou Ba',  kind: 'client',    date: '18 juin 2026', courses: 2, amount: 1350 },
+  { id: 'c1', name: 'Modou Fall',   service: 'transport', date: '24 juin 2026', courses: 5, amount: 3200 },
+  { id: 'c2', name: 'Ibrahima Sow', service: 'livraison', date: '23 juin 2026', courses: 3, amount: 1850 },
+  { id: 'c3', name: 'Awa Camara',   service: 'transport', date: '22 juin 2026', courses: 4, amount: 2400 },
+  { id: 'c4', name: 'Modou Fall',   service: 'transport', date: '20 juin 2026', courses: 6, amount: 3600 },
+  { id: 'c5', name: 'Pape Ndoye',   service: 'livraison', date: '18 juin 2026', courses: 2, amount: 1350 },
 ];
 
-export type Member = {
-  id: string;
-  name: string;
-  kind: MemberKind;
-  active: boolean;
-  courses: number;
-};
-
-export const MEMBERS: Member[] = [
-  { id: 'm1', name: 'Modou Fall',    kind: 'chauffeur', active: true,  courses: 27 },
-  { id: 'm2', name: 'Ibrahima Sow',  kind: 'livreur',   active: true,  courses: 14 },
-  { id: 'm3', name: 'Cheikh Diouf',  kind: 'chauffeur', active: false, courses: 0 },
-  { id: 'm4', name: 'Fatou Ndiaye',  kind: 'client',    active: true,  courses: 9 },
-  { id: 'm5', name: 'Aïssatou Ba',   kind: 'client',    active: true,  courses: 5 },
-  { id: 'm6', name: 'Ndeye Gueye',   kind: 'client',    active: false, courses: 0 },
-];
+/** Les deux chiffres du réseau, LUS depuis la liste plutôt qu'écrits en dur :
+ *  ajouter un membre les met à jour tous les deux. */
+export const activeMembers = (ms: Member[] = MEMBERS) => ms.filter((m) => m.active).length;
+export const totalCourses = (ms: Member[] = MEMBERS) => ms.reduce((n, m) => n + m.courses, 0);
 
 /** Formate un montant en francs CFA avec séparateur d'espace : 12400 → « 12 400 F ». */
 export const fcfa = (n: number) => `${n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} F`;
 
-/** Libellé grand public d'un membre selon son service connu. */
-export const kindLabel = (k: MemberKind) =>
-  k === 'chauffeur' ? 'Chauffeur' : k === 'livreur' ? 'Livreur' : 'Client';
+/** Libellé grand public du service d'un Affilié. */
+export const serviceLabel = (s: MemberService) => (s === 'transport' ? 'Transport' : 'Livraison');
 
-export const kindIcon = (k: MemberKind): 'car' | 'package' | 'rider' =>
-  k === 'chauffeur' ? 'car' : k === 'livreur' ? 'package' : 'rider';
+/** Glyphe du service. `car` et `package` sont les deux pictogrammes que l'app
+ *  emploie déjà pour ces deux services (tuiles d'accueil, itinéraires). */
+export const serviceIcon = (s: MemberService): IconName => (s === 'transport' ? 'car' : 'package');
 
 /** Détection sommaire de l'opérateur Mobile Money d'après le préfixe. */
 export function detectOperator(num: string): string | null {

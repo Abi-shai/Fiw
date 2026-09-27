@@ -232,7 +232,8 @@ qui ont besoin de cet interligne pour respirer, reprennent la variante entière
 | `Avatar`, `PrestataireRow` | taille calculée | `fontSize: size * 0.38` — aucun cran fixe, cf. §Axes de taille |
 | `Logo` textuel (`index`) | 32 Bold | Signe de marque, pas du texte courant |
 | Emojis (`PaymentSheet`, drapeau `index`) | 28, 22 | Taille d'un glyphe, pas de la typographie |
-| `WheelPicker`, saisies de montant `affilie` | 22/30, 24, 48 | Chiffres d'un sélecteur ou d'une saisie de montant, absents de la maquette |
+| `WheelPicker`, saisies de montant `affilie` | 22/30, 48 | Chiffres d'un sélecteur ou d'une saisie de montant, absents de la maquette. _(Le 24 du champ téléphone de retrait a disparu le 27 septembre 2026 : l'écran passe par `Field / Type=téléphone`.)_ |
+| Code d'affiliation (`affilie/outils`) | `display` + `letterSpacing` 2 | Même motif que `PlateChip` : un code se lit **caractère par caractère**, la chasse élargie EST le motif. Seul interlettrage assumé hors `PlateChip` et `FlagChip`. |
 
 ### Libellé de section en capitales
 
@@ -306,7 +307,7 @@ du rythme de mise en page. Elles restent en dur et sont concentrées dans `Gamme
 | `radius-md` | 12px | Boutons, **champs de saisie & SearchBar**, cards |
 | `radius-lg` | 16px | Grandes cartes |
 | `radius-card` | 20px | **Cartes de feuille** — `SheetCard`, `VehicleGroup` (et son bloc véhicule interne), `InfoBanner`. Palier propre aux cartes empilées dans un `GroupedSheet` : entre `lg` et `xl`, il épouse le rayon 28 de la feuille sans le répéter. Exposé en code sous `Radii.card` (ex-constante locale `CARD_RADIUS`). |
-| `radius-xl` | 28px | **Bottom sheets, modals** |
+| `radius-xl` | 28px | **Bottom sheets, modals** — et rien d'autre. Une carte posée sur un écran n'y a pas droit : le QR de l'Affiliation le portait, ce qui lui donnait l'arrondi d'une feuille au milieu d'une page. _(Relevé le 27 septembre 2026.)_ |
 | `radius-pill` | 999px | Éléments totalement arrondis (chips, segmented, pastilles) |
 
 ---
@@ -383,12 +384,13 @@ Deux familles : **pleine** (fond de couleur, pour le CTA) et **transparente** (s
 | `secondary` | transparent | `color-bg` | `color-text-primary` | `color-border` (1.5px) |
 | `destructive` | transparent | `color-error-subtle` | `color-error` | — |
 | `destructiveFilled` | `#EF4444` | `#DC2626` | `#FFFFFF` | — |
+| `inverse` | `color-surface` | `blue-100` | `color-primary` | — |
 | `link` | transparent | transparent (opacité 0.55) | `color-primary` | — |
 | `linkDestructive` | transparent | transparent (opacité 0.55) | `color-error` | — |
 
 `disabled` : opacité 0.45 (toutes variantes). `loading` : spinner à la couleur du texte. Slots icône Phosphor leading/trailing sur toutes les variantes.
 
-> **Choix de variante.** `secondary` (contour neutre gris) = action secondaire courante. `destructive` (texte rouge, **sans bordure ni fond**) = **annulation / action dangereuse secondaire** (ex. « Annuler la commande », « Annuler (gratuit) ») — à privilégier sur toutes les pages présentant ce type d'action, plutôt qu'un lien texte ad hoc. `destructiveFilled` (plein rouge) est **réservé** au cas où l'action destructive EST le CTA de l'écran (ex. « Raccrocher »). `link` (texte bleu primary, **sans fond ni bordure ni pilule**, empreinte compacte) = **action-lien inline** dans une rangée ou un formulaire (ex. « Modifier » un numéro, « Renvoyer le code ») — à privilégier plutôt qu'un `Text` + icône ad hoc. `linkDestructive` = le **pendant rouge de `link`** (même empreinte, texte `color-error`), pour l'action-lien qui retire/supprime dans une rangée (ex. « Retirer » un compte Mobile Money) — il permet d'opposer deux actions **de même forme** dans la même liste, seule la couleur changeant selon la portée (ex. slot rempli « Retirer » vs slot vide « Ajouter »).
+> **Choix de variante.** `secondary` (contour neutre gris) = action secondaire courante. `destructive` (texte rouge, **sans bordure ni fond**) = **annulation / action dangereuse secondaire** (ex. « Annuler la commande », « Annuler (gratuit) ») — à privilégier sur toutes les pages présentant ce type d'action, plutôt qu'un lien texte ad hoc. `destructiveFilled` (plein rouge) est **réservé** au cas où l'action destructive EST le CTA de l'écran (ex. « Raccrocher »). `link` (texte bleu primary, **sans fond ni bordure ni pilule**, empreinte compacte) = **action-lien inline** dans une rangée ou un formulaire (ex. « Modifier » un numéro, « Renvoyer le code ») — à privilégier plutôt qu'un `Text` + icône ad hoc. `inverse` (**plein blanc, texte `color-primary`**) = le CTA posé sur un **aplat de marque** — bouton « Retirer » de la carte Wallet, actions de l'écran de célébration. C'est le pendant *rempli* de `linkInverse`, exactement comme `primary` est celui de `link` : sans lui, un écran plein bleu n'avait que `secondary`, dont le contour gris et l'encre `color-text-primary` tombent à ~3:1 sur `#0066FF`. Son état pressé est `blue-100` — le seul assombrissement du blanc qui reste dans la palette de marque. _(Ajouté le 27 septembre 2026.)_ `linkDestructive` = le **pendant rouge de `link`** (même empreinte, texte `color-error`), pour l'action-lien qui retire/supprime dans une rangée (ex. « Retirer » un compte Mobile Money) — il permet d'opposer deux actions **de même forme** dans la même liste, seule la couleur changeant selon la portée (ex. slot rempli « Retirer » vs slot vide « Ajouter »).
 
 ### L'état désactivé : peindre ou délaver (amendement du 25 août 2026)
 
@@ -453,18 +455,20 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 |---|---|---|
 | `Text` | Typographie | Variants sémantiques, mappe graisse→famille Outfit. Seul point d'entrée typo. |
 | `Icon` | Icône | Phosphor, sous-ensemble nommé, `regular`/`fill`. |
-| `Button` | Action | 6 variantes (`primary` / `secondary` contour neutre / `destructive` texte Error / `destructiveFilled` plein rouge / `link` texte-action sans fond / `linkDestructive` idem en rouge), tailles `lg`/`md`/`sm`, slots icône, loading/disabled. |
+| `Button` | Action | 7 variantes (`primary` / `secondary` contour neutre / `destructive` texte Error / `destructiveFilled` plein rouge / `inverse` plein blanc à texte bleu, sur aplat de marque / `link` texte-action sans fond / `linkDestructive` idem en rouge), tailles `lg`/`md`/`sm`, slots icône, loading/disabled. |
 | `IconButton` | Bouton rond icône | Set `Variant` × `Size`. **Variantes** : `floating` (blanc + liseré + ombre, sur carte ; **icône gris foncé `gray-700`** — neutre, registre nav, pas le bleu marque) · `flat` (fond gris, dans sheet ; icône bleu marque) · `secondary` (transparent + liseré `border`, icône `textPrimary` — action de second rang lisible sur fond teinté, ex. bouton carte d'un `PlaceField`) · `link` (**nu**, ni fond ni liseré, icône bleu marque — actions inline d'un champ : effacer, afficher le mot de passe). **Tailles** : `lg` 46 / icône 24 · `md` 40 / icône 22 · `sm` 32 / icône 18. Défaut : `lg` en `floating`, `md` ailleurs. ⚠️ `sm` passe sous la cible tactile de 48 — réservé à l'intérieur d'un contrôle qui porte déjà la zone de frappe. _(Étendu le 23 août 2026.)_ |
-| `SearchBar` | Recherche | Deux variantes : `sheet` (dans une feuille — fond `bg`, rayon `md`, liseré `border`, h48) et `floating` (posée **sur la carte** — pilule blanche, liseré `hairline`, `shadow-float`, h46). Croix d'effacement quand le champ n'est pas vide, slot `trailing` optionnel (bouton carte, micro). **Ne couvre pas** les champs De/À de l'accueil : ce sont des rangées d'itinéraire à deux lignes, pas une recherche. _(Construite le 23 août 2026 — jusque-là ce tableau la décrivait alors qu'elle n'existait nulle part, et trois écrans la réimplémentaient chacun à sa façon.)_ |
+| `SearchBar` | Recherche | Deux variantes : `sheet` (dans une feuille — fond `bg`, rayon `md`, liseré `border`, h48) et `floating` (posée **sur la carte** — pilule blanche, liseré `hairline`, `shadow-float`, h46). Croix d'effacement quand le champ n'est pas vide, slot `trailing` optionnel (bouton carte, micro). **Ne couvre pas** les champs De/À de l'accueil : ce sont des rangées d'itinéraire à deux lignes, pas une recherche. _(Construite le 23 août 2026 — jusque-là ce tableau la décrivait alors qu'elle n'existait nulle part, et trois écrans la réimplémentaient chacun à sa façon.)_ **Prop `onPress` = raccourci** : la barre cesse d'être un champ et devient un BOUTON qui en a l'apparence — plus de `TextInput`, un `Text` tertiaire à la place du placeholder, et le tap ouvre là où la vraie saisie a lieu (le « Où allez-vous ? » en tête de l'accueil). Un prop et non un composant distinct, parce que c'est le MÊME objet à l'écran, à la mesure près — et c'est justement ce qui le fait marcher. _(27 septembre 2026.)_ |
 | `ScreenHeader` | En-tête de page | `IconButton` retour (icône forcée en `gray-700`, pas en bleu) + titre `heading2` + slot d'action à droite. Gère la safe-area. Le pendant « feuille » est `SheetHeader` (titre `heading1` + croix). **N'inclut pas** les boutons flottants sur carte (ce sont des `IconButton` posés séparément). |
 | `PlaceRow` | Ligne de lieu | Cercle d'icône + titre + sous-titre + trailing. Récents, suggestions, lieux enregistrés. |
 | `Field` | Toute saisie | Set à **trois axes** : `Type` = `texte` · `téléphone` · `zone`, `État` = `repos` · `actif` · `erreur` · `désactivé`, `Contenu` = `rempli` · `vide` — 24 variantes. Vide et rempli sont orthogonaux à l'état : un champ focus peut être vide, un requis en erreur l'est par définition. Le champ **vide** affiche un `Placeholder` en `text-tertiary` et **n'a pas de bouton d'effacement** (rien à effacer) ; le champ **rempli** le porte dans les trois types — au centre à droite en `texte` et `téléphone`, **en haut à droite** en `zone`. La couleur du × suit l'état (`text-tertiary` / `primary` / `error` / `text-disabled`). Libellé avec astérisque requis, icône de tête, slot trailing, texte d'aide sous le contrôle. `Type=téléphone` porte le chip indicatif (drapeau + `+code` + caret) ouvrant le `CountryPicker`, numéro **formaté par pays** (`constants/countries.ts`), **tous pays acceptés** — point d'entrée unique de toute saisie de téléphone, changement de numéro **et** onboarding (cf. `sitemap-client.md` §1). _(Absorbe `PhoneField` et `TextArea`, retirés le 23 août 2026 ; **absorption effective dans le code le 25 août 2026** — `Field` porte l'axe `type` = `texte` · `téléphone` · `zone`, et `components/PhoneField.tsx` est supprimé.)_ |
 | `PlaceField` | Saisie d'un Lieu | Départ / arrivée : deux lignes (libellé + valeur), icône de tête, bouton rond « choisir sur la carte » optionnel, état `actif`. Distinct de `Field` — on y saisit un Lieu, pas du texte libre. Pendant de `PlaceRow`, qui **affiche** un Lieu. |
 | `CountryPicker` | Choix du pays | Feuille **3 crans** (`hooks/useSnapSheet`) + barre de recherche + liste monde triée. Drapeaux = **PNG plats locaux** (`assets/flags/`, map `constants/flags.ts`) rendus via `FlagChip` — **pas de SVG** (`SvgXml` plante sur les drapeaux à bloc `<style>`). |
+| `PayLogo` | Logo d'un moyen de paiement | Gabarit 56 : **le logo de marque quand il existe** (`PAY_ILLUSTRATIONS`), sinon le `Medallion lg` du système. Extrait de `PaymentSheet` le 27 septembre 2026, quand le choix d'opérateur du retrait Affilié en a eu besoin — il dessinait jusque-là une pastille de couleur de 12 px par opérateur, contre la règle « moyens de paiement = logos en assets » du §Icônes. |
 | `SettingsRow` | Ligne de réglage | Icône ligne + label + **sous-titre** + slot `right` + chevron. Variante `destructive` (label rouge) ; prop `accent` = **rangée d'objet** (pastille bleue 42 px, voir la règle plus bas). Page Compte et sous-écrans. **Volontairement pauvre** : un objet plus riche (logo de service, badge d'état, action sur une 2ᵉ ligne — cf. carte de `compte/paiement.tsx`) mérite **son propre composant**, pas des slots ajoutés ici un par un. Le résumé de la rangée passe **toujours par `subtitle`**, jamais par une valeur alignée à droite : la valeur de droite dispute sa largeur au label et le fait passer à la ligne, d'où des rangées de hauteurs inégales. `subtitle` est en `numberOfLines={1}` — un résumé trop long se tronque, il ne déforme pas la liste. |
 | `SettingsGroup` | Groupe de réglages | Regroupe des `SettingsRow` séparées par un filet 1 px **de bord à bord**, label de section en capitales (`label` 13 px medium, gris secondaire) + `footnote`. **Sans carte** — voir la règle ci-dessous. |
 | `Radio` | Pastille de sélection | Coché = fond bleu marque + tick blanc ; décoché = cercle vide `text-disabled`. Marque l'élu d'un ensemble à choix unique **dans une feuille de choix** (`PaymentSheet`). Non tappable en propre — c'est la rangée qui porte l'action. Dans une **liste persistante**, préférer `SettingsRow selected` + badge (voir ci-dessous). |
 | `Callout` | Encart d'information | Fond `brand-yellow-subtle` + liseré `brand-yellow-100` + **pastille `brand-yellow` à glyphe sombre** (structure de la carte « Devenir prestataire » — le jaune remplit, le glyphe dessus porte le contraste). Pour une **règle** ou une **affordance non devinable** que le Client doit lire. Jaune et **pas bleu** : cf. répartition des rôles bleu/jaune. **Un seul par écran** — au-delà, c'est un problème de hiérarchie. À distinguer du motif `infoRow` (icône + `caption` tertiaire **sans fond**), qui précise sans réclamer l'attention. |
+| `StepList` | Liste explicative | `Medallion sm` en tête + titre `bodyMedium` + corps `bodySmall` **qui passe à la ligne**, 20 d'air entre les items, aucun filet. Le pendant de `List`/`ListRow` pour du texte qui respire — voir la règle « Une porte se tronque, un paragraphe respire ». Axe `ton` = celui de `Medallion` (`accent` quand les étapes sont la matière de l'écran, `neutre` quand elles déroulent un texte déjà annoncé). ⚠️ Rien à voir avec `StepProgress`, qui mesure l'avancement RÉEL d'une Commande. _(Construit le 27 septembre 2026.)_ |
 
 > **Les cartes sont pour les objets ; les portes sont à plat.** Une carte blanche
 > encadrée représente **une chose qui a un état** — un moyen de paiement (configuré /
@@ -684,6 +688,102 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > pas la double entrée **d'un même écran**.
 > _(Décidé le 4 septembre 2026, en alignant le Menu sur la grammaire de sa
 > page fille.)_
+
+> **Une porte se tronque, un paragraphe respire.** `ListRow` coupe son titre
+> et son sous-titre à une ligne, et c'est sa raison d'être : des rangées
+> voisines gardent la même hauteur, la liste tient comme une colonne. Une
+> **étape** de « Comment ça marche », une **clause** de contrat, un fait qu'on
+> explique — ça n'est pas une porte, ça ne mène nulle part, et le tronquer lui
+> retire son sens. Ces listes-là passent par **`StepList`**.
+>
+> Le réflexe à ne pas avoir, c'est d'ajouter à `ListRow` un prop « pas de
+> troncature » : il aurait cassé la seule chose qui fait tenir une liste de
+> portes. C'est un composant distinct qui manquait, pas une option.
+>
+> Les deux se ressemblent volontairement — même typographie (`bodyMedium` /
+> `bodySmall` secondaire), même gouttière 12 — pour se lire comme une seule
+> famille. Trois choses les séparent : le médaillon est **aligné en haut** (le
+> corps peut faire trois lignes), il est en **`sm`** (36, l'empreinte que
+> `Medallion` réserve nommément à la liste d'étapes, là où `md` 42 est celle
+> d'une rangée), et les items sont séparés par **20 d'air** plutôt que par un
+> `Divider` — un filet découperait un texte suivi en cases.
+> _(27 septembre 2026, en reprenant `affilie/presentation` ; cf.
+> `benchmark-affiliation-mobbin.md`.)_
+
+> **Une proposition demande une mention ; un contrat demande une case.** Le
+> consentement n'a pas la même forme selon ce que l'écran est en train de
+> faire :
+>
+> - L'écran **propose** un programme (il le vend, il l'explique, il finit par un
+>   CTA) → le consentement est une **mention** `caption` tertiaire sous le CTA,
+>   le mot « conditions » en `color-primary` et tappable. Le CTA n'est jamais
+>   désactivé : rien ne manque, on n'a rien demandé à remplir.
+> - L'écran **EST le contrat** (le texte intégral, qu'on est venu signer) → une
+>   `Checkbox` **décochée**, qui débloque le bouton.
+>
+> Et jamais les deux pour un même contrat. L'Affiliation les avait tous les
+> deux : une case **pré-cochée** sur la page de proposition, une seconde case
+> sur la page de conditions, deux boutons de libellés différents menant au même
+> tableau de bord. Une case pré-cochée est un consentement donné à la place du
+> Client ; le corpus Mobbin n'en montre aucune (D5 du benchmark).
+>
+> La forme de la mention existait déjà dans le produit : c'est celle de
+> l'onboarding (`app/index.tsx`), « En continuant, vous acceptez les
+> **Conditions d'utilisation** ». _(27 septembre 2026.)_
+
+> **Un raccourci a l'apparence de ce qu'il ouvre.** Le « Où allez-vous ? » en
+> tête de l'accueil ressemble trait pour trait à une barre de recherche, mais
+> on n'y saisit rien : le tap fait monter la feuille et bascule en mode
+> recherche, où les vrais champs De/À prennent la main. C'est voulu — le Client
+> tape à l'endroit où il tapera encore une fois la barre ouverte, et le morph
+> se lit comme un agrandissement plutôt que comme un changement d'écran.
+>
+> Ce qu'il ne faut PAS faire, c'est poser un vrai champ : la saisie serait
+> balayée par le morph. Ni dessiner une seconde géométrie qui ressemble — deux
+> composants pour un seul dessin, c'est deux mesures à tenir en phase. D'où le
+> prop `onPress` sur `SearchBar` plutôt qu'un composant de plus.
+> _(27 septembre 2026, en simplifiant l'accueil sur le seul Transport.)_
+
+> **Ce qui flotte sur la carto suit le cran de la feuille.** Le bouton de
+> recentrage le faisait déjà ; la carte « Course en cours » le fait aussi. Deux
+> raisons, et la première n'est pas esthétique : **la feuille recadre son
+> contenu** (`overflow: hidden`, pour que sa première carte soit coupée par
+> l'arc de 28 au lieu d'en déborder), donc tout élément volontairement hors
+> bornes s'y ferait couper. Il vit dehors, et c'est la même valeur animée `ty`
+> qui le porte, diminuée de sa propre hauteur et de son air.
+>
+> Corollaire : ces éléments **s'empilent** au-dessus de l'arête, ils ne se
+> superposent pas. Quand la carte de course est là, le recentrage monte de la
+> hauteur de la carte.
+>
+> Et ils prennent le traitement des éléments flottants — liseré `color-hairline`
+> + `shadow-float` — même quand leur dessin est celui d'une carte de feuille :
+> une `SheetCard` posée sur la carto n'est plus une carte de feuille, elle n'a
+> plus de feuille. _(27 septembre 2026.)_
+
+> **Un chiffre n'a droit à sa propre tuile que s'il n'a rien à ouvrir
+> derrière.** La règle est née sur la page Menu, en refusant ses tuiles de
+> statistiques ; elle vaut partout, et le premier à en profiter est le
+> **tableau de bord de l'Affiliation**, qui en alignait quatre.
+>
+> Le test est mécanique : si le chiffre a un écran derrière lui, il est le
+> **résumé de la porte** qui y mène — c'est là qu'il informe le plus, puisqu'il
+> dit d'avance ce qu'on trouvera. S'il n'a rien derrière (les kilomètres de
+> Waymo, le CO₂ d'Uber), alors il est à lui-même sa destination et peut prendre
+> une tuile.
+>
+> Deux corollaires observés en appliquant la règle à l'Affiliation :
+>
+> - **Un chiffre affiché deux fois sur un écran est un défaut, pas une
+>   redondance utile.** « Gains cumulés · 12 400 F » répétait au mot près le
+>   solde du Wallet posé dix pixels plus haut.
+> - **Deux chiffres qui ouvrent le même écran font UN sous-titre**, pas deux
+>   portes : « 4 prestataires actifs · 56 courses générées » sous « Mon
+>   réseau ».
+>
+> Et ils se lisent depuis la **source réelle** — ajouter un membre met les deux
+> à jour — comme les résumés de rangée du Menu et de Mon compte.
+> _(27 septembre 2026.)_
 
 ### Axes de taille : `sm|md|lg` ou pixels ?
 

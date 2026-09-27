@@ -21,13 +21,19 @@ import Spinner from '@/components/Spinner';
 //                      inline qui retire/supprime (ex. « Retirer » un compte
 //                      Mobile Money). Le pendant rouge de `link`, comme
 //                      `destructive` est le pendant rouge de `secondary`.
+// · inverse          — plein BLANC à texte `primary` : le CTA posé sur un aplat
+//                      de marque (carte Wallet de l'Affilié, écran de
+//                      célébration). Le pendant « rempli » de `linkInverse`,
+//                      exactement comme `primary` est celui de `link`. Sans lui,
+//                      un écran plein bleu n'avait que `secondary` — contour gris
+//                      et texte `textPrimary`, soit du sombre sur du bleu à ~3:1.
 // · linkInverse      — le lien posé sur un fond sombre ou `primary`, en
 //                      `textOnPrimary` (ex. « Fermer » de la célébration).
 //                      Un septième rôle et non un axe de ton : un axe aurait
 //                      obligé les six autres variantes à déclarer une valeur qui
 //                      n'a aucun sens pour un bouton plein. Il ne peint pas de
 //                      fond — c'est l'écran qui porte le bleu, le bouton s'y pose.
-type Variant = 'primary' | 'secondary' | 'destructive' | 'destructiveFilled' | 'link' | 'linkDestructive' | 'linkInverse';
+type Variant = 'primary' | 'secondary' | 'destructive' | 'destructiveFilled' | 'inverse' | 'link' | 'linkDestructive' | 'linkInverse';
 type Size = 'lg' | 'md' | 'sm';
 
 interface Props {
@@ -50,6 +56,9 @@ const BG: Record<Variant, { rest: string; pressed: string }> = {
   secondary:        { rest: 'transparent',  pressed: Colors.bg },
   destructive:      { rest: 'transparent',  pressed: Colors.errorSubtle },
   destructiveFilled:{ rest: Colors.error,   pressed: Colors.errorPressed },
+  // Pressé en `blue100` : le palier clair de l'échelle, seul assombrissement
+  // du blanc qui reste dans la palette de marque.
+  inverse:          { rest: Colors.surface,  pressed: Colors.blue100 },
   link:             { rest: 'transparent',  pressed: 'transparent' },
   linkDestructive:  { rest: 'transparent',  pressed: 'transparent' },
   linkInverse:      { rest: 'transparent',  pressed: 'transparent' },
@@ -61,6 +70,7 @@ const FG: Record<Variant, string> = {
   secondary: Colors.textPrimary,
   destructive: Colors.error,
   destructiveFilled: Colors.textOnPrimary,
+  inverse: Colors.primary,
   link: Colors.primary,
   linkDestructive: Colors.error,
   linkInverse: Colors.textOnPrimary,
@@ -95,7 +105,7 @@ export default function Button({
   const isDisabled = disabled || loading;
   const fg = FG[variant];
   const s = SIZING[size];
-  const filled = variant === 'primary' || variant === 'destructiveFilled';
+  const filled = variant === 'primary' || variant === 'destructiveFilled' || variant === 'inverse';
   const isLink = variant === 'link' || variant === 'linkDestructive' || variant === 'linkInverse';
 
   const scale = useRef(new Animated.Value(1)).current;
