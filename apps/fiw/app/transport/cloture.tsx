@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -8,6 +8,7 @@ import Button from '@/components/Button';
 import IconButton from '@/components/IconButton';
 import ScreenFooter from '@/components/ScreenFooter';
 import Text from '@/components/Text';
+import { enregistrerCommandeTerminee } from '@/hooks/useAffiliePromo';
 import Icon from '@/components/Icon';
 import Avatar from '@/components/Avatar';
 import AlertBadge from '@/components/AlertBadge';
@@ -22,6 +23,12 @@ const QUICK_TAGS = [
 const RATING_LABEL = ['', 'Mauvais', 'Passable', 'Bien', 'Très bien', 'Excellent !'];
 
 export default function ClotureScreen() {
+  // Atteindre la clôture, c'est avoir mené une Commande à son terme : c'est
+  // donc ICI que se compte le pas de la sourdine de la bannière Affiliation, et
+  // nulle part ailleurs. Une Commande ANNULÉE ne passe pas par cet écran, elle
+  // ne fait donc pas avancer le compteur — sinon fermer la bannière puis
+  // annuler trois fois la ferait revenir sans que le Client ait rien vécu.
+  useEffect(enregistrerCommandeTerminee, []);
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     destName: string; gammeLabel: string; gammeId: string;

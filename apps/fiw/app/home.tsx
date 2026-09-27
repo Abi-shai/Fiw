@@ -20,6 +20,7 @@ import Text from '@/components/Text';
 import Icon, { type IconName } from '@/components/Icon';
 import { CARD_GAP as SHEET_GAP, Handle, SheetCard, SheetHeader, groupedSheetSurface } from '@/components/Sheet';
 import { useSnapSheet, SHEET_SPRING } from '@/hooks/useSnapSheet';
+import { useAffiliePromoVisible, fermerAffiliePromo } from '@/hooks/useAffiliePromo';
 import { Colors, Radii, SectionLabel, Shadows, Strokes } from '@/constants/tokens';
 import { DAKAR_CENTER, SUGGESTIONS, RECENT_PLACES, PRESTATAIRE } from '@/constants/data';
 import { usePlaces } from '@/stores/places';
@@ -172,8 +173,11 @@ export default function HomeScreen() {
 
   // Mode de l'écran : grille de services ↔ recherche d'itinéraire (morph
   // in-place) ↔ choix d'un point sur la carte (pin fixe, carte mobile dessous).
-  // Bannière Affilié refermée : le proto ne la persiste pas d'un lancement à l'autre.
-  const [promoDismissed, setPromoDismissed] = useState(false);
+  // Bannière Affilié : sa visibilité n'est plus un simple booléen d'écran, elle
+  // obéit à la SOURDINE CROISSANTE — fermer met en sourdine, ça ne supprime pas,
+  // et elle revient après 5, puis 10, puis 15 Commandes terminées depuis le
+  // dernier refus. La règle entière, avec son pourquoi, est dans le hook.
+  const promoVisible = useAffiliePromoVisible();
   // Interrupteur de démo (facilitateur) : une Commande Transport est-elle en
   // cours pendant qu'on est revenu sur l'accueil ? Le cas était signalé comme
   // NON DESSINÉ au recap du 30 août 2026 (« l'utilisateur revient à l'accueil
@@ -621,11 +625,12 @@ export default function HomeScreen() {
             <View {...panHandlers} style={styles.headerZone}>
               <View style={styles.handleFloat} pointerEvents="none"><Handle /></View>
               <SheetCard>
-                {/* Bannière Affilié Réseau — refermable */}
-                {!promoDismissed && (
+                {/* Bannière Affilié Réseau — refermable, et remise en sourdine
+                    pour un nombre croissant de Commandes à chaque refus. */}
+                {promoVisible && (
                   <AffiliePromo
                     onPress={() => router.push('/affilie/presentation')}
-                    onDismiss={() => setPromoDismissed(true)}
+                    onDismiss={fermerAffiliePromo}
                   />
                 )}
 
