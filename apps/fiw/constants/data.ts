@@ -40,7 +40,20 @@ export const CLIENT = {
   name: 'Mamadou Diallo',
   phone: '+221 77 123 45 67',
   note: 4.9,
-  trips: 87,
+  // Toutes les **Commandes** menées à leur terme, TOUS SERVICES — transport et
+  // livraison confondus. Le champ s'appelait `trips` et se lisait « courses »,
+  // ce qui laissait croire à un compteur Transport ; il n'en est pas un.
+  //
+  // `CONTEXT.md` est explicite : « Commande » est le terme canonique interne de
+  // toute demande de service, et il s'**affiche « Course » dans Fiw (Client)** —
+  // « Course » est une ÉTIQUETTE D'INTERFACE, pas un concept distinct. Le
+  // sous-titre « 87 courses » du Menu est donc juste quel que soit le service ;
+  // c'est le nom du champ qui devait le dire, pas l'inverse.
+  //
+  // À ne pas confondre avec `trips` des Prestataires plus bas : celui-là compte
+  // les **Missions** exécutées, l'autre versant de la même Commande.
+  // _(Renommé le 27 septembre 2026.)_
+  commandes: 87,
 };
 
 // Contacts de confiance : reçoivent le trajet en temps réel au départ et peuvent

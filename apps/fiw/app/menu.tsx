@@ -106,10 +106,15 @@ export default function MenuScreen() {
   };
 
   // Résumé lu depuis la SOURCE RÉELLE, comme sur « Mon compte & sécurité ».
-  // Le décompte vient de `CLIENT.trips` et NON de la longueur de
+  // Le décompte vient de `CLIENT.commandes` et NON de la longueur de
   // `COURSE_HISTORY` : cette liste est l'échantillon que l'écran Historique
-  // affiche (4 entrées), pas le total des courses du Client (87).
-  const courses = CLIENT.trips;
+  // affiche (4 entrées), pas le total du Client (87).
+  //
+  // Le champ compte toutes les **Commandes**, tous services ; on l'affiche en
+  // « courses » parce que c'est l'étiquette de la Commande dans l'app Client
+  // (`CONTEXT.md`). Le libellé n'a donc pas à changer le jour où la Livraison
+  // revient dans le MVP : il couvrait déjà les deux.
+  const courses = CLIENT.commandes;
   const derniere = COURSE_HISTORY[0]?.date.split(' · ')[0].toLowerCase();
   const historiqueSummary = courses === 0
     ? 'Aucune course pour le moment'
