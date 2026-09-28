@@ -688,6 +688,46 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > pas la double entrée **d'un même écran**.
 > _(Décidé le 4 septembre 2026, en alignant le Menu sur la grammaire de sa
 > page fille.)_
+>
+> _Amendement du 28 septembre 2026._ Le portrait du Menu est en **colonne
+> centrée** — avatar, nom, téléphone, puis une pastille « Voir mon profil » — et il
+> mène désormais à la **fiche Profil**, plus à la page Compte ; la rangée « Mon
+> compte & sécurité » reste la porte du hub. Les deux entrées vers la page Compte
+> de D3 n'existent donc plus, mais ce que D3 protégeait — un chemin **écrit**
+> pour qui suit les mots plutôt que l'avatar — est désormais porté par le
+> portrait lui-même. Détail dans `benchmark-compte-mobbin.md`, amendement de D3.
+
+> **Un portrait centré dit sa porte par une pastille, pas par un chevron.** Quand le
+> portrait est une **rangée**, le chevron a sa place naturelle : le bout de la
+> ligne, comme toutes les portes de la liste. Quand il est **centré**, il n'a
+> plus de bout de rangée, et le chevron qu'on colle au nom ne tient pas :
+>
+> - **Il est plus fin que le nom.** Le caret `bold`, le plus épais de Phosphor
+>   en contour, fait un trait de 1,5 à 16 ; les fûts d'un `heading2` en font
+>   ~2,3. Rien de plus épais n'existe dans `Icon` (`fill` est une forme pleine,
+>   réservée aux états actifs), et il faudrait une icône de ~24 — bien plus haute
+>   que les capitales — pour égaler le trait.
+> - **Il sort le nom de l'axe.** Centrer le groupe nom + chevron décale le nom
+>   vers la gauche, sous un avatar et au-dessus d'un téléphone qui, eux, sont
+>   centrés.
+> - **Personne ne le fait.** Sur ≈ 85 écrans Mobbin, les portraits centrés qui
+>   sont des portes le disent sous le nom, par une **pastille** (Photoroom, Wise,
+>   Grok) ou un lien (monday.com) ; le seul chevron collé à un nom centré est une
+>   fiche de contact (Luma), pas un menu.
+>
+> Donc : le signe de porte d'un portrait centré est un `Button
+> variant="secondary" size="sm"`, centré, **après les lignes d'identité** —
+> c'est l'ordre de tout le corpus, l'action vient en dernier — et à **10** de la
+> dernière d'entre elles, l'écart que `compte/profil` met déjà entre son portrait
+> et son action. La pastille reste dans la famille du portrait : un **contour**
+> sans aplat, comme l'`Avatar` `contour` qu'elle accompagne, qui ne lui rend donc
+> pas la masse de couleur qu'on lui a retirée. Corollaire : son libellé dit la
+> vraie destination — « Voir mon profil » oblige le portrait à ouvrir la fiche
+> Profil.
+> _(28 septembre 2026, après cinq passes sur un chevron collé au nom — encre,
+> taille, écart, graisse — dont aucune n'a tenu. Un `Button variant="link"` a été
+> posé d'abord, sur le motif de « Modifier la photo » ; comparée à l'écran, la
+> pastille l'a emporté.)_
 
 > **Une porte se tronque, un paragraphe respire.** `ListRow` coupe son titre
 > et son sous-titre à une ligne, et c'est sa raison d'être : des rangées

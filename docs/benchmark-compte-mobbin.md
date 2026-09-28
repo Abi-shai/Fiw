@@ -165,6 +165,64 @@ que l'affordance (invisible) de l'avatar tappable — enjeu d'**accessibilité**
 l'audience Dakar. À documenter par un commentaire dans `MenuDrawer.tsx` au câblage,
 pour qu'un futur dev ne « nettoie » pas la rangée.
 
+> _Amendement du 28 septembre 2026 — le portrait mène à la fiche Profil, et le
+> dit par un mot._ Le portrait du Menu est passé en **colonne centrée** (avatar,
+> nom, téléphone — l'arrangement de Yango, demandé le 14 septembre). Il a perdu
+> au passage le bout de rangée où posait son chevron, et la question est devenue :
+> comment un portrait centré dit-il qu'il est une porte ?
+>
+> **Ce qui a été essayé.** Sans aucun signe d'abord, en comptant sur la rangée
+> « Mon compte & sécurité » juste en dessous — écarté à l'écran : sans signe, le
+> portrait se lit comme un bloc posé là, et D3 n'a jamais fait de la rangée
+> l'affordance du portrait, seulement un second chemin. Puis un chevron collé
+> au nom, réglé en cinq passes (encre, taille, écart, graisse) sans jamais tenir
+> — le caret `bold` de Phosphor reste plus fin que les fûts d'un `heading2`
+> (1,5 contre ~2,3), et centrer le groupe nom + chevron sort le nom de l'axe.
+>
+> **Ce que fait le corpus** (≈ 85 écrans iOS, 7 requêtes) — cinq familles :
+>
+> | Famille | Signe de porte | Apps |
+> |---|---|---|
+> | Rangée, chevron en bout | le chevron, à sa place naturelle | [Glovo](https://mobbin.com/screens/a8a2dd9d-2909-4550-8d8a-9be3f7da83b2) · [inDrive](https://mobbin.com/screens/c2b1581d-f297-4cfd-b659-ce6d5286f544) · [BlaBlaCar](https://mobbin.com/screens/a2c9bf6a-fdc4-4888-90b2-6d03292b7c8e) · [Tonal](https://mobbin.com/screens/4d6bde90-cad3-460d-b3fa-f14f0bc71daa) |
+> | Rangée + lien sous le nom | un **mot** en couleur de marque | [Bolt, menu](https://mobbin.com/screens/40d88928-1105-4207-a140-22d601cdd548) (« My account ») · [Lyft, menu](https://mobbin.com/screens/4b1a7a6e-f93c-486f-97e5-736865654014) (« View profile », sous une ligne secondaire) · [Mindvalley](https://mobbin.com/screens/b8010e85-a009-4a14-b476-57e42bd3a1d7) (nom · e-mail · pastille) |
+> | **Centré, porte** | un **mot** ou une pastille sous le nom | [monday.com](https://mobbin.com/screens/bf98fa22-722b-4811-b9ee-dda34020a636) (« View Profile ») · [Photoroom](https://mobbin.com/screens/454edfc3-512c-4d40-8ffa-7fb9d317b85a) (nom · e-mail · pastille) · [Wise](https://mobbin.com/screens/165c9c01-2707-4f86-b996-44995625fdc7) · [Grok](https://mobbin.com/screens/f743950f-7425-4df8-af65-bd32bf7c303e) (« Edit › ») |
+> | Centré, pas une porte | aucun — la rangée « Personal info » en dessous est la porte | [Bolt, onglet Compte](https://mobbin.com/screens/edcdcfff-1dd1-4112-8160-bc00fb7ae02e) · [Tesla Robotaxi](https://mobbin.com/screens/77306280-9f47-4bc1-8d25-3846156d89f2) |
+> | Grand nom à gauche, avatar à droite | aucun — une rangée plus bas | [Uber](https://mobbin.com/screens/b5becf3a-7859-4932-a272-b5523dab5ddb) · [Careem](https://mobbin.com/screens/2f1e3a0d-f91b-4480-ac0b-6037d101e8dd) · [Wolt](https://mobbin.com/screens/0218957f-3d0b-4d03-b6ca-18bb8ab696b3) |
+>
+> Un seul chevron collé à un nom centré dans tout le corpus : [Luma](https://mobbin.com/screens/c4a84b7e-61bc-442c-b912-b5adfcb5e90d),
+> une fiche de **contact**, pas un menu. Et partout, **l'action vient après les
+> lignes d'identité**.
+>
+> **Décidé par elle le 28 septembre 2026 :**
+>
+> - Le portrait porte une **pastille « Voir mon profil »** (`Button
+>   variant="secondary" size="sm"`) après le téléphone, à 10 — la famille
+>   Photoroom / Wise / Grok. Un lien (`Button variant="link" size="sm"`, le motif
+>   de « Modifier la photo » sur `compte/profil`) a été posé d'abord, puis
+>   comparé à l'écran : **la pastille l'a emporté**. Le chevron collé au nom est
+>   retiré.
+> - **Le téléphone reste.** Les portraits centrés à lien du corpus s'en tiennent
+>   à photo + nom + lien ; mais leur ligne secondaire, quand ils en ont une, est
+>   l'identifiant du compte (e-mail, pseudo), et chez Fiw l'identifiant **est** le
+>   numéro — connexion par code SMS. Yango l'affiche aussi.
+> - **Le portrait et son lien mènent à la fiche Profil**, plus à la page Compte :
+>   le libellé du corpus (« View profile ») ne dit vrai qu'à cette condition, et
+>   le portrait montre exactement ce que la fiche Profil édite (photo, nom,
+>   téléphone). Proposés et écartés : « Voir mon compte » (qui gardait la
+>   destination d'origine) et « Mon compte » (le mot du menu Bolt, presque le
+>   titre de la rangée juste en dessous).
+>
+> **Ce qui change pour D3.** Les deux entrées vers la page Compte n'existent plus
+> depuis le Menu : le portrait ouvre la fiche Profil, la rangée « Mon compte &
+> sécurité » ouvre le hub, et la fiche Profil reste atteignable par les deux
+> chemins. Ce que D3 protégeait, en revanche, **tient et se renforce** : son
+> objet était un chemin **écrit** pour les Clients qui suivent les mots plutôt
+> que l'affordance invisible de l'avatar — c'est désormais le portrait lui-même
+> qui porte ses mots.
+>
+> ⚠️ Limites du corpus, les mêmes qu'au 14 juillet : iOS seul, et ni Yango ni
+> Heetch indexés.
+
 **D4 — « Devenir prestataire » inclus, épinglé en pied de sidebar, style distinct.**
 Élément séparé de la liste (couleur différente, motif [Bolt](https://mobbin.com/screens/40d88928-1105-4207-a140-22d601cdd548) /
 [Lyft](https://mobbin.com/screens/585cc414-743e-4e4f-b211-b433a70fcff2)) pour ne pas
@@ -491,7 +549,8 @@ rubriques + bas de page)
 > rangée ordinaire, et la **Note du Client** en est le sous-titre. **D3 tient**
 > : deux entrées mènent toujours à la page Compte depuis le Menu, le portrait
 > et la rangée « Mon compte & sécurité ». Règle générale dans `style-guide.md`,
-> « Un portrait par flux »._ → `profil` · `paiement` (Mobile Money + Espèces) · `lieux`
+> « Un portrait par flux ». (Depuis le 28 septembre 2026, le portrait mène à la
+> fiche Profil — voir l'amendement de D3.)_ → `profil` · `paiement` (Mobile Money + Espèces) · `lieux`
 (Maison/Travail + libres) · `securite` (Contacts de confiance à 2 niveaux + OTP) ·
 `preferences` (notifications) · Déconnexion · Supprimer mon compte · CGU + version.
 Sidebar : pied épinglé **Devenir prestataire** → Fiw Pro (style distinct).

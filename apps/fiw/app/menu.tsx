@@ -92,7 +92,9 @@ const AFFILIATION_DEMO_LABEL: Record<AffiliationState, string> = {
  *  la première Commande terminée — à l'ouverture initiale, fermer c'est ranger,
  *  pas refuser. Cette règle appartient désormais à la bannière de l'ACCUEIL, qui
  *  est celle qui intercepte et qui ne persiste rien aujourd'hui. Elle n'est pas
- *  implémentée là-bas : l'accueil n'a pas été touché (décision explicite). */
+ *  implémentée là-bas : l'accueil n'a pas été touché (décision explicite).
+ *  _(Implémentée le 27 septembre 2026 : `hooks/useAffiliePromo.ts`, non
+ *  persistée — le proto n'a pas de stockage.)_ */
 export default function MenuScreen() {
   const insets = useSafeAreaInsets();
 
@@ -120,10 +122,16 @@ export default function MenuScreen() {
     ? 'Aucune course pour le moment'
     : `${courses} course${courses > 1 ? 's' : ''}${derniere ? ` · dernière ${derniere}` : ''}`;
 
-  // Le portrait ET la rangée « Mon compte & sécurité » mènent au même écran :
+  // Le portrait ET la rangée « Mon compte & sécurité » menaient au même écran :
   // redondance VOLONTAIRE (cf. benchmark-compte-mobbin.md D3). Ne pas
   // « nettoyer » l'un des deux.
+  // _Amendé le 28 septembre 2026 : le portrait mène désormais à la fiche
+  // PROFIL, la rangée reste la porte de la page Compte. Ce que D3 protégeait —
+  // un chemin écrit pour qui suit les mots plutôt que l'avatar — est porté par le
+  // lien « Voir mon profil » lui-même. Les deux portes restent : l'une ouvre la
+  // fiche de la personne affichée, l'autre le hub._
   const goCompte = () => router.push('/compte');
+  const goProfil = () => router.push('/compte/profil');
   const goAffiliation = () => router.push('/affilie/presentation');
   const onBecomePro = () =>
     Alert.alert('Fiw Pro', 'Ouvrez ou installez l’application Fiw Pro pour devenir prestataire.');
@@ -158,24 +166,71 @@ export default function MenuScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Portrait — tap → page Compte. Il vit ICI et nulle part ailleurs :
-            c'est la page d'atterrissage, il y confirme de qui on parle. Sur
-            « Mon compte & sécurité », le même bloc n'était qu'une porte parmi
-            cinq, la seule à ne pas être une rangée ; il y est redevenu une
-            rangée « Profil ». La Note du Client l'a suivi. */}
-        <TouchableOpacity style={styles.identity} activeOpacity={0.7} onPress={goCompte}>
-          {/* Portrait en CONTOUR : fond `surface`, liseré `borderSubtle`,
-              initiales `gray700`. Plus aucune couleur de marque — ni l'aplat,
-              ni les lettres. Il en faisait l'élément le plus coloré d'une page
-              dont la seule chose à mettre en avant est la proposition du pied,
-              et il ne confirme qu'une identité. _(14 septembre 2026.)_ */}
-          <Avatar name={CLIENT.name} size={AVATAR_CARD} variant="contour" />
-          <View style={styles.identityText}>
-            <Text variant="heading2" numberOfLines={1}>{CLIENT.name}</Text>
-            <Text variant="bodySmall" color={Colors.textSecondary}>{CLIENT.phone}</Text>
-          </View>
-          <Icon name="chevronRight" size={20} color={Colors.textTertiary} />
-        </TouchableOpacity>
+        {/* Portrait — tap → fiche **Profil**. Il vit ICI et nulle part
+            ailleurs : c'est la page d'atterrissage, il y confirme de qui on
+            parle. Sur « Mon compte & sécurité », le même bloc n'était qu'une
+            porte parmi cinq, la seule à ne pas être une rangée ; il y est
+            redevenu une rangée « Profil ». La Note du Client l'a suivi.
+
+            **En COLONNE centrée, façon Yango** (demandé le 14 septembre 2026,
+            fait le 27) : avatar au-dessus, nom, téléphone, puis le lien. Seul
+            l'ARRANGEMENT vient de Yango, pas le style — on garde les initiales
+            et l'`Avatar` maison en `contour`, pas la silhouette générique.
+
+            · **Taille gardée à 64** (`AVATAR_CARD`). Yango est bien plus grand,
+              mais grossir, c'est rendre de la masse à un portrait qu'on vient de
+              vider de son aplat pour qu'il cesse de tirer l'œil. Et 64 est une
+              taille du système, aux initiales typées par la maquette (`heading1`) ;
+              au-delà on tombe dans les avatars « héros » à valeur libre.
+            · **La porte se dit par une PASTILLE : « Voir mon profil »**
+              (28 septembre 2026). Sans signe, le portrait se lisait comme un
+              bloc posé là ; on doit savoir AVANT de taper qu'il mène ailleurs.
+              Un chevron collé au nom a été essayé d'abord, et réglé en cinq
+              passes (encre, taille, écart, graisse) sans jamais tenir : le caret
+              `bold`, le plus épais de Phosphor en contour, reste plus fin que les
+              fûts d'un `heading2` (1,5 contre ~2,3 mesurés), et centrer le groupe
+              nom + chevron sort le nom de l'axe de l'avatar. Le bench Mobbin a
+              tranché (benchmark-compte-mobbin.md, amendement de D3) : un portrait
+              centré qui est une porte le dit sous le nom, par une pastille
+              (Photoroom, Wise, Grok) ou un lien (monday.com), et l'action vient
+              TOUJOURS après les lignes d'identité. Le lien `link sm` a été posé
+              d'abord ; la pastille l'a emporté à l'écran, le même jour. Voir la
+              règle du style guide « Un portrait centré dit sa porte par une
+              pastille ».
+            · **Le téléphone reste**, entre le nom et la pastille : c'est
+              l'identifiant du compte Fiw (connexion par code SMS), là où le
+              corpus met un e-mail ou un pseudo.
+            · **Le portrait et sa pastille mènent à la fiche Profil**, plus à la
+              page Compte (décidé par elle le 28 septembre 2026). Le libellé doit
+              dire vrai, et le portrait montre exactement ce que cette fiche
+              édite : photo, nom, téléphone. La rangée « Mon compte & sécurité »
+              reste la porte du hub.
+            · **Écart avatar → nom : 14**, celui de la rangée, simplement passé
+              à la verticale (même écart que sous l'avatar de la clôture).
+              **Téléphone → pastille : 10**, voir `identity`. Les espacements de
+              la page sont le chantier suivant. */}
+        <View style={styles.identity}>
+          <TouchableOpacity style={styles.portrait} activeOpacity={0.7} onPress={goProfil}>
+            {/* Portrait en CONTOUR : fond `surface`, liseré `borderSubtle`,
+                initiales `gray700`. Plus aucune couleur de marque — ni l'aplat,
+                ni les lettres. Il en faisait l'élément le plus coloré d'une page
+                dont la seule chose à mettre en avant est la proposition du pied,
+                et il ne confirme qu'une identité. _(14 septembre 2026.)_ */}
+            <Avatar name={CLIENT.name} size={AVATAR_CARD} variant="contour" />
+            <View style={styles.identityText}>
+              <Text variant="heading2" align="center" numberOfLines={1}>{CLIENT.name}</Text>
+              <Text variant="bodySmall" align="center" color={Colors.textSecondary}>{CLIENT.phone}</Text>
+            </View>
+          </TouchableOpacity>
+          {/* `Button variant="secondary" size="sm"` du système : pilule
+              transparente à contour gris, encre `textPrimary`. Elle reste dans la
+              famille du portrait — un CONTOUR sans aplat, comme l'`Avatar`
+              `contour` au-dessus — et n'y rapporte donc pas la masse de couleur
+              qu'on lui a retirée ; c'est aussi pourquoi elle n'est pas bleue.
+              Hors du `TouchableOpacity` du portrait : deux zones de frappe qui
+              mènent au même endroit, pas une imbriquée dans l'autre. */}
+          <Button label="Voir mon profil" variant="secondary" size="sm" onPress={goProfil} style={styles.profilLink} />
+        </View>
 
         {/* Chaque porte porte son résumé en SOUS-TITRE : le titre nomme la
             rubrique, le sous-titre dit ce qu'il y a derrière. Jamais en valeur
@@ -343,15 +398,25 @@ const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: Colors.surface },
   content: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 8 },
 
+  // Colonne centrée (27 septembre 2026) : les valeurs de la rangée d'avant,
+  // réorientées — aucune n'a changé.
   identity: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    // 10 entre le téléphone et la pastille : l'écart que `compte/profil` met
+    // déjà entre son portrait et son action (`photoWrap`). Le lien essayé avant
+    // elle s'en tenait à 2, sa `linkBox` apportant l'air ; une pastille n'a pas
+    // de marge à elle.
+    gap: 10,
     paddingVertical: 12,
     // Même respiration que celle qui sépare deux listes (28).
     marginBottom: 28,
   },
-  identityText: { flex: 1, gap: 2 },
+  // Toute la largeur en zone de frappe, comme l'était la rangée.
+  portrait: { alignSelf: 'stretch', alignItems: 'center', gap: 14 },
+  // Les deux lignes prennent toute la largeur et se centrent par `align` : un
+  // nom trop long finit ainsi en « … » au bord de la gouttière.
+  identityText: { alignSelf: 'stretch', gap: 2 },
+  profilLink: { alignSelf: 'center' },
 
   // La gouttière de page, reprise par chaque rangée : le débord de la liste
   // fait filer les filets aux bords, le texte reste aligné sous le portrait.
