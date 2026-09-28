@@ -130,6 +130,9 @@ export default function MenuScreen() {
   // un chemin écrit pour qui suit les mots plutôt que l'avatar — est porté par le
   // lien « Voir mon profil » lui-même. Les deux portes restent : l'une ouvre la
   // fiche de la personne affichée, l'autre le hub._
+  // _Même jour, plus tard : l'avatar, le nom et le téléphone ne sont plus
+  // tappables. La porte de la fiche Profil, c'est la pastille « Voir mon
+  // profil », et elle seule._
   const goCompte = () => router.push('/compte');
   const goProfil = () => router.push('/compte/profil');
   const goAffiliation = () => router.push('/affilie/presentation');
@@ -166,13 +169,14 @@ export default function MenuScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Portrait — tap → fiche **Profil**. Il vit ICI et nulle part
+        {/* Portrait — NON tappable ; seule sa pastille ouvre la fiche
+            **Profil**. Il vit ICI et nulle part
             ailleurs : c'est la page d'atterrissage, il y confirme de qui on
             parle. Sur « Mon compte & sécurité », le même bloc n'était qu'une
             porte parmi cinq, la seule à ne pas être une rangée ; il y est
             redevenu une rangée « Profil ». La Note du Client l'a suivi.
-            _(Cette rangée est retirée le 28 septembre 2026 : le portrait est
-            désormais la seule porte de la fiche Profil.)_
+            _(Cette rangée est retirée le 28 septembre 2026 : la pastille du
+            portrait est désormais la seule porte de la fiche Profil.)_
 
             **En COLONNE centrée, façon Yango** (demandé le 14 septembre 2026,
             fait le 27) : avatar au-dessus, nom, téléphone, puis le lien. Seul
@@ -202,17 +206,23 @@ export default function MenuScreen() {
             · **Le téléphone reste**, entre le nom et la pastille : c'est
               l'identifiant du compte Fiw (connexion par code SMS), là où le
               corpus met un e-mail ou un pseudo.
-            · **Le portrait et sa pastille mènent à la fiche Profil**, plus à la
-              page Compte (décidé par elle le 28 septembre 2026). Le libellé doit
-              dire vrai, et le portrait montre exactement ce que cette fiche
-              édite : photo, nom, téléphone. La rangée « Mon compte & sécurité »
-              reste la porte du hub.
+            · **La pastille mène à la fiche Profil**, plus à la page Compte
+              (décidé par elle le 28 septembre 2026). Le libellé doit dire vrai,
+              et le portrait montre exactement ce que cette fiche édite : photo,
+              nom, téléphone. La rangée « Mon compte & sécurité » reste la porte
+              du hub.
+            · **L'avatar, le nom et le téléphone ne sont PAS tappables** —
+              seule la pastille l'est (décidé par elle le même jour). Le portrait
+              avait d'abord gardé la zone de frappe de l'ancienne rangée, toute
+              la largeur ; elle est retirée. C'est la règle « un portrait
+              confirme, il n'appelle à rien » tenue jusqu'au bout : l'identité
+              se lit, l'action se tape, et les deux ne se confondent plus.
             · **Écart avatar → nom : 14**, celui de la rangée, simplement passé
               à la verticale (même écart que sous l'avatar de la clôture).
               **Téléphone → pastille : 10**, voir `identity`. Les espacements de
               la page sont le chantier suivant. */}
         <View style={styles.identity}>
-          <TouchableOpacity style={styles.portrait} activeOpacity={0.7} onPress={goProfil}>
+          <View style={styles.portrait}>
             {/* Portrait en CONTOUR : fond `surface`, liseré `borderSubtle`,
                 initiales `gray700`. Plus aucune couleur de marque — ni l'aplat,
                 ni les lettres. Il en faisait l'élément le plus coloré d'une page
@@ -223,14 +233,13 @@ export default function MenuScreen() {
               <Text variant="heading2" align="center" numberOfLines={1}>{CLIENT.name}</Text>
               <Text variant="bodySmall" align="center" color={Colors.textSecondary}>{CLIENT.phone}</Text>
             </View>
-          </TouchableOpacity>
+          </View>
           {/* `Button variant="secondary" size="sm"` du système : pilule
               transparente à contour gris, encre `textPrimary`. Elle reste dans la
               famille du portrait — un CONTOUR sans aplat, comme l'`Avatar`
               `contour` au-dessus — et n'y rapporte donc pas la masse de couleur
               qu'on lui a retirée ; c'est aussi pourquoi elle n'est pas bleue.
-              Hors du `TouchableOpacity` du portrait : deux zones de frappe qui
-              mènent au même endroit, pas une imbriquée dans l'autre. */}
+              C'est la SEULE zone de frappe du portrait. */}
           <Button label="Voir mon profil" variant="secondary" size="sm" onPress={goProfil} style={styles.profilLink} />
         </View>
 
@@ -416,7 +425,8 @@ const styles = StyleSheet.create({
     // Même respiration que celle qui sépare deux listes (28).
     marginBottom: 28,
   },
-  // Toute la largeur en zone de frappe, comme l'était la rangée.
+  // Toute la largeur : c'est ce qui laisse `identityText` tronquer le nom au
+  // bord de la gouttière. (Ce n'est plus une zone de frappe.)
   portrait: { alignSelf: 'stretch', alignItems: 'center', gap: 14 },
   // Les deux lignes prennent toute la largeur et se centrent par `align` : un
   // nom trop long finit ainsi en « … » au bord de la gouttière.

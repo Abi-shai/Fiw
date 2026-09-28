@@ -740,6 +740,13 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > taille, écart, graisse — dont aucune n'a tenu. Un `Button variant="link"` a été
 > posé d'abord, sur le motif de « Modifier la photo » ; comparée à l'écran, la
 > pastille l'a emporté.)_
+>
+> _Précision du même jour : **la pastille est la seule zone de frappe.**_ L'avatar,
+> le nom et le téléphone ne sont pas tappables — le portrait avait d'abord gardé
+> la zone de frappe pleine largeur de l'ancienne rangée, elle est retirée. C'est
+> la règle « un portrait confirme, il n'appelle à rien » tenue jusqu'au bout :
+> l'identité se lit, l'action se tape. Là où ce document écrit « le portrait
+> mène à la fiche Profil », lire : sa pastille.
 
 > **Une porte se tronque, un paragraphe respire.** `ListRow` coupe son titre
 > et son sous-titre à une ligne, et c'est sa raison d'être : des rangées

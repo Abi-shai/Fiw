@@ -229,6 +229,12 @@ pour qu'un futur dev ne « nettoie » pas la rangée.
 > plus que sur la fiche : D1 tient, mais la Note n'est plus visible avant de
 > l'ouvrir.
 >
+> _Puis, toujours le même jour :_ l'avatar, le nom et le téléphone **cessent
+> d'être tappables**, à sa demande — seule la pastille « Voir mon profil » ouvre
+> la fiche Profil. Partout où cet amendement dit « le portrait mène à la fiche
+> Profil », c'est désormais sa pastille qui y mène. Le fond de D3 ne bouge pas :
+> le chemin vers la fiche est écrit, et c'est même le seul qui existe.
+>
 > ⚠️ Limites du corpus, les mêmes qu'au 14 juillet : iOS seul, et ni Yango ni
 > Heetch indexés.
 
