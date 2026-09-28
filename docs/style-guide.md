@@ -696,6 +696,18 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > de D3 n'existent donc plus, mais ce que D3 protégeait — un chemin **écrit**
 > pour qui suit les mots plutôt que l'avatar — est désormais porté par le
 > portrait lui-même. Détail dans `benchmark-compte-mobbin.md`, amendement de D3.
+>
+> _Second amendement, même jour — la page fille ne fait plus de rangée._ La
+> rangée « Profil » de **Mon compte & Sécurité** est **retirée** (à sa demande) :
+> la fiche Profil n'a plus qu'une porte, le portrait du Menu. Le titre de cette
+> règle — « ses filles en font une rangée » — ne vaut donc plus pour le flux
+> Compte : quand le portrait de la page d'atterrissage est **lui-même** la porte
+> de la fiche qu'il résume, la page fille n'a pas à la rouvrir. Deux
+> conséquences : le résumé de la rangée « Mon compte & sécurité » du Menu perd
+> « Profil » (« Moyens de paiement, Lieux enregistrés ») ; et la **Note du
+> Client**, qui était le résumé de la rangée retirée, ne se lit plus que sur la
+> fiche Profil — D1 tient (moyenne affichée, détail privé), mais elle n'est plus
+> visible avant d'ouvrir la fiche.
 
 > **Un portrait centré dit sa porte par une pastille, pas par un chevron.** Quand le
 > portrait est une **rangée**, le chevron a sa place naturelle : le bout de la

@@ -220,6 +220,15 @@ pour qu'un futur dev ne « nettoie » pas la rangée.
 > que l'affordance invisible de l'avatar — c'est désormais le portrait lui-même
 > qui porte ses mots.
 >
+> _Plus tard le même jour :_ la rangée « Profil » de « Mon compte & Sécurité »
+> est **retirée**, à sa demande. La fiche Profil n'est donc **plus** atteignable
+> par les deux chemins écrits ci-dessus : sa seule porte est le portrait du
+> Menu. La page Compte passe de cinq portes à quatre (Moyens de paiement, Lieux
+> enregistrés, Sécurité, Préférences), le résumé de sa rangée sur le Menu perd
+> « Profil », et la **Note du Client** — résumé de la rangée retirée — ne se lit
+> plus que sur la fiche : D1 tient, mais la Note n'est plus visible avant de
+> l'ouvrir.
+>
 > ⚠️ Limites du corpus, les mêmes qu'au 14 juillet : iOS seul, et ni Yango ni
 > Heetch indexés.
 
@@ -550,7 +559,8 @@ rubriques + bas de page)
 > : deux entrées mènent toujours à la page Compte depuis le Menu, le portrait
 > et la rangée « Mon compte & sécurité ». Règle générale dans `style-guide.md`,
 > « Un portrait par flux ». (Depuis le 28 septembre 2026, le portrait mène à la
-> fiche Profil — voir l'amendement de D3.)_ → `profil` · `paiement` (Mobile Money + Espèces) · `lieux`
+> fiche Profil et la rangée « Profil » est retirée de cette page — voir
+> l'amendement de D3.)_ → `profil` · `paiement` (Mobile Money + Espèces) · `lieux`
 (Maison/Travail + libres) · `securite` (Contacts de confiance à 2 niveaux + OTP) ·
 `preferences` (notifications) · Déconnexion · Supprimer mon compte · CGU + version.
 Sidebar : pied épinglé **Devenir prestataire** → Fiw Pro (style distinct).

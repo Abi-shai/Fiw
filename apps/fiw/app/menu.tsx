@@ -171,6 +171,8 @@ export default function MenuScreen() {
             parle. Sur « Mon compte & sécurité », le même bloc n'était qu'une
             porte parmi cinq, la seule à ne pas être une rangée ; il y est
             redevenu une rangée « Profil ». La Note du Client l'a suivi.
+            _(Cette rangée est retirée le 28 septembre 2026 : le portrait est
+            désormais la seule porte de la fiche Profil.)_
 
             **En COLONNE centrée, façon Yango** (demandé le 14 septembre 2026,
             fait le 27) : avatar au-dessus, nom, téléphone, puis le lien. Seul
@@ -244,8 +246,11 @@ export default function MenuScreen() {
         <List style_="plat" bleed={20}>
           {/* Le résumé énumère les rubriques de la page fille SANS répéter
               « sécurité », que le titre dit déjà : un sous-titre ajoute, il ne
-              redit pas. Termes canoniques (CONTEXT.md), pas d'abréviation. */}
-          <ListRow icon="account" title="Mon compte & sécurité" subtitle="Profil, Moyens de paiement, Lieux enregistrés" onPress={goCompte} style={styles.row} />
+              redit pas. Termes canoniques (CONTEXT.md), pas d'abréviation.
+              « Profil » en est sorti le 28 septembre 2026 avec la rangée du même
+              nom : la page fille ne l'ouvre plus, c'est le portrait ci-dessus qui
+              y mène. */}
+          <ListRow icon="account" title="Mon compte & sécurité" subtitle="Moyens de paiement, Lieux enregistrés" onPress={goCompte} style={styles.row} />
           <ListRow icon="clock" title="Historique" subtitle={historiqueSummary} onPress={() => router.push('/history')} style={styles.row} />
           {/* Le solde de Points est mis en relief par la pastille `Badge` du
               système plutôt que par le slot `value` : 240 pts est ce qu'on vient

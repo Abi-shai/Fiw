@@ -7,7 +7,6 @@ import ScreenHeader from '@/components/ScreenHeader';
 import List from '@/components/List';
 import ListRow from '@/components/ListRow';
 import Text from '@/components/Text';
-import { CLIENT } from '@/constants/data';
 import { usePlaces } from '@/stores/places';
 import { usePayment, configuredMethods } from '@/stores/payment';
 import { useSafety, safetySummary } from '@/stores/safety';
@@ -35,9 +34,6 @@ export default function CompteScreen() {
   // question qu'on ne peut pas deviner de l'extérieur — le partage est-il en
   // marche ? (Tranché le 20 août 2026, question 4.)
   const securiteSummary = safetySummary(useSafety());
-  // La Note du Client tient lieu de résumé de la rangée « Profil » : c'est la
-  // seule matière que la fiche porte et que le Client ne connaît pas déjà.
-  const profilSummary = `${CLIENT.note.toLocaleString('fr-FR')} · Note du Client`;
 
   const logout = () =>
     Alert.alert('Se déconnecter', 'Voulez-vous vous déconnecter de Fiw ?', [
@@ -70,7 +66,7 @@ export default function CompteScreen() {
             « Sécurité » et non « Contacts de confiance » : l'écran couvre aussi
             le partage de trajet — la rangée portait le nom d'une seule de ses
             sections (réunion du 16 août 2026). */}
-        {/* Une seule liste, sans titres de section : cinq portes ne demandent
+        {/* Une seule liste, sans titres de section : quatre portes ne demandent
             pas de taxonomie, et les titres répétaient le nom de leurs rangées. */}
         <List style_="plat" bleed={20}>
           {/* Le portrait (avatar + nom + téléphone) a quitté cet écran : il vit
@@ -81,8 +77,14 @@ export default function CompteScreen() {
               une rangée, et la Note du Client (moyenne ; le détail par course
               reste privé — décision D1) passe en résumé, comme le résumé de
               toutes les autres rangées dit ce qu'il y a derrière la porte.
-              _(4 septembre 2026.)_ */}
-          <ListRow icon="account" title="Profil" subtitle={profilSummary} subtitleIcon="star" onPress={() => router.push('/compte/profil')} style={styles.row} />
+              _(4 septembre 2026.)_
+
+              _Rangée « Profil » retirée le 28 septembre 2026, à sa demande, le
+              jour où le portrait du Menu est devenu lui-même la porte de la
+              fiche Profil (pastille « Voir mon profil »). La fiche n'a plus que
+              cette porte-là. La Note du Client, qui en était le résumé, ne se
+              lit plus que sur la fiche — D1 tient (moyenne affichée, détail
+              privé), mais elle n'est plus visible avant de l'ouvrir._ */}
           <ListRow icon="card" title="Moyens de paiement" subtitle={paymentSummary} onPress={() => router.push('/compte/paiement')} style={styles.row} />
           <ListRow icon="location" title="Lieux enregistrés" subtitle={placesSummary} onPress={() => router.push('/compte/lieux')} style={styles.row} />
           <ListRow icon="shield" title="Sécurité" subtitle={securiteSummary} onPress={() => router.push('/compte/securite')} style={styles.row} />
