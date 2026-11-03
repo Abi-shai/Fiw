@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import LeafletMap, { LeafletMapHandle } from '@/components/LeafletMap';
 import IconButton from '@/components/IconButton';
+import List from '@/components/List';
 import ListRow from '@/components/ListRow';
 import Medallion from '@/components/Medallion';
 import Divider from '@/components/Divider';
@@ -599,7 +600,9 @@ export default function HomeScreen() {
                       onPress={() => handleSelect(item.place)}
                     />
                   )}
-                  ItemSeparatorComponent={() => <Divider />}
+                  // Filet sous le texte (médaillon 42 + gouttière 12) : la liste
+                  // du Menu fait référence, feuilles comprises (29 sept. 2026).
+                  ItemSeparatorComponent={() => <Divider inset={54} />}
                 />
             </SheetCard>
           </View>
@@ -659,10 +662,17 @@ export default function HomeScreen() {
               contentContainerStyle={styles.stack}
             >
               <SheetCard style={[styles.lastCard, { paddingBottom: 16 + insets.bottom }]}>
-                {RECENTS.map((r, i) => (
-                  <React.Fragment key={r.name}>
-                    {i > 0 ? <Divider /> : null}
+                {/* La liste du Menu fait référence, feuilles comprises : filet
+                    sous le texte (médaillon 42 + gouttière 12). Elle passe par
+                    `List` et non par des rangées et des filets posés un à un
+                    dans la carte : `SheetCard` espace ses enfants de 12, qui
+                    s'ajoutaient au-dessus ET au-dessous de chaque filet — 91
+                    entre deux titres au lieu des 67 du Menu (relevé le
+                    29 septembre 2026). */}
+                <List style_="plat" inset={54} style={styles.recentsList}>
+                  {RECENTS.map((r) => (
                     <ListRow
+                      key={r.name}
                       leading={<Medallion icon="clock" />}
                       title={r.name}
                       subtitle={r.detail}
@@ -671,8 +681,8 @@ export default function HomeScreen() {
                       trailing={null}
                       onPress={() => openConfigure('transport', r, departureName)}
                     />
-                  </React.Fragment>
-                ))}
+                  ))}
+                </List>
               </SheetCard>
             </ScrollView>
           </>
@@ -775,8 +785,14 @@ const styles = StyleSheet.create({
   stack: { paddingTop: SHEET_GAP },
   // Dernière carte : coins bas carrés, blanc jusqu'au bord de l'écran.
   lastCard: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
-  // Carte des résultats de recherche : elle prend la hauteur restante.
-  resultsCard: { flex: 1, marginTop: SHEET_GAP },
+  // Pas de marge basse dans une carte : c'est son padding qui ferme.
+  recentsList: { marginBottom: 0 },
+  // Carte des résultats de recherche : elle ÉPOUSE son contenu (« hug »), et ne
+  // se rétrécit — en faisant défiler sa liste — que si les résultats dépassent
+  // la feuille. Elle prenait jusqu'ici toute la hauteur restante (`flex: 1`) :
+  // deux résultats flottaient dans une grande carte blanche. Changé à sa
+  // demande le 29 septembre 2026.
+  resultsCard: { flexShrink: 1, marginTop: SHEET_GAP },
 
   flex1: { flex: 1 },
 

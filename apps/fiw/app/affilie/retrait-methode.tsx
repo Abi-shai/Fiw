@@ -13,11 +13,11 @@ import PayLogo from '@/components/PayLogo';
 import { Colors, Outfit, SectionLabel, Spacing } from '@/constants/tokens';
 import { AFFILIE_RESEAU, WITHDRAW_MIN, fcfa } from '@/constants/affilie';
 
-/** Retrait du filet pour une tête de `PayLogo` : 16 (padding de carte) + 56
- *  (logo) + 12 (gouttière). Et non 0 : le filet pleine largeur est réservé aux
- *  listes posées DANS UNE FEUILLE — celle de `PaymentSheet` l'est, celle-ci est
- *  sur un écran et garde son retrait, aligné sous le texte. */
-const INSET_PAYLOGO = 84;
+/** Retrait du filet pour une tête de `PayLogo` : 56 (logo) + 12 (gouttière),
+ *  le même que la feuille de paiement depuis que les listes en feuille ont
+ *  aussi leur filet sous le texte. Le padding 16 de la carte n'y entre pas
+ *  (84 jusqu'au 29 septembre 2026 : le filet partait 16 à droite du texte). */
+const INSET_PAYLOGO = 68;
 
 type Operator = { id: string; name: string };
 
@@ -111,8 +111,8 @@ export default function RetraitMethode() {
 
         {/* Choix d'opérateur : même grammaire que la feuille de paiement des
             flux Transport et Livraison — logo en tête, `Radio` en fin de
-            rangée, filet pleine largeur. Deux endroits où l'on choisit par quoi
-            l'argent passe, un seul dessin. */}
+            rangée, filet sous le texte (retrait 68). Deux endroits où l'on
+            choisit par quoi l'argent passe, un seul dessin. */}
         <List title="Opérateur" style_="carte" inset={INSET_PAYLOGO} style={styles.operators}>
           {OPERATORS.map((o) => (
             <ListRow

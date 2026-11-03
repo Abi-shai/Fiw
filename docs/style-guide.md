@@ -495,6 +495,13 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > désignait une rubrique qu'elle ne contient pas — les réglages vivent un cran
 > plus bas, dans « Mon compte & Sécurité »._
 >
+> _Amendement du 29 septembre 2026 — le filet ne va plus de bord à bord._ Il part
+> sous le texte des rangées et s'arrête à la gouttière de page, à droite : la
+> liste ne déborde plus jusqu'aux bords de l'écran. Décidé sur la page Menu et
+> étendu à toutes les listes — voir « La liste du Menu fait référence », plus
+> bas. Le reste de la règle tient : à plat, sur fond blanc, des filets et pas de
+> carte.
+>
 > _Amendement du 14 septembre 2026 — l'exception qui existait sans être écrite._
 > Une **proposition** n'est pas une porte de réglage, et elle a droit à sa carte.
 > La règle disait « une rangée de réglage ne représente rien, c'est une porte » ;
@@ -621,6 +628,9 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > pastille est désormais un `Medallion / Ton=accent` posé dans le `leading` de la
 > rangée, et le mode `plat` de `List` porte la géométrie sans carte décrite
 > ci-dessus (débord de la gouttière pour que les filets filent aux bords)._
+> _(Le débord est retiré le 29 septembre 2026 : les filets s'arrêtent désormais à
+> la gouttière. Le retrait d'une liste à pastille 42 est de 54 — cf. « La liste
+> du Menu fait référence ».)_
 
 > **Le filet d'une liste en feuille file d'un bord à l'autre.** Une liste posée
 > dans une `BottomSheet` sépare ses rangées d'un filet **pleine largeur**
@@ -641,6 +651,66 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > la maquette — accueil, adresse ×2, paiement ×2, destinataire — sont tous en
 > `Retrait=0`, quand le composant `List` seul est réglé sur 50. Le code calculait
 > jusque-là un retrait depuis la largeur de la tête, partout. Partie XLI.)_
+>
+> _Amendement du 29 septembre 2026 — les valeurs du retrait d'écran._ Le 50 de
+> `Retrait=50` était justifié par « padding 16 + icône 22 + gouttière 12 ». Mais
+> `ListRow` n'a pas de padding horizontal — ni dans le code ni dans la maquette :
+> ces 16 sont ceux du **contenu de la liste** (la carte en code, le slot `Contenu`
+> en Figma), qui décale filets et rangées ensemble. Les compter une seconde fois
+> faisait partir **tous** les filets 16 à droite du texte — dans le code (mesuré
+> sur le Menu : filet à 70 du bord, titre à 54) comme dans Figma (`List / plat` :
+> filet à 66, texte à 50). Le retrait vaut désormais **tête + 12** : 34 pour une
+> icône 22 (le défaut de `List`), 48 pour un `Medallion sm`, 54 pour un
+> `Medallion` 42, 60 pour un `Avatar` 48, 68 pour un `PayLogo` 56 ; `Divider`
+> porte 0 · 34 · 54 · 60 dans Figma.
+>
+> _Second amendement, même jour — la règle des feuilles est abandonnée._ À sa
+> demande, la liste du Menu s'applique **partout où il y a une liste**, feuilles
+> comprises : accueil (lieux récents, résultats de recherche), feuille de
+> paiement, destinataire, choix du pays. Leurs filets partent désormais sous le
+> texte comme ceux des écrans. L'argument ci-dessus — en feuille, le filet tient
+> la colonne et un retrait le ferait flotter — n'a pas été retenu : une liste est
+> une liste, où qu'elle soit posée. `Retrait=0` ne sert plus qu'aux filets qui
+> séparent des **blocs** (un titre de son contenu, un itinéraire de son
+> paiement), jamais des rangées.
+
+> **La liste du Menu fait référence.** Mise au point sur la page Menu les 28 et
+> 29 septembre 2026, puis étendue à **toutes** les listes de l'app — écrans et
+> feuilles : Menu, Mon compte & Sécurité, Lieux enregistrés et leur recherche,
+> Contacts de confiance, Préférences, Historique, les listes de l'Affiliation,
+> les lieux récents et les résultats de l'accueil, les feuilles de paiement, de
+> destinataire et de choix du pays. Trois règles :
+>
+> - **Le filet part sous le texte.** Retrait = tête + gouttière 12 (voir
+>   l'amendement ci-dessus). Un filet décalé du texte n'est aligné sur rien.
+> - **Il s'arrête où s'arrêtent les rangées** : à la gouttière de page pour une
+>   liste à plat, au padding de la carte pour une liste en carte, au padding de la
+>   carte de feuille dans une feuille. Il ne file plus
+>   jusqu'aux bords de l'écran ; le prop `bleed` de `List`, qui servait à ça, est
+>   retiré. _(Contredit la règle « filet de bord à bord » du 11 août 2026, tirée
+>   de l'idiome Android : décidé en regardant le Menu, et amendé là-haut.)_
+> - **Une rangée respire : marge verticale 12.** `ListRow` passe de 8 à 12, soit
+>   une rangée à deux lignes de **66** (12 + 20 + 4 + 18 + 12) au lieu de 58. La
+>   liste du Menu était « trop compacte ». Choisi sur planche contre 8 et 16
+>   (canevas Claude Design, page « Espacements du Menu ») ; 16, la valeur la plus
+>   proche au-dessus des 72 de Material 3 pour deux lignes, a été vu dans l'app
+>   puis ramené à 12. La marge vaut pour **toutes** les rangées, feuilles
+>   comprises : une rangée est une rangée.
+>
+> **La bibliothèque Figma a suivi le même jour.** `ListRow` : marge verticale
+> liée à `space/3`. `Divider` : `Retrait` = 0 · 34 · 54 · 60 (au lieu de 0 · 50
+> · 76 — la maquette avait la même erreur que le code : dans `List / plat`, le
+> filet partait à 66 pour un texte à 50). `List` : le contenu n'espace plus ses
+> éléments (12 → 0), sinon l'air autour du filet serait de 24. Les feuilles de
+> l'accueil et des parcours, qui contiennent des `ListRow`, y sont désormais plus
+> hautes de 8 par rangée — dans la maquette comme dans le code. ⚠️ Leurs filets
+> de liste, eux, sont encore en `Retrait=0` dans la maquette : l'abandon de la
+> règle des feuilles n'y est pas reporté.
+>
+> **L'Historique passe sur page blanche.** Ses courses défilaient sans filet, sur
+> le gris de fond ; elles deviennent une `List` à plat (retrait 54), sur le blanc
+> et la gouttière du Menu dont Historique est une porte — une liste à plat vit
+> sur le blanc.
 
 > **L'action « ajouter » d'un écran de gestion est un bouton `primary` sous la
 > liste.** Sur un écran dont c'est la **seule** action — Lieux enregistrés,
@@ -855,8 +925,9 @@ Il expose un **nombre de pixels** quand toutes ses sous-mesures se déduisent pa
 formule. `Avatar` en est le seul cas : `borderRadius = size/2` et
 `fontSize = size*0.38`, donc aucun cran ne décide de rien et une échelle nommée
 serait une fausse abstraction. Les deux tailles qui appartiennent au système
-sont malgré tout nommées — `AVATAR_ROW` (48, adossé au retrait 76 de `ListRow` :
-16 padding + 48 + 12 gap) et `AVATAR_CARD` (64, carte prestataire). Au-delà, les
+sont malgré tout nommées — `AVATAR_ROW` (48, adossé au retrait 60 de `ListRow` :
+48 + 12 gap ; 76 jusqu'au 29 septembre 2026, qui comptait à tort un padding 16)
+et `AVATAR_CARD` (64, carte prestataire). Au-delà, les
 avatars « héros » (clôture, profil, appel plein écran) restent des valeurs
 libres : ils sortent du système de rangées et de cartes.
 

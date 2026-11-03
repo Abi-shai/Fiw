@@ -68,7 +68,7 @@ export default function CompteScreen() {
             sections (réunion du 16 août 2026). */}
         {/* Une seule liste, sans titres de section : quatre portes ne demandent
             pas de taxonomie, et les titres répétaient le nom de leurs rangées. */}
-        <List style_="plat" bleed={20}>
+        <List style_="plat">
           {/* Le portrait (avatar + nom + téléphone) a quitté cet écran : il vit
               une fois, en tête du Menu, la page d'atterrissage où il
               confirme de qui on parle. Ici il n'était qu'une PORTE parmi cinq,
@@ -85,15 +85,15 @@ export default function CompteScreen() {
               cette porte-là. La Note du Client, qui en était le résumé, ne se
               lit plus que sur la fiche — D1 tient (moyenne affichée, détail
               privé), mais elle n'est plus visible avant de l'ouvrir._ */}
-          <ListRow icon="card" title="Moyens de paiement" subtitle={paymentSummary} onPress={() => router.push('/compte/paiement')} style={styles.row} />
-          <ListRow icon="location" title="Lieux enregistrés" subtitle={placesSummary} onPress={() => router.push('/compte/lieux')} style={styles.row} />
-          <ListRow icon="shield" title="Sécurité" subtitle={securiteSummary} onPress={() => router.push('/compte/securite')} style={styles.row} />
-          <ListRow icon="bell" title="Préférences" subtitle="Notifications" onPress={() => router.push('/compte/preferences')} style={styles.row} />
+          <ListRow icon="card" title="Moyens de paiement" subtitle={paymentSummary} onPress={() => router.push('/compte/paiement')} />
+          <ListRow icon="location" title="Lieux enregistrés" subtitle={placesSummary} onPress={() => router.push('/compte/lieux')} />
+          <ListRow icon="shield" title="Sécurité" subtitle={securiteSummary} onPress={() => router.push('/compte/securite')} />
+          <ListRow icon="bell" title="Préférences" subtitle="Notifications" onPress={() => router.push('/compte/preferences')} />
         </List>
 
-        <List style_="plat" bleed={20}>
-          <ListRow icon="signOut" title="Se déconnecter" ton="destructif" trailing={null} onPress={logout} style={styles.row} />
-          <ListRow icon="trash" title="Supprimer mon compte" ton="destructif" trailing={null} onPress={deleteAccount} style={styles.row} />
+        <List style_="plat">
+          <ListRow icon="signOut" title="Se déconnecter" ton="destructif" trailing={null} onPress={logout} />
+          <ListRow icon="trash" title="Supprimer mon compte" ton="destructif" trailing={null} onPress={deleteAccount} />
         </List>
 
         <Text variant="caption" color={Colors.textTertiary} align="center" style={styles.legal}>
@@ -114,9 +114,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.surface },
   content: { paddingHorizontal: 20, paddingTop: 8 },
 
-  // La gouttière de page, reprise par chaque rangée : le débord de la liste
-  // fait filer les filets aux bords, le texte reste aligné sous le titre.
-  row: { paddingHorizontal: 20 },
   legal: { marginTop: 4 },
   version: { marginTop: 6 },
 });

@@ -545,6 +545,12 @@ lieu d'une absence de rangée. **Logos** tirés du registre partagé
   > `SettingsGroup` n'a plus de carte. Les cartes restent aux **objets** (un
   > moyen de paiement, une gamme, un reçu), pas aux portes. Règle détaillée dans
   > `style-guide.md`, section « Composants & organismes ».
+  >
+  > _Amendement du 29 septembre 2026 : les filets ne filent plus « pleine
+  > largeur ». Ils partent sous le texte et s'arrêtent à la gouttière de page —
+  > décidé sur la page Menu, étendu à toutes les listes (`style-guide.md`,
+  > « La liste du Menu fait référence »). Le reste tient : à plat, fond blanc,
+  > en-têtes de section._
 - **`TrustedContactRow`** — contact de confiance : avatar/initiales + nom + état de
   partage, menant aux réglages par contact (partage au départ, appel d'urgence).
 

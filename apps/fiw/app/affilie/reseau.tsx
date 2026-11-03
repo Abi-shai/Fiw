@@ -12,8 +12,10 @@ import Text from '@/components/Text';
 import { Colors, Radii, Spacing } from '@/constants/tokens';
 import { MEMBERS, serviceLabel, activeMembers, totalCourses } from '@/constants/affilie';
 
-/** Retrait du filet pour une tête d'`Avatar` de rangée : 16 + 48 + 12. */
-const INSET_AVATAR = 76;
+/** Retrait du filet pour une tête d'`Avatar` de rangée : 48 + 12 (gouttière).
+ *  Le padding 16 de la carte n'y entre pas (76 jusqu'au 29 septembre 2026 : le
+ *  filet partait 16 à droite du texte). */
+const INSET_AVATAR = 60;
 
 // JS3 — Mon réseau : les Prestataires inscrits avec le code.
 //

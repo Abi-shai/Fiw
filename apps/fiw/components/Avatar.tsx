@@ -13,7 +13,8 @@ function initials(name: string) {
 }
 
 /** Tailles système de l'avatar. `AVATAR_ROW` est adossé à la géométrie de
- *  `ListRow` (retrait 76 = 16 padding + 48 avatar + 12 gap) ; `AVATAR_CARD` est
+ *  `ListRow` (retrait du filet 60 = 48 avatar + 12 gap ; 76 jusqu'au
+ *  29 septembre 2026, qui comptait à tort un padding 16) ; `AVATAR_CARD` est
  *  celle de la carte prestataire. Au-delà, les avatars « héros » (clôture,
  *  profil, appel) restent des valeurs libres : ils sortent du système de
  *  rangées et cartes. */

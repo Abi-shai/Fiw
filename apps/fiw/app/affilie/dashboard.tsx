@@ -16,10 +16,13 @@ import {
   activeMembers, totalCourses, fcfa, serviceIcon,
 } from '@/constants/affilie';
 
-/** Retrait du filet pour une tête de `Medallion sm` : 16 (padding de carte)
- *  + 36 (médaillon) + 12 (gouttière). Les rangées de commission l'emploient ;
- *  les portes, à tête d'icône 22, gardent le 50 par défaut de `List`. */
-const INSET_MEDALLION_SM = 64;
+/** Retrait du filet pour une tête de `Medallion sm` : 36 (médaillon) + 12
+ *  (gouttière). Les rangées de commission l'emploient ; les portes, à tête
+ *  d'icône 22, gardent le 34 par défaut de `List`. Le padding 16 de la carte
+ *  n'y entre pas : il décale déjà filets et rangées ensemble — le compter
+ *  faisait partir le filet 16 à droite du texte (64 jusqu'au 29 septembre
+ *  2026). */
+const INSET_MEDALLION_SM = 48;
 
 // JS3 — Le tableau de bord de l'Affilié Réseau. Page d'atterrissage du rôle :
 // combien j'ai, comment j'en gagne plus, qui est dans mon réseau, ce qui est

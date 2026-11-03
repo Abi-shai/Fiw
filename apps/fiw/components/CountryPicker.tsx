@@ -114,7 +114,9 @@ export default function CountryPicker({ visible, selectedCode, onSelect, onClose
                 onPress={() => onSelect(item)}
               />
             )}
-            ItemSeparatorComponent={() => <Divider />}
+            // Filet sous le nom du pays (drapeau 26 + gouttière 12) : la liste
+            // du Menu fait référence, feuilles comprises (29 sept. 2026).
+            ItemSeparatorComponent={() => <Divider inset={38} />}
             ListEmptyComponent={
               <Text variant="body" color={Colors.textTertiary} align="center" style={styles.empty}>Aucun pays trouvé</Text>
             }

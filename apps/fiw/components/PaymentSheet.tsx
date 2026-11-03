@@ -21,10 +21,11 @@ export default function PaymentSheetContent({ value, onChange, onDone }: {
 }) {
   return (
     <View style={styles.wrap}>
-      {/* Filet pleine largeur : en feuille, il file d'un bord à l'autre du
-          contenu — cf. la règle « Le filet d'une liste en feuille » du style
-          guide. Le retrait est réservé aux listes d'écran. */}
-      <List style_="plat" inset={0} style={styles.list}>
+      {/* Filet sous le texte (logo 56 + gouttière 12), feuille ou pas : la
+          liste du Menu fait référence partout depuis le 29 septembre 2026. Il
+          filait jusque-là pleine largeur, règle des listes en feuille abandonnée
+          le même jour (style guide). */}
+      <List style_="plat" inset={68} style={styles.list}>
         {PAYMENT_METHODS.map((m) => (
           <ListRow
             key={m.id}

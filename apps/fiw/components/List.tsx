@@ -18,26 +18,36 @@ type Props = {
    * `carte` — carte blanche à liseré, pour les listes posées dans une feuille.
    */
   style_?: 'carte' | 'plat';
-  /** Retrait du filet entre rangées : 50 pour une tête d'icône 22, 76 pour un
-   *  avatar de 48. Se déduit de ce qu'on met dans le `leading` des rangées. */
+  /** Retrait du filet entre rangées : la distance entre le début de la rangée
+   *  et son TEXTE, soit la tête + la gouttière 12 de `ListRow`. 34 pour une
+   *  icône 22 (le défaut), 48 pour un `Medallion sm` 36, 54 pour un `Medallion`
+   *  42, 60 pour un `Avatar` 48, 68 pour un `PayLogo` 56. Même dans une
+   *  feuille : la règle « pleine largeur en feuille » est abandonnée le
+   *  29 septembre 2026 (style guide, « La liste du Menu fait référence »).
+   *
+   *  _Changé le 29 septembre 2026._ Le défaut était 50, soit 16 + 22 + 12 : il
+   *  comptait un padding 16 que `ListRow` n'a pas — ces 16 sont ceux du contenu
+   *  de la liste (la carte), qui décale déjà les filets autant que les rangées.
+   *  Tous les filets partaient donc 16 à droite du texte (mesuré sur le Menu :
+   *  filet à 70 du bord, titre à 54). La maquette Figma avait la même erreur,
+   *  corrigée le même jour. */
   inset?: number;
-  /** Débord horizontal, en `plat` : annule la gouttière de page pour que les
-   *  filets filent d'un bord à l'autre de l'écran, comme ceux de la sidebar. Les
-   *  rangées reprennent la gouttière dans leur propre padding, si bien que leur
-   *  texte reste aligné sous le titre de section. */
-  bleed?: number;
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 };
 
 /**
  * Conteneur de rangées (Figma `List`) : libellé de section, rangées séparées
- * par un `Divider`, note de bas de liste. Remplace `SettingsGroup` — même motif,
- * mais il accorde enfin son retrait de filet avec la géométrie réelle de
- * `ListRow` (16 de padding + 22 d'icône + 12 de gouttière = 50).
+ * par un `Divider`, note de bas de liste. Remplace `SettingsGroup`.
+ *
+ * **Le filet part sous le texte et s'arrête où s'arrêtent les rangées** — à la
+ * gouttière de la page en `plat`, au padding de la carte en `carte`. C'est la
+ * liste du Menu, arrêtée le 29 septembre 2026 et étendue à toute l'app. Le prop
+ * `bleed`, qui faisait déborder une liste à plat jusqu'aux bords de l'écran pour
+ * que ses filets y filent, est retiré avec la règle « filet de bord à bord ».
  */
 export default function List({
-  title, footnote, style_ = 'carte', inset = 50, bleed = 0, children, style,
+  title, footnote, style_ = 'carte', inset = 34, children, style,
 }: Props) {
   const items = React.Children.toArray(children).filter(Boolean);
   const plat = style_ === 'plat';
@@ -51,10 +61,10 @@ export default function List({
           ? <Text variant="label" color={Colors.textSecondary} style={styles.title}>{title}</Text>
           : <Text variant="caption" color={Colors.textTertiary} style={styles.title}>{title}</Text>
       ) : null}
-      <View style={[plat ? null : styles.card, bleed ? { marginHorizontal: -bleed } : null]}>
+      <View style={plat ? null : styles.card}>
         {items.map((child, i) => (
           <View key={i}>
-            {i > 0 ? <Divider inset={bleed ? inset + bleed : inset} /> : null}
+            {i > 0 ? <Divider inset={inset} /> : null}
             {child}
           </View>
         ))}

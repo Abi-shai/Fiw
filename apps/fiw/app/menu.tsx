@@ -253,42 +253,23 @@ export default function MenuScreen() {
             leur unique rangée — « Mon compte » au-dessus de « Mon compte &
             sécurité », « Aide » au-dessus de « Aide & support ».
 
-            **Filet aligné sur le TEXTE des rangées** (style guide : « une liste
-            d'écran garde son retrait, aligné sur le texte »). Avec le retrait par
-            défaut (50) et le débord, il partait à 70, 16 à droite du titre : ce
-            50 compte le padding 16 d'une rangée Figma, que nos rangées n'ont pas.
-            `inset={34}` = icône 22 + gouttière 12 de `ListRow`, d'où un filet à
-            54 du bord, là où commence le titre (20 + 22 + 12).
-
-            **Et il s'arrête à la gouttière de page, à droite** — décidé par elle
-            le même jour. La liste ne DÉBORDE plus (`bleed` retiré, et les rangées
-            perdent le padding 20 qui le compensait) : rangées et filets vivent
-            dans la gouttière de 20 comme le reste de la page, et le filet finit
-            sous le chevron au lieu de filer jusqu'au bord de l'écran.
-            ⚠️ Écart à la règle écrite « rangées séparées par un filet de bord à
-            bord » (style guide, « Les cartes sont pour les objets ; les portes
-            sont à plat », 11 août 2026). Il DEVIENT la règle (décidé par elle le
-            28 septembre 2026) : la liste du Menu est mise au point d'abord, puis
-            appliquée à toutes les listes de l'app — le style guide sera amendé
-            à ce moment-là.
-
-            **Marge verticale des rangées : 12, et non les 8 de `ListRow`**
-            (décidé par elle le 29 septembre 2026). Rangée de 58 → 66. Trois
-            marges comparées sur planche (8 · 12 · 16, canevas Claude Design) ;
-            16 (rangée de 74, la plus proche au-dessus des 72 de Material 3 pour
-            deux lignes) a d'abord été posé, puis ramené à 12 après l'avoir vu
-            dans l'app. Posée ici en `style` sur chaque rangée le temps de mettre
-            la liste du Menu au point ; elle rejoindra la spécification de
-            `ListRow` quand la liste sera appliquée à toute l'app. */}
-        <List style_="plat" inset={34}>
+            **C'est la liste de référence du design system** (28–29 septembre
+            2026) : mise au point ici, puis étendue à toutes les listes de l'app.
+            Le filet part sous le TEXTE des rangées (retrait 34 = icône 22 +
+            gouttière 12, le défaut de `List`) et s'arrête à la gouttière de page
+            — la liste ne déborde plus jusqu'aux bords de l'écran. Les rangées ont
+            une marge verticale de 12 (rangée de 66, choisie sur planche contre 8
+            et 16). Règles et pourquoi : style guide, « La liste du Menu fait
+            référence ». */}
+        <List style_="plat">
           {/* Le résumé énumère les rubriques de la page fille SANS répéter
               « sécurité », que le titre dit déjà : un sous-titre ajoute, il ne
               redit pas. Termes canoniques (CONTEXT.md), pas d'abréviation.
               « Profil » en est sorti le 28 septembre 2026 avec la rangée du même
               nom : la page fille ne l'ouvre plus, c'est le portrait ci-dessus qui
               y mène. */}
-          <ListRow icon="account" title="Mon compte & sécurité" subtitle="Moyens de paiement, Lieux enregistrés" onPress={goCompte} style={styles.row} />
-          <ListRow icon="clock" title="Historique" subtitle={historiqueSummary} onPress={() => router.push('/history')} style={styles.row} />
+          <ListRow icon="account" title="Mon compte & sécurité" subtitle="Moyens de paiement, Lieux enregistrés" onPress={goCompte} />
+          <ListRow icon="clock" title="Historique" subtitle={historiqueSummary} onPress={() => router.push('/history')} />
           {/* Le solde de Points est mis en relief par la pastille `Badge` du
               système plutôt que par le slot `value` : 240 pts est ce qu'on vient
               chercher dans cette rangée, pas un résumé de son contenu. Le
@@ -300,9 +281,8 @@ export default function MenuScreen() {
             title="Fidélité"
             subtitle="Réductions et gratuités"
             trailing={<View style={styles.trailingGroup}><Badge variant="suggere" label="240 pts" />{chevron}</View>}
-            style={styles.row}
           />
-          <ListRow icon="help" title="Aide & support" subtitle="Questions fréquentes, nous contacter" trailing={chevron} style={styles.row} />
+          <ListRow icon="help" title="Aide & support" subtitle="Questions fréquentes, nous contacter" trailing={chevron} />
         </List>
 
         {/* Pousse la zone d'argent tout en bas */}
@@ -461,10 +441,6 @@ const styles = StyleSheet.create({
   identityText: { alignSelf: 'stretch', gap: 2 },
   profilLink: { alignSelf: 'center' },
 
-  // Marge verticale des rangées du Menu : 12 au lieu des 8 de `ListRow`
-  // (29 septembre 2026, cf. le commentaire de la liste). Provisoire ici, le
-  // temps de mettre la liste au point avant de l'étendre à toute l'app.
-  row: { paddingVertical: 12 },
   trailingGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 
   // ── Le bloc du pied ────────────────────────────────────────────────────

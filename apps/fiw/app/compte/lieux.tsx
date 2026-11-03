@@ -46,8 +46,7 @@ export default function LieuxScreen() {
             liste. */}
         <List
           style_="plat"
-          bleed={20}
-          inset={56}
+          inset={54}
           footnote="Maison et Travail sont toujours présents ; ajoutez autant de lieux libres que vous voulez."
         >
           {places.map((p) => (
@@ -61,7 +60,6 @@ export default function LieuxScreen() {
               subtitle={rowSubtitle(p)}
               subtitleAccent={rowIsInvite(p)}
               onPress={() => router.push(`/compte/lieu?id=${p.id}`)}
-              style={styles.row}
             />
           ))}
         </List>
@@ -82,10 +80,8 @@ export default function LieuxScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.surface },
   content: { paddingHorizontal: 20, paddingTop: 8 },
-  // Les lieux sont des portes — mêmes rangées à plat, mêmes filets de bord à
-  // bord que le hub Compte, et non une carte englobant la liste. Le padding de
-  // 20 est celui que la liste annule par son débord, pour que les filets filent
-  // aux bords sans désaligner le texte.
-  row: { paddingHorizontal: 20 },
+  // Les lieux sont des portes — mêmes rangées à plat que le hub Compte, et non
+  // une carte englobant la liste. Filets sous le texte (retrait 54 = médaillon
+  // 42 + gouttière 12), dans la gouttière de page.
   add: { marginTop: 16 },
 });

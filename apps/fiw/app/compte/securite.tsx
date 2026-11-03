@@ -59,14 +59,13 @@ export default function SecuriteScreen() {
             Un contact de confiance est un élément que le Client possède, pas un
             réglage : la liste porte la pastille bleue, comme les Lieux
             enregistrés — mêmes objets, même grammaire d'un écran à l'autre. */}
-        <List title="Contacts de confiance" style_="plat" bleed={20} inset={56}>
+        <List title="Contacts de confiance" style_="plat" inset={54}>
           {contacts.length === 0 ? (
             <ListRow
               leading={<Medallion icon="user" ton="accent" />}
               title="Aucun contact"
               subtitle="Ajoutez-en un ci-dessous"
               trailing={null}
-              style={styles.row}
             />
           ) : (
             contacts.map((c) => (
@@ -77,7 +76,6 @@ export default function SecuriteScreen() {
                 subtitle={c.phone}
                 trailing={null}
                 onPress={() => confirmRemove(c.id)}
-                style={styles.row}
               />
             ))
           )}
@@ -96,8 +94,5 @@ const styles = StyleSheet.create({
   // rangées à plat séparées par des filets, jamais des cartes (todo P5).
   container: { flex: 1, backgroundColor: Colors.surface },
   content: { paddingHorizontal: 20, paddingTop: 8 },
-  // La gouttière de page, reprise par chaque rangée : le débord de la liste
-  // fait filer les filets aux bords sans désaligner le texte.
-  row: { paddingHorizontal: 20 },
   add: { marginTop: 16 },
 });

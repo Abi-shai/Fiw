@@ -9,6 +9,7 @@ import LeafletMap, { type LeafletMapHandle } from '@/components/LeafletMap';
 import ScreenHeader from '@/components/ScreenHeader';
 import Field from '@/components/Field';
 import IconButton from '@/components/IconButton';
+import List from '@/components/List';
 import ListRow from '@/components/ListRow';
 import Medallion from '@/components/Medallion';
 import Button from '@/components/Button';
@@ -192,17 +193,22 @@ export default function LieuScreen() {
             <View style={styles.resultsCard}>
               <ScrollView keyboardShouldPersistTaps="handled" style={styles.resultsScroll}>
                 {results.length ? (
-                  results.map((s) => (
-                    <ListRow
-                      key={s.id}
-                      leading={<Medallion icon="location" />}
-                      title={s.name}
-                      subtitle={s.detail}
-                      trailing={null}
-                      onPress={() => goTo({ lat: s.lat, lng: s.lng })}
-                      style={styles.resultRow}
-                    />
-                  ))
+                  // La liste du Menu fait référence (29 sept. 2026) : filet sous
+                  // le texte (médaillon 42 + gouttière 12), arrêté où s'arrêtent
+                  // les rangées — le retrait de 4 est porté par la liste, pour
+                  // que filets et rangées le partagent.
+                  <List style_="plat" inset={54} style={styles.resultsList}>
+                    {results.map((s) => (
+                      <ListRow
+                        key={s.id}
+                        leading={<Medallion icon="location" />}
+                        title={s.name}
+                        subtitle={s.detail}
+                        trailing={null}
+                        onPress={() => goTo({ lat: s.lat, lng: s.lng })}
+                      />
+                    ))}
+                  </List>
                 ) : (
                   <Text variant="bodySmall" color={Colors.textSecondary} style={styles.noResult}>
                     Aucun quartier ne correspond. Placez le pin à la main.
@@ -353,7 +359,9 @@ const styles = StyleSheet.create({
     ...Shadows.float,
   },
   resultsScroll: { maxHeight: 288 },
-  resultRow: { paddingHorizontal: 4 },
+  // Le retrait de 4 des rangées, porté par la liste pour que ses filets
+  // s'arrêtent au même endroit ; pas de marge basse dans une carte.
+  resultsList: { paddingHorizontal: 4, marginBottom: 0 },
   noResult: { paddingVertical: 18, paddingHorizontal: 4, lineHeight: 20 },
 
   // --- Carte : pin + dock de validation (calqué sur home.tsx) ---

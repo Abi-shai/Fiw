@@ -379,8 +379,9 @@ export default function LivraisonConfigureScreen() {
                 placeholder="Rechercher un nom ou un numéro…"
                 style={styles.searchWrap}
               />
-              {/* Filet pleine largeur : liste en feuille. */}
-              <List style_="plat" inset={0}>
+              {/* Filet sous le texte (avatar 48 + gouttière 12) : la liste du
+                  Menu fait référence, feuilles comprises (29 sept. 2026). */}
+              <List style_="plat" inset={60}>
                 {contactMatches.map((c) => (
                   <ListRow
                     key={c.id}

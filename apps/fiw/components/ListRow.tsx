@@ -9,8 +9,8 @@ export type ListRowTon = 'neutre' | 'action' | 'destructif';
 type Props = {
   /** Tête de rangée, à sa taille naturelle : icône 22, `Medallion` 42,
    *  `Avatar` 48 ou 64, `FlagChip`… C'est un emplacement libre, pas une icône
-   *  imposée — d'où le retrait du `Divider` qui suit (50 pour une icône, 76 pour
-   *  un avatar de rangée). */
+   *  imposée — d'où le retrait du `Divider` qui suit : tête + gouttière 12,
+   *  soit 34 pour une icône, 60 pour un avatar de rangée (cf. `List`). */
   leading?: React.ReactNode;
   /** Raccourci du cas courant : le glyphe 22 nu, teinté par le `ton`. C'est le
    *  contenu par défaut du slot dans la maquette. */
@@ -60,9 +60,14 @@ const HEAD_COLOR: Record<ListRowTon, string> = {
 
 /**
  * LA rangée du système (Figma `ListRow`). Une seule spécification — gouttière
- * 12, padding vertical 8, titre `bodyMedium`, valeur `label`, trailing 18 —
+ * 12, padding vertical 12, titre `bodyMedium`, valeur `label`, trailing 18 —
  * pour tout ce qui « fait rangée » : réglages, lieux, contacts, moyens de
  * paiement, prestataires.
+ *
+ * _Padding vertical 8 → 12 le 29 septembre 2026_ : la liste du Menu était « trop
+ * compacte ». Une rangée à deux lignes passe de 58 à 66 (12 + 20 + 4 + 18 + 12).
+ * Choisi sur planche contre 8 et 16, arrêté sur le Menu puis étendu à toutes les
+ * rangées. Le composant Figma `ListRow` a suivi le même jour (`space/3`).
  *
  * Elle a remplacé six composants qui disaient la même chose avec sept tailles de
  * tête, quatre paddings et trois largeurs. Ce qui varie d'un emploi à l'autre
@@ -144,7 +149,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 8,
+    paddingVertical: 12,
   },
   body: { flex: 1, gap: 4 },
   subtitleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
