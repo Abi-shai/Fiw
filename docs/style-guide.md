@@ -662,7 +662,7 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > filet à 66, texte à 50). Le retrait vaut désormais **tête + 12** : 34 pour une
 > icône 22 (le défaut de `List`), 48 pour un `Medallion sm`, 54 pour un
 > `Medallion` 42, 60 pour un `Avatar` 48, 68 pour un `PayLogo` 56 ; `Divider`
-> porte 0 · 34 · 54 · 60 dans Figma.
+> porte 0 · 34 · 54 · 60 dans Figma (68 ajouté le 3 novembre 2026).
 >
 > _Second amendement, même jour — la règle des feuilles est abandonnée._ À sa
 > demande, la liste du Menu s'applique **partout où il y a une liste**, feuilles
@@ -706,6 +706,13 @@ apps/fiw, apps/fiw-pro  ← templates + pages (routes Expo)
 > hautes de 8 par rangée — dans la maquette comme dans le code. ⚠️ Leurs filets
 > de liste, eux, sont encore en `Retrait=0` dans la maquette : l'abandon de la
 > règle des feuilles n'y est pas reporté.
+> _(Reporté le 3 novembre 2026 : les 15 filets entre rangées des feuilles
+> `BottomSheet` et de la maquette d'accueil « S2 » sont passés sous le texte —
+> 54 sous un médaillon, 60 sous un avatar, et **68** sous un logo de paiement,
+> retrait ajouté à `Divider` pour l'occasion. Les conteneurs de ces listes
+> espaçaient leurs éléments de 8 (`space/2`) : liés à `space/0`, comme le
+> contenu de `List`. Les filets entre blocs restent en `Retrait=0`, et les
+> planches d'exploration de l'accueil n'ont pas été touchées.)_
 >
 > **L'Historique passe sur page blanche.** Ses courses défilaient sans filet, sur
 > le gris de fond ; elles deviennent une `List` à plat (retrait 54), sur le blanc
