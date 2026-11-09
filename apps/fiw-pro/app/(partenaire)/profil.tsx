@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  validerLabel: { fontSize: 14, fontWeight: '700', color: Colors.white },
+  validerLabel: { fontSize: 14, fontWeight: '700', color: Colors.surface },
 
   separator: { height: 8, backgroundColor: Colors.bg, marginVertical: 8 },
 

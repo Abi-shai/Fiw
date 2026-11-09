@@ -49,7 +49,7 @@ export default function CommanderScreen() {
         activeOpacity={0.85}
       >
         <View style={styles.newClientIcon}>
-          <Ionicons name="add" size={22} color={Colors.white} />
+          <Ionicons name="add" size={22} color={Colors.surface} />
         </View>
         <Text style={styles.newClientLabel}>Nouveau client</Text>
         <Ionicons name="chevron-forward" size={18} color={Colors.primary} />

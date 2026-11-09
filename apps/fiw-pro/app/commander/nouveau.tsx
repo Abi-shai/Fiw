@@ -153,5 +153,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   continueBtnDisabled: { opacity: 0.4 },
-  continueBtnLabel: { fontSize: 16, fontWeight: '700', color: Colors.white },
+  continueBtnLabel: { fontSize: 16, fontWeight: '700', color: Colors.surface },
 });

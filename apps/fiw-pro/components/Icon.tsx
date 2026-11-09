@@ -6,11 +6,18 @@ import {
   CheckCircle, HandsPraying, Person, PencilSimple, CaretDown,
   Check, Timer, FlagBannerFold, Handshake, Lifebuoy,
   Info, Hourglass, Coins, Lightning, CaretUp,
-  Wallet, Lock,
+  SpeakerHigh, SpeakerSlash, Microphone, MicrophoneSlash, LockSimple,
+  Bicycle, CalendarBlank, FileText, TShirt, Pill, DeviceMobile, Barcode, ShieldCheck,
+  User, AddressBook, PaperPlaneTilt, UsersThree,
+  Gift, Question, UserCircleGear,
+  Copy, QrCode, Wallet, Bank, DownloadSimple, XCircle,
+  CreditCard, Bell, SignOut, Trash, SteeringWheel,
   type IconProps as PhosphorProps,
 } from 'phosphor-react-native';
 import { Colors } from '@/constants/tokens';
 
+// Set nommé et curé. Les écrans n'importent JAMAIS phosphor directement —
+// ils passent par <Icon name="…" /> pour empêcher tout mélange de familles.
 const REGISTRY = {
   search: MagnifyingGlass,
   close: X,
@@ -51,8 +58,43 @@ const REGISTRY = {
   coins: Coins,
   lightning: Lightning,
   chevronUp: CaretUp,
+  speaker: SpeakerHigh,
+  speakerOff: SpeakerSlash,
+  mic: Microphone,
+  micOff: MicrophoneSlash,
+  lock: LockSimple,
+  // Livraison
+  bicycle: Bicycle,
+  calendar: CalendarBlank,
+  document: FileText,
+  tshirt: TShirt,
+  pill: Pill,
+  device: DeviceMobile,
+  barcode: Barcode,
+  shield: ShieldCheck,
+  user: User,
+  contacts: AddressBook,
+  send: PaperPlaneTilt,
+  group: UsersThree,
+  // Menu latéral
+  account: UserCircleGear,
+  gift: Gift,
+  help: Question,
+  // Affilié
+  copy: Copy,
+  qr: QrCode,
   wallet: Wallet,
-  lock: Lock,
+  users: UsersThree,
+  bank: Bank,
+  download: DownloadSimple,
+  xCircle: XCircle,
+  card: CreditCard,
+  bell: Bell,
+  signOut: SignOut,
+  trash: Trash,
+  // Devenir prestataire — volant = « conduire ou livrer » (rôle générique,
+  // inclusif des livreurs, contrairement à `car`). Seul symbole abstrait du kit.
+  wheel: SteeringWheel,
 } as const;
 
 export type IconName = keyof typeof REGISTRY;
@@ -61,6 +103,8 @@ type Props = {
   name: IconName;
   size?: number;
   color?: string;
+  /** `bold` par défaut — trait épais, style graphique affirmé de la marque ;
+   *  `fill` réservé aux états actifs/sélectionnés (emphase maximale). */
   weight?: PhosphorProps['weight'];
 };
 

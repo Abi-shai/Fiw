@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   soldeLabel: { fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 },
-  soldeValue: { fontSize: 32, fontWeight: '800', color: Colors.white, marginBottom: 4 },
+  soldeValue: { fontSize: 32, fontWeight: '800', color: Colors.surface, marginBottom: 4 },
   soldeCommission: { fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 16 },
 
   geleBox: {
@@ -139,10 +139,10 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
   },
-  minText: { fontSize: 12, color: Colors.white, lineHeight: 16 },
+  minText: { fontSize: 12, color: Colors.surface, lineHeight: 16 },
 
   retirerBtn: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderRadius: 12,
     height: 48,
     justifyContent: 'center',

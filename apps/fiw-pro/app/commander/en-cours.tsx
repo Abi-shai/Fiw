@@ -195,5 +195,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  doneBtnLabel: { fontSize: 15, fontWeight: '700', color: Colors.white },
+  doneBtnLabel: { fontSize: 15, fontWeight: '700', color: Colors.surface },
 });

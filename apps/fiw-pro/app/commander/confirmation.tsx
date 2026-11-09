@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   prixLabel: { fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 },
-  prixValue: { fontSize: 30, fontWeight: '800', color: Colors.white },
+  prixValue: { fontSize: 30, fontWeight: '800', color: Colors.surface },
   prixNote: { fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
 
   smsNote: {
@@ -200,5 +200,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  primaryBtnLabel: { fontSize: 15, fontWeight: '700', color: Colors.white },
+  primaryBtnLabel: { fontSize: 15, fontWeight: '700', color: Colors.surface },
 });

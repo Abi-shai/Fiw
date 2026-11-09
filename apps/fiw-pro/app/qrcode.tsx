@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   qrLogoInactive: { backgroundColor: Colors.textTertiary },
-  qrLogoText: { fontSize: 18, fontWeight: '800', color: Colors.white, letterSpacing: -0.5 },
+  qrLogoText: { fontSize: 18, fontWeight: '800', color: Colors.surface, letterSpacing: -0.5 },
   qrPointLabel: { fontSize: 10, fontWeight: '700', color: Colors.textPrimary, letterSpacing: 1.5, textAlign: 'center' },
   qrPointLabelInactive: { color: Colors.textTertiary },
 
