@@ -1,215 +1,185 @@
 import React, { useState } from 'react';
-import {
-  View, StyleSheet, TouchableOpacity,
-  ScrollView, SafeAreaView,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
-import { Colors, Spacing, Radii, Shadows, Outfit } from '@/constants/tokens';
-import Text from '@/components/Text';
-import Icon from '@/components/Icon';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import Button from '@/components/Button';
-import { MISSION_INCOMING, PRESTATAIRE, COMMISSION_RATE } from '@/constants/data';
+import ScreenFooter from '@/components/ScreenFooter';
+import Text from '@/components/Text';
+import Divider from '@/components/Divider';
+import Icon from '@/components/Icon';
+import Hint from '@/components/Hint';
+import InfoRow from '@/components/InfoRow';
+import { Colors, Radii, SectionLabel, Spacing, Strokes } from '@/constants/tokens';
+import { COMMISSION_RATE, MISSION_INCOMING, PRESTATAIRE, fcfa } from '@/constants/data';
 
-export default function CompleteScreen() {
-  const [rating, setRating] = useState(0);
-  const [submitted, setSubmitted] = useState(false);
+const LIBELLE_NOTE = ['', 'Très difficile', 'Difficile', 'Correct', 'Bon client', 'Excellent client'];
 
-  const montantBrut = MISSION_INCOMING.prixEstime;
-  const commission = Math.round(montantBrut * COMMISSION_RATE);
-  const netPercu = montantBrut - commission;
+/**
+ * **Course terminée.**
+ *
+ * ── Une erreur de la version de juin, corrigée ici ────────────────────────
+ * L'écran annonçait « **Net perçu** = brut − commission », soit 1 892 F sur une
+ * course à 2 200 F. **C'est faux, et c'est précisément le contresens que le
+ * mimétisme du corpus produit** (cf. `docs/benchmark-fiw-pro.md` § 1) : chez
+ * Bolt, Uber ou Heetch, la plateforme encaisse et reverse au chauffeur net de
+ * commission — d'où un « net perçu » qui a un sens.
+ *
+ * Chez Fiw, non. Le Client paie le Prestataire **directement**, la totalité.
+ * La commission ne sort pas de la course : elle est **prélevée sur le Wallet**,
+ * qui est prépayé (`CONTEXT.md` — sens unique débit, Wallet vide = accès
+ * bloqué). Le Prestataire encaisse donc 2 200 F en main, et son Wallet baisse
+ * de 308 F. Ce sont deux mouvements distincts, et les présenter comme une
+ * soustraction fait croire à une retenue qui n'existe pas.
+ *
+ * D'où la hiérarchie de l'écran : **ce qu'il encaisse** en grand, et la
+ * commission juste en dessous comme ce qu'elle est — une **ligne de Wallet**,
+ * avec le nouveau solde.
+ *
+ * ⚠️ **Question ouverte** : quand le Client paie en Mobile Money, l'argent
+ * transite-t-il par Fiw ? Si oui, le modèle « j'encaisse la totalité » ne tient
+ * que pour les espèces, et cet écran devra distinguer les deux. Le modèle du
+ * Wallet prépayé suggère que non — mais ce n'est écrit nulle part.
+ *
+ * ── L'évaluation ──────────────────────────────────────────────────────────
+ * `CONTEXT.md` : l'ÉvaluationClient est **privée**. Le Client ne voit jamais
+ * qui l'a notée ni combien ; seule sa moyenne lui est montrée. L'écran le dit,
+ * parce que c'est ce qui rend la note honnête — un Prestataire qui se croit
+ * identifiable note poliment.
+ *
+ * ⚠️ Les étoiles sont en **`brandYellow`** et non en `warning`. Le Client, lui,
+ * peint encore les siennes en `warning` dans `transport/cloture.tsx` — alors
+ * que `ListRow` a été corrigé le 4 septembre au motif qu'*une note n'est pas
+ * une alerte*. C'est un reste à corriger **côté Client** ; on ne reproduit pas
+ * ici un défaut déjà identifié là-bas.
+ */
+export default function Complete() {
+  const insets = useSafeAreaInsets();
+  const [note, setNote] = useState(5);
+  const m = MISSION_INCOMING;
 
-  const handleSubmit = () => {
-    setSubmitted(true);
-    setTimeout(() => router.replace('/dashboard'), 1800);
+  const commission = Math.round(m.prix * COMMISSION_RATE);
+  const soldeApres = PRESTATAIRE.walletSolde - commission;
+
+  const terminer = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    router.replace('/accueil');
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* En-tête */}
-        <View style={styles.header}>
-          <View style={styles.checkCircle}>
-            <Icon name="tick" size={36} color={Colors.textOnPrimary} />
+    <View style={styles.page}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Bandeau de marque, à fond perdu. Le corpus le fait partout où
+            l'écran annonce une somme qui vient d'être gagnée (DiDi met son
+            montant sur un plein bleu, Yassir sur un plein violet) — et c'est
+            aussi ce que fait l'app Client sur sa célébration d'Affiliation.
+            Un chiffre qui compte mérite un fond qui le porte ; posé sur du
+            gris, il n'était qu'une ligne de plus. */}
+        <View style={[styles.bandeau, { paddingTop: insets.top + Spacing[7] }]}>
+          <View style={styles.pastille}>
+            <Icon name="check" size={32} weight="fill" color={Colors.textOnPrimary} />
           </View>
-          <Text variant="display" style={{ marginBottom: 4 }}>Mission terminée</Text>
-          <Text variant="caption" color={Colors.textTertiary}>{MISSION_INCOMING.id}</Text>
-        </View>
+          <Text variant="heading2" color={Colors.textOnPrimary} align="center">Course terminée</Text>
 
-        {/* Récapitulatif financier */}
-        <View style={styles.card}>
-          <Text variant="label" style={styles.cardTitle}>Récapitulatif</Text>
-
-          <View style={styles.lineRow}>
-            <Text variant="bodySmall" color={Colors.textSecondary}>Montant brut</Text>
-            <Text variant="label">{montantBrut.toLocaleString('fr-FR')} F CFA</Text>
-          </View>
-          <View style={styles.lineRow}>
-            <Text variant="bodySmall" color={Colors.textSecondary}>Commission Fiw (14 %)</Text>
-            <Text variant="label" color={Colors.error}>−{commission.toLocaleString('fr-FR')} F CFA</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.lineRow}>
-            <Text variant="label" style={{ fontFamily: Outfit.semibold, fontSize: 16 }}>Net perçu</Text>
-            <Text variant="heading2" color={Colors.primary}>{netPercu.toLocaleString('fr-FR')} F CFA</Text>
-          </View>
-
-          <View style={styles.walletNotice}>
-            <Text variant="caption" color={Colors.primary}>
-              Commission débitée de votre Wallet · Nouveau solde :{' '}
-              <Text variant="caption" color={Colors.primary} style={{ fontFamily: Outfit.bold }}>
-                {(PRESTATAIRE.walletSolde - commission).toLocaleString('fr-FR')} F
-              </Text>
-            </Text>
-          </View>
-        </View>
-
-        {/* Trajet */}
-        <View style={styles.card}>
-          <Text variant="label" style={styles.cardTitle}>Trajet</Text>
-          <View style={styles.routeRow}>
-            <View style={[styles.routeDot, { backgroundColor: Colors.primary }]} />
-            <Text variant="bodySmall">{MISSION_INCOMING.pickup.name}</Text>
-          </View>
-          <View style={styles.routeLine} />
-          <View style={styles.routeRow}>
-            <View style={[styles.routeDot, { backgroundColor: Colors.error }]} />
-            <Text variant="bodySmall">{MISSION_INCOMING.destination.name}</Text>
-          </View>
-          <Text variant="caption" color={Colors.textTertiary} style={{ marginTop: Spacing[2] }}>
-            {MISSION_INCOMING.distance} · {MISSION_INCOMING.type}
+          {/* Ce qu'il encaisse — en main, auprès du Client. C'est le chiffre de
+              l'écran, et il vaut le prix PLEIN de la course. */}
+          <Text variant="caption" color={Colors.textOnInverseSecondary} style={styles.kicker}>
+            À ENCAISSER AUPRÈS DU CLIENT
+          </Text>
+          <Text variant="displayXl" color={Colors.textOnPrimary}>{fcfa(m.prix)}</Text>
+          <Text variant="bodySmall" color={Colors.textOnInverseSecondary} align="center">
+            {m.pickup.name} → {m.destination.name} · {m.distanceCourse}
           </Text>
         </View>
 
-        {/* ÉvaluationClient — privée */}
-        <View style={styles.card}>
-          <View style={styles.evalHeader}>
-            <Text variant="label" style={styles.cardTitle}>Évaluation client</Text>
-            <View style={styles.privateBadge}>
-              <Icon name="lock" size={11} color={Colors.textSecondary} />
-              <Text variant="caption" color={Colors.textSecondary} style={{ marginLeft: 4 }}>Privée</Text>
-            </View>
+        <View style={styles.corps}>
+        {/* La commission, présentée comme un mouvement de Wallet — pas comme
+            une retenue sur la course. */}
+        <View style={styles.wallet}>
+          <View style={styles.ligne}>
+            <InfoRow
+              label={`Commission Fiw (${Math.round(COMMISSION_RATE * 100)} %)`}
+              value={`−${fcfa(commission)}`}
+            />
           </View>
-          <Text variant="bodySmall" color={Colors.textTertiary} style={{ marginBottom: Spacing[4] }}>
-            Non visible par {MISSION_INCOMING.clientName}. Utilisée pour améliorer l'expérience globale.
-          </Text>
-
-          <View style={styles.starsRow}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <TouchableOpacity
-                key={star}
-                onPress={() => !submitted && setRating(star)}
-                activeOpacity={0.7}
-                disabled={submitted}
-              >
-                <Icon
-                  name="star"
-                  size={32}
-                  weight={star <= rating ? 'fill' : 'regular'}
-                  color={star <= rating ? Colors.warning : Colors.border}
-                />
-              </TouchableOpacity>
-            ))}
+          <Divider inset={0} />
+          <View style={styles.ligne}>
+            <InfoRow label="Nouveau solde du Wallet" value={fcfa(soldeApres)} emphase="montant" />
           </View>
-
-          {rating > 0 && (
-            <Text variant="bodySmall" color={Colors.textSecondary} align="center" style={{ marginTop: 4 }}>
-              {['', 'Très mauvais', 'Mauvais', 'Correct', 'Bien', 'Excellent'][rating]}
-            </Text>
-          )}
         </View>
+        <Hint icon="info">
+          La commission est prélevée sur votre Wallet, pas sur la course.
+        </Hint>
 
-        {submitted ? (
-          <View style={styles.successRow}>
-            <Text variant="label" color={Colors.primary} align="center">
-              Évaluation enregistrée · Retour au tableau de bord…
-            </Text>
-          </View>
-        ) : (
-          <Button
-            label={rating === 0 ? 'Passer' : 'Valider et terminer'}
-            onPress={handleSubmit}
-            style={styles.submitBtn}
-          />
-        )}
+        {/* ÉvaluationClient — privée. */}
+        <Text variant="heading2" style={styles.titreNote}>Comment s'est passée la course ?</Text>
+        <View style={styles.etoiles}>
+          {[1, 2, 3, 4, 5].map((s) => (
+            <TouchableOpacity key={s} onPress={() => { Haptics.selectionAsync(); setNote(s); }} activeOpacity={0.7}>
+              <Icon
+                name="star"
+                size={36}
+                weight={s <= note ? 'fill' : 'bold'}
+                color={s <= note ? Colors.brandYellow : Colors.border}
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
+        <Text variant="label" align="center">{LIBELLE_NOTE[note]}</Text>
+        <Hint icon="lock" align="center" style={styles.prive}>
+          {m.clientName} ne verra jamais votre note ni qui l'a donnée.
+        </Hint>
+        </View>
       </ScrollView>
-    </SafeAreaView>
+
+      <ScreenFooter rule>
+        <Button label="Terminer" onPress={terminer} />
+      </ScreenFooter>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
-  scroll: { padding: Spacing[6], paddingBottom: 48 },
-  header: { alignItems: 'center', marginBottom: Spacing[6] },
-  checkCircle: {
-    width: 72, height: 72,
-    borderRadius: 36,
+  page: { flex: 1, backgroundColor: Colors.bg },
+  content: { paddingBottom: Spacing[8] },
+  corps: { paddingHorizontal: Spacing[4] },
+  // `InfoRow` est à plat par contrat : c'est au conteneur de lui donner sa
+  // respiration verticale, et au `Divider` du système de la séparer.
+  ligne: { paddingVertical: Spacing[3] },
+
+  // Le bandeau descend sous la barre d'état (le `paddingTop` ajoute la zone
+  // sûre) et s'arrondit en bas seulement : en haut il est coupé par le bord de
+  // l'écran, l'arrondir y laisserait deux coins de page.
+  bandeau: {
     backgroundColor: Colors.primary,
-    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing[4],
-    ...Shadows.lg,
+    paddingHorizontal: Spacing[6],
+    paddingBottom: Spacing[8],
+    borderBottomLeftRadius: Radii.xl,
+    borderBottomRightRadius: Radii.xl,
+    gap: Spacing[1],
+    marginBottom: Spacing[7],
   },
-  card: {
+  pastille: {
+    width: 64, height: 64, borderRadius: Radii.pill,
+    backgroundColor: Colors.onInverseSubtle,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: Spacing[3],
+  },
+  kicker: { ...SectionLabel, marginTop: Spacing[5] },
+
+  wallet: {
     backgroundColor: Colors.surface,
     borderRadius: Radii.lg,
-    padding: 20,
-    marginBottom: Spacing[4],
-    ...Shadows.sm,
-  },
-  cardTitle: {
-    fontFamily: Outfit.bold,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.5,
-    marginBottom: 14,
-  },
-  lineRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  divider: { height: 1, backgroundColor: Colors.border, marginVertical: 10 },
-  walletNotice: {
-    marginTop: 12,
-    backgroundColor: Colors.primarySubtle,
-    borderRadius: Radii.sm,
-    padding: 10,
-  },
-  routeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
-  routeDot: { width: 10, height: 10, borderRadius: 5 },
-  routeLine: {
-    width: 2, height: 12,
-    backgroundColor: Colors.border,
-    marginLeft: 4, marginBottom: 4,
-  },
-  evalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  privateBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bg,
-    borderRadius: Radii.sm,
-    paddingHorizontal: Spacing[2],
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  starsRow: {
-    flexDirection: 'row',
-    gap: Spacing[2],
-    justifyContent: 'center',
+    borderWidth: Strokes.thin, borderColor: Colors.borderSubtle,
+    paddingHorizontal: Spacing[4],
     marginBottom: Spacing[2],
   },
-  submitBtn: { marginTop: Spacing[2] },
-  successRow: {
-    backgroundColor: Colors.primarySubtle,
-    borderRadius: Radii.md,
-    padding: Spacing[4],
-    alignItems: 'center',
-    marginTop: Spacing[2],
+
+  titreNote: { marginTop: Spacing[8], textAlign: 'center' },
+  etoiles: {
+    flexDirection: 'row', justifyContent: 'center', gap: Spacing[3],
+    marginTop: Spacing[4], marginBottom: Spacing[3],
   },
+  prive: { marginTop: Spacing[3] },
 });

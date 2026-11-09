@@ -39,6 +39,34 @@ interface Props {
   markers?: Marker[];
   route?: RouteConfig;
   mapStyle?: string;
+  /**
+   * **Zones de demande** — la carte de chaleur de l'app Prestataire.
+   *
+   * Relevé décisif du benchmark : chez Lyft, Bolt Driver et Bolt Food, la
+   * feuille de l'état « en ligne » est aussi sobre que possible et **c'est la
+   * carte qui porte la vie de l'écran**. Un écran d'attente n'est pas rendu
+   * vivant par du décor dans la feuille.
+   *
+   * ── La forme, reprise de Bolt Food ────────────────────────────────────
+   * **Des polygones, pas des halos.** Une zone de demande a une frontière
+   * opérationnelle ; un dégradé radial dit « quelque part par là » et ne se
+   * tape pas. Remplissage à **18 %** et liseré de la même teinte : la carte
+   * doit rester lisible DESSOUS — une première version à 85 % l'effaçait.
+   *
+   * L'étiquette est une **pastille blanche portant la valeur**, pas une
+   * pastille colorée portant le nom du quartier : le Prestataire connaît ses
+   * quartiers, ce qu'il ne sait pas c'est où ça bouge. Blanche, elle reste
+   * lisible quelle que soit la teinte de la zone.
+   *
+   * ⚠️ **On ne peint QUE les zones chaudes.** Bolt Food colore tout — vert
+   * pour le normal, rouge pour le fort — parce qu'il a un multiplicateur de
+   * prix à annoncer. Fiw n'en a pas : son positionnement est « le prix affiché
+   * est le prix payé, toujours ». Peindre le « normal » n'apprendrait donc
+   * rien et demanderait une échelle de couleurs que le système n'a pas. Ne
+   * peindre que le chaud résout les deux : une seule teinte, la primaire, et
+   * aucun jeton à inventer.
+   */
+  demande?: { coords: [number, number][]; label: string }[];
   tintWater?: boolean;
   /** Allège la basemap (masque verdure/landuse, POIs, bâtiments, transports)
    *  pour dégager la lecture du trajet (façon Yango). */
@@ -72,6 +100,7 @@ const getMapHTML = (
   markers: Marker[],
   route: RouteConfig | undefined,
   mapStyle: string,
+  demande: NonNullable<Props['demande']>,
   tintWater: boolean,
   declutter: boolean,
   fitPadding: Props['fitPadding'],
@@ -137,6 +166,16 @@ const getMapHTML = (
       clip-path: polygon(50% 100%, 6% 0, 94% 0);
       pointer-events: none;
     }
+    .zone-pill {
+      display: flex; align-items: center; gap: 5px;
+      background: #fff; color: #1A1A1A;
+      font-family: -apple-system, system-ui, sans-serif;
+      font-size: 13px; font-weight: 600;
+      padding: 6px 10px 6px 12px; border-radius: 999px;
+      white-space: nowrap;
+      box-shadow: 0 2px 10px rgba(11,18,32,0.18);
+    }
+    .zone-chev { color: #9CA3AF; font-size: 16px; line-height: 1; }
     .user-dot {
       position: absolute; top: 50%; left: 50%;
       width: 16px; height: 16px; border-radius: 50%;
@@ -741,6 +780,34 @@ const getMapHTML = (
       });
 
       map.on('load', function() {
+        /* Zones de demande : un polygone par zone, rempli a 18% dans la
+           primaire, borde de la meme teinte. L'etiquette est une pastille
+           blanche posee au centroide. (Pas d'accent grave ici : gabarit.) */
+        var ZONES = ${JSON.stringify(demande)};
+        if (ZONES.length) {
+          map.addSource('demande', { type: 'geojson', data: {
+            type: 'FeatureCollection',
+            features: ZONES.map(function(z) {
+              return { type: 'Feature', properties: {},
+                geometry: { type: 'Polygon', coordinates: [z.coords.concat([z.coords[0]])] } };
+            })
+          }});
+          map.addLayer({ id: 'demande-fill', type: 'fill', source: 'demande',
+            paint: { 'fill-color': '#0066FF', 'fill-opacity': 0.18 } });
+          map.addLayer({ id: 'demande-line', type: 'line', source: 'demande',
+            paint: { 'line-color': '#0066FF', 'line-width': 1.5, 'line-opacity': 0.55 } });
+
+          ZONES.forEach(function(z) {
+            var cx = 0, cy = 0;
+            z.coords.forEach(function(c) { cx += c[0]; cy += c[1]; });
+            cx /= z.coords.length; cy /= z.coords.length;
+            var el = document.createElement('div');
+            el.className = 'zone-pill';
+            el.innerHTML = z.label + '<span class="zone-chev">&rsaquo;</span>';
+            new mapboxgl.Marker({ element: el }).setLngLat([cx, cy]).addTo(map);
+          });
+        }
+
         if (${tintWater}) {
           // Heetch-like soft blue water on the light style. POIs/place labels are kept.
           // water-shadow n'existe pas dans tous les styles : on teste la
@@ -818,7 +885,7 @@ const NO_SPRITE: Sprite = { uri: '', ratio: 0.5 };
 const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMap(
   {
     center, zoom = 14, markers = [], route, mapStyle = 'mapbox://styles/mapbox/navigation-day-v1',
-    tintWater = false, declutter = false, fitPadding, providers = [],
+    demande = [], tintWater = false, declutter = false, fitPadding, providers = [],
     providerSprite = NO_SPRITE, vehicleSprite = NO_SPRITE,
     followVehicle = false, followZoom = 15.2, onCenterChange, style,
   },
@@ -833,7 +900,7 @@ const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMap(
   const html = useRef<string | null>(null);
   if (html.current === null) {
     html.current = getMapHTML(
-      center, zoom, markers, route, mapStyle, tintWater, declutter,
+      center, zoom, markers, route, mapStyle, demande, tintWater, declutter,
       fitPadding, providers, providerSprite, vehicleSprite, followVehicle, followZoom
     );
   }

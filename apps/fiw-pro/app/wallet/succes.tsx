@@ -10,7 +10,7 @@ export default function RetraitSuccesScreen() {
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <View style={styles.iconCircle}>
-          <Ionicons name="checkmark" size={40} color={Colors.white} />
+          <Ionicons name="checkmark" size={40} color={Colors.surface} />
         </View>
 
         <Text style={styles.title}>Retrait envoyé</Text>
@@ -109,5 +109,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  doneBtnLabel: { fontSize: 15, fontWeight: '700', color: Colors.white },
+  doneBtnLabel: { fontSize: 15, fontWeight: '700', color: Colors.surface },
 });

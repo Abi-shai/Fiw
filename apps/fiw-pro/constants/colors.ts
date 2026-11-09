@@ -1,10 +1,56 @@
+// ⚠️ FICHIER GÉNÉRÉ — ne pas éditer à la main.
+// Source : apps/fiw/constants/colors.ts  ·  Générateur : scripts/gen-pro-tokens.py
+// Toute correction se fait côté Client, puis on relance le générateur.
+
+// ── Fiw Pro ───────────────────────────────────────────────────────────
+// La primaire descend d'un palier par rapport au Client : blue800 au lieu
+// de blue700, et hover/pressed/subtle suivent. L'ÉCHELLE bleue ci-dessous
+// est inchangée — c'est la référence commune aux deux apps, pas la couleur
+// de l'une d'elles.
+//
+// ⚠️ Deux rôles sont DÉRIVÉS et non repris de la maquette, faute de valeur
+// Pro posée : `primaryFill` retombe sur la primaire (le bleu Pro, moins
+// saturé, ne vibre pas comme #0066FF sur une grande surface) et
+// `primaryInk` descend à blue900 — où il rejoint `primaryHover`. À
+// confirmer en maquette avant d'en dépendre.
+
 export const Colors = {
   // Primary
   primary:        '#084EC5',
   primaryHover:   '#0D459B',
   primaryPressed: '#0E2B5D',
+  // Aplat bleu des GRANDES surfaces (plateforme de la carte gamme). Moins
+  // saturé que `primary` : étalé sur une large surface, le bleu de marque
+  // vibre et écrase l'illustration posée dessus. Ne jamais l'employer pour du
+  // texte ni pour un bouton — c'est un fond, pas une couleur d'action.
+  primaryFill:    '#084EC5',
+  // Bleu de TEXTE sur fond clair — un cran plus profond que `primary`, qui
+  // manque de corps sur un chiffre de 18 px (prix de la carte gamme).
+  primaryInk:     '#0D459B',
+  // Aligné sur la variable `primarySubtle` du fichier Figma (16 août 2026) : les
+  // deux avaient divergé, le code tirant vers le violet et la maquette vers le
+  // cyan. Même valeur que `blue50` — c'est le palier subtil de l'échelle bleue.
   primarySubtle:  '#D6EDFF',
   primaryOn:      '#FFFFFF',
+  // Jaune de marque (logo Fiw, accents ponctuels). Seuls jaunes autorisés — à ne
+  // pas confondre avec `warning` (#F59E0B, ambre fonctionnel « ça cloche »).
+  // Échelle calquée sur le bleu, mêmes rôles (cf. carte « Devenir prestataire »,
+  // page Menu : fond `primarySubtle` + liseré `blue100` + pastille `primary`) :
+  // même teinte (h 51°) et même saturation (100%) partout, seule la luminosité
+  // change — les trois se lisent comme une seule couleur.
+  // Le jaune est une couleur *lumineuse* : à luminosité égale il paraît bien plus
+  // pâle que le bleu. L'échelle ne décalque donc pas les luminosités du bleu —
+  // chaque palier descend plus bas que son pendant, et le `100` se désature (82%)
+  // pour exister comme liseré au lieu de se noyer dans le fond.
+  //
+  // Corollaire : le plein sur le subtil ne fait que 1.2:1. Le jaune plein
+  // **remplit une forme, il ne dessine jamais** — pastille + glyphe sombre par
+  // dessus (cf. `Callout`), pas de glyphe tracé en jaune. Il n'y a donc pas de
+  // palier foncé ici : le jour où du *texte* devra tenir sur un fond jaune, il en
+  // faudra un (≈ 49° 100% 30% / #998200 → 3.7:1) — surtout pas le plein.
+  brandYellow:       '#FFE347', // plein  (51° 100% 64%) — pastilles, tags    ≈ primary
+  brandYellow100:    '#F6E7A3', // clair  (49°  82% 80%) — liserés d'encart   ≈ blue100
+  brandYellowSubtle: '#FFFBE9', // subtil (49° 100% 96%) — fonds d'encart     ≈ primarySubtle
 
   // Blue scale
   blue50:  '#EDF7FF',
@@ -19,11 +65,30 @@ export const Colors = {
   blue900: '#0D459B',
   blue950: '#0E2B5D',
 
-  // Neutrals
-  bg:            '#F9FAFB',
+  // Neutrals — dérivés de l'échelle de gris Tailwind (gray-50 → gray-900).
+  // Paliers nommés sémantiquement ; gray600/700 exposés pour les cas plus
+  // foncés (ex. icônes neutres) où textSecondary (gray-500) est trop clair.
+  // Le gris de fond — « le sol ». Il occupe soit la page entière (Transport,
+  // Livraison, Affiliation), soit seulement un bloc posé sur une page blanche
+  // (toute la partie Compte, où figure et fond sont inversés : page blanche,
+  // blocs gris). Deux emplois, un seul rôle : ce qui est en retrait.
+  // À ne pas confondre avec `surfaceAlt`, qui est un cadre de **regroupement
+  // discret à l'intérieur d'une feuille déjà dense** (RideSheet, configure) —
+  // lui doit rester à peine perceptible, sinon il ajoute une frontière à lire
+  // sur un écran qui en a déjà beaucoup.
+  bg:            '#F9FAFB', // gray-50
   surface:       '#FFFFFF',
-  border:        '#E5E7EB',
+  border:        '#E5E7EB', // gray-200
+  gray600:       '#4B5563',
+  gray700:       '#374151',
+  // Liseré universel des éléments flottant sur la carte : détache l'élément
+  // du fond carto quel que soit son contraste (translucide, neutre).
+  hairline:      'rgba(17, 24, 39, 0.08)',
   borderSubtle:  '#F3F4F6',
+  // Piste neutre des segmented controls & pills d'action (gris froid).
+  track:         '#F2F3F5',
+  // Fond de card subtil, légèrement plus froid que `surface` (cards internes).
+  surfaceAlt:    '#FBFBFC',
   textPrimary:   '#1A1A1A',
   textSecondary: '#6B7280',
   textTertiary:  '#9CA3AF',
@@ -32,28 +97,46 @@ export const Colors = {
 
   // Functional
   error:          '#EF4444',
+  errorPressed:   '#DC2626',
   errorSubtle:    '#FEE2E2',
   warning:        '#F59E0B',
   warningSubtle:  '#FEF3C7',
   success:        '#10B981',
   successSubtle:  '#D1FAE5',
+  // Encres foncées des paliers fonctionnels — le pendant texte de `*Subtle`.
+  // `warning` et `success` sont des pleins : posés en TEXTE sur leur propre
+  // subtil ils tombent sous 3:1 (2.0:1 pour l'ambre, 2.4:1 pour le vert). Ces
+  // deux paliers-là sont faits pour écrire dessus, et pour rien d'autre.
+  // C'est exactement le manque annoncé plus haut à propos du jaune de marque.
+  warningInk:     '#B45309',
+  successInk:     '#047857',
 
-  // Fiw Pro specific
-  online:     '#10B981',
-  offline:    '#9CA3AF',
-  walletLow:  '#EF4444',
+  // ── Sur fond sombre ou bleu ────────────────────────────────────────────
+  // Un écran plein `primary` ou `gray/ink` renverse la logique : il n'y a plus
+  // de surface à poser, seulement du blanc plus ou moins présent. Ces cinq
+  // rôles nomment ces degrés — jusqu'ici c'étaient neuf `rgba` en dur dans sept
+  // fichiers, et `textPrimary` détourné en couleur de FOND.
+  //
+  // `surfaceInverse` est un fond, pas une encre : c'est ce qui manquait pour
+  // que l'écran d'appel cesse d'emprunter la couleur du texte.
+  surfaceInverse:         '#1A1A1A',
+  /** Surface posée SUR un fond sombre ou bleu — contrôle d'appel, médaillon de
+   *  célébration, bouton verrouillé du Wallet. Blanc translucide plutôt qu'un
+   *  gris opaque : elle prend la teinte de ce qu'elle recouvre au lieu de la
+   *  trouer. */
+  onInverseSubtle:        'rgba(255, 255, 255, 0.18)',
+  /** Liseré sur un fond sombre ou bleu. */
+  onInverseMuted:         'rgba(255, 255, 255, 0.25)',
+  /** Texte secondaire sur fond sombre — le pendant de `textSecondary` là où
+   *  `textOnPrimary` (blanc plein) est l'encre principale. */
+  textOnInverseSecondary: 'rgba(255, 255, 255, 0.70)',
 
-  // Utilitaires partagés avec le design system
-  gray600:    '#4B5563',
-  gray700:    '#374151',
-  hairline:   'rgba(17, 24, 39, 0.08)',
-  errorPressed: '#DC2626',
-  overlay:    'rgba(0, 0, 0, 0.5)',
-
-  // Aliases (backward compat with existing screens)
-  white:        '#FFFFFF',
-  black:        '#1A1A1A',
-  primaryLight: '#D6EDFF',
-  background:   '#F9FAFB',
-  warningLight: '#FEF3C7',
+  // ── Voiles ─────────────────────────────────────────────────────────────
+  /** Voile posé sur la CARTO — pendant la recherche, et sous le pin d'ancrage.
+   *  À distinguer du composant `Scrim`, qui voile l'écran derrière une feuille :
+   *  celui-ci assombrit la carte elle-même. */
+  scrim:                  'rgba(17, 24, 39, 0.22)',
+  /** Bleu de marque à peine posé — les anneaux du radar. Le palier au-dessous
+   *  de `primarySubtle`, pour une forme qui doit se deviner sans se lire. */
+  primaryGhost:           'rgba(8, 78, 197, 0.06)',
 };

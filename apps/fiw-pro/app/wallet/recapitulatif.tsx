@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   montantLabel: { fontSize: 14, color: 'rgba(255,255,255,0.7)' },
-  montantValue: { fontSize: 34, fontWeight: '800', color: Colors.white },
+  montantValue: { fontSize: 34, fontWeight: '800', color: Colors.surface },
   montantSub: { fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
 
   destinationCard: {
@@ -172,5 +172,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  confirmLabel: { fontSize: 15, fontWeight: '700', color: Colors.white },
+  confirmLabel: { fontSize: 15, fontWeight: '700', color: Colors.surface },
 });

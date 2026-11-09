@@ -26,7 +26,7 @@ function CompteCard({
       activeOpacity={0.85}
     >
       <View style={[styles.cardIcon, primary && styles.cardIconPrimary]}>
-        <Ionicons name={icon} size={28} color={primary ? Colors.white : Colors.primary} />
+        <Ionicons name={icon} size={28} color={primary ? Colors.surface : Colors.primary} />
       </View>
       <View style={styles.cardText}>
         <Text style={[styles.cardTitre, primary && styles.cardTitrePrimary]}>{titre}</Text>
@@ -61,7 +61,7 @@ export default function ChoixCompteScreen() {
             icon="car-outline"
             titre="Prestataire"
             description="Chauffeur ou livreur — recevez et gérez vos missions"
-            onPress={() => router.replace('/dashboard')}
+            onPress={() => router.replace('/accueil')}
           />
           <CompteCard
             icon="storefront-outline"
@@ -94,9 +94,9 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     marginBottom: 8,
   },
-  logoText: { fontSize: 26, fontWeight: '800', color: Colors.white, letterSpacing: -1 },
+  logoText: { fontSize: 26, fontWeight: '800', color: Colors.surface, letterSpacing: -1 },
   logoPro: {
-    fontSize: 11, fontWeight: '700', color: Colors.primaryLight,
+    fontSize: 11, fontWeight: '700', color: Colors.primarySubtle,
     marginLeft: 3, marginBottom: 3, letterSpacing: 1,
   },
   title: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary, textAlign: 'center' },
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   cardIconPrimary: { backgroundColor: 'rgba(255,255,255,0.2)' },
   cardText: { flex: 1 },
   cardTitre: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 3 },
-  cardTitrePrimary: { color: Colors.white },
+  cardTitrePrimary: { color: Colors.surface },
   cardDesc: { fontSize: 13, color: Colors.textSecondary, lineHeight: 18 },
   cardDescPrimary: { color: 'rgba(255,255,255,0.75)' },
 

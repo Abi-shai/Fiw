@@ -3,11 +3,16 @@ import { Text as RNText, StyleSheet, TextProps as RNTextProps, TextStyle } from 
 import { Colors, Typography, type TextVariant } from '@/constants/tokens';
 
 type Props = RNTextProps & {
+  /** Variante typographique sémantique (mappe taille + graisse Outfit + line-height). */
   variant?: TextVariant;
+  /** Couleur du token de texte (défaut : primaire). */
   color?: string;
+  /** Alignement rapide. */
   align?: TextStyle['textAlign'];
 };
 
+/** Seul point d'entrée typographique de l'app. Interdit le fontSize/fontWeight
+ *  brut dans les écrans : toute taille/graisse passe par une variante. */
 export default function Text({
   variant = 'body',
   color = Colors.textPrimary,

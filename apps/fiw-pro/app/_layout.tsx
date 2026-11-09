@@ -45,9 +45,19 @@ export default function RootLayout() {
         <Stack.Screen name="wallet/recapitulatif" />
         <Stack.Screen name="wallet/succes" />
         <Stack.Screen name="qrcode" />
-        {/* Flow Prestataire (existant) */}
+        {/* Flow Prestataire */}
         <Stack.Screen name="otp" />
-        <Stack.Screen name="dashboard" />
+        <Stack.Screen name="accueil" />
+        <Stack.Screen name="menu" />
+        <Stack.Screen name="wallet/index" />
+        <Stack.Screen name="gains" />
+        <Stack.Screen name="statut" />
+        <Stack.Screen name="bloque" />
+        <Stack.Screen name="activation/index" />
+        <Stack.Screen name="activation/services" />
+        <Stack.Screen name="activation/piece" />
+        <Stack.Screen name="mission/appel" />
+        <Stack.Screen name="mission/chat" />
         <Stack.Screen name="mission/navigating" />
         <Stack.Screen name="mission/arrived" />
         <Stack.Screen name="mission/in-progress" />

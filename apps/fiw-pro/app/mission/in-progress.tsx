@@ -1,160 +1,158 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Share, View, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LeafletMap from '@/components/LeafletMap';
+import SlideToConfirm from '@/components/SlideToConfirm';
+import Toast, { useToast } from '@/components/Toast';
+import ActionTile, { ActionTileRow } from '@/components/ActionTile';
 import Button from '@/components/Button';
+import AlertBadge from '@/components/AlertBadge';
+import BottomSheet from '@/components/BottomSheet';
 import Text from '@/components/Text';
-import Icon from '@/components/Icon';
-import { sheetSurface } from '@/components/Sheet';
-import { Colors, Spacing, Radii, Shadows, Outfit } from '@/constants/tokens';
-import { MISSION_INCOMING } from '@/constants/data';
+import MissionItineraire from '@/components/MissionItineraire';
+import Sheet from '@/components/Sheet';
+import { Colors, Radii, Spacing } from '@/constants/tokens';
+import { topviewSprite } from '@/constants/illustrations';
+import { CARTE_BASE, DUREE_COURSE } from '@/constants/carte';
+import { MISSION_INCOMING, fcfa } from '@/constants/data';
 
-const DEST = MISSION_INCOMING.destination;
+/**
+ * **Course en cours — vers la destination.**
+ *
+ * L'écran le plus dépouillé du parcours, et c'est voulu : le Prestataire
+ * conduit. Tout ce qui n'est pas la destination, le moyen de joindre le Client
+ * et la fin de course a été retiré.
+ *
+ * Ce qui a disparu de la version de juin, et pourquoi :
+ * - **Le badge « Mission en cours »** — il nommait l'écran qu'on regardait.
+ * - **La pastille ETA bleue en haut** — doublon de la durée restante, dans un
+ *   objet dessiné à la main (fond `primary`, typo en dur) qui n'existait nulle
+ *   part ailleurs dans le système.
+ * - **Le bouton d'appel carré de 56 × 52** — une troisième géométrie de bouton,
+ *   inventée pour cet écran. Les contacts passent par la rangée d'`ActionTile`
+ *   du Client.
+ *
+ * ⚠️ **« Passer hors ligne après cette course » a été retiré** (8 novembre).
+ * L'idée venait du benchmark — le besoin est réel, aucune des dix apps du
+ * corpus ne le couvre — mais elle encombrait l'écran de conduite d'un
+ * troisième ordre, sous un glissé de fin de course qui est déjà la seule
+ * chose à faire ici. Si elle revient, ce sera ailleurs : dans la bascule
+ * elle-même, au moment où l'on maintient « Sortir » pendant une course.
+ */
+export default function InProgress() {
+  const insets = useSafeAreaInsets();
+  const m = MISSION_INCOMING;
+  const toast = useToast();
+  const [sosOuvert, setSosOuvert] = useState(false);
 
-export default function InProgressScreen() {
-  const [eta, setEta] = useState(12);
+  // Partager son trajet : le Prestataire aussi roule seul la nuit. Côté
+  // Client c'est « partager ma course avec un contact de confiance » ; ici
+  // c'est le même geste, et c'est le lien de suivi qui change de porteur.
+  const partager = () => {
+    Share.share({
+      message: `Je suis en course avec Fiw. Suivez-moi en direct : https://fiw.sn/suivi/${m.id}`,
+    });
+  };
+  const [minutes, setMinutes] = useState(12);
 
   useEffect(() => {
-    const t = setInterval(() => {
-      setEta((prev) => (prev > 1 ? prev - 1 : 1));
-    }, 5000);
+    const t = setInterval(() => setMinutes((v) => (v > 1 ? v - 1 : 1)), 5000);
     return () => clearInterval(t);
   }, []);
 
   return (
-    <View style={styles.container}>
+    <View style={styles.page}>
       <LeafletMap
-        center={MISSION_INCOMING.pickup}
+        center={m.pickup}
         zoom={13}
-        markers={[
-          { lat: MISSION_INCOMING.pickup.lat, lng: MISSION_INCOMING.pickup.lng, type: 'prestataire' },
-          { lat: DEST.lat, lng: DEST.lng, type: 'destination' },
-        ]}
+        markers={[{ lat: m.destination.lat, lng: m.destination.lng, type: 'destination' }]}
+        route={{ from: m.pickup, to: m.destination, animateDuration: DUREE_COURSE }}
+        vehicleSprite={topviewSprite('auto')}
+        followVehicle
+        fitPadding={{ top: insets.top + 40, bottom: 380, left: 48, right: 48 }}
+        {...CARTE_BASE}
         style={StyleSheet.absoluteFillObject}
       />
 
-      <SafeAreaView style={styles.overlay} pointerEvents="box-none">
-        <View style={styles.topBar}>
-          <View style={[styles.inProgressBadge, Shadows.float]}>
-            <View style={styles.pulseDot} />
-            <Text variant="bodySmall" style={{ fontFamily: Outfit.semibold }}>Mission en cours</Text>
-          </View>
-          <View style={[styles.etaBadge, Shadows.md]}>
-            <Text variant="caption" color={Colors.primarySubtle} style={{ fontFamily: Outfit.semibold, letterSpacing: 0.5 }}>
-              ETA
-            </Text>
-            <Text style={{ fontFamily: Outfit.bold, fontSize: 18, color: Colors.textOnPrimary }}>
-              {eta} min
-            </Text>
-          </View>
+      <Sheet floating style={[styles.sheet, { paddingBottom: insets.bottom + Spacing[4] }]}>
+        <Text variant="heading2">{minutes} min restantes</Text>
+        <Text variant="bodySmall" color={Colors.textSecondary}>
+          Course de {m.distanceCourse} avec {m.clientName}
+        </Text>
+
+        {/* La prise en charge est faite : elle reste affichée, mais c'est la
+            destination qui porte désormais le Repère utile. Le Repère du point
+            de collecte n'a plus d'emploi une fois le Client à bord. */}
+        <MissionItineraire
+          depart={{ name: m.pickup.name, detail: m.pickup.detail }}
+          arrivee={m.destination}
+          labels={{ from: 'Prise en charge', to: 'Destination' }}
+          style={styles.itineraire}
+        />
+
+        <View style={styles.prixRow}>
+          <Text variant="bodySmall" color={Colors.textSecondary} style={styles.flex1}>
+            À encaisser
+          </Text>
+          <Text variant="amount">{fcfa(m.prix)}</Text>
         </View>
 
-        <View style={[sheetSurface, styles.bottomPanel]}>
-          <View style={styles.routeSummary}>
-            <View style={styles.routeRow}>
-              <View style={[styles.routeDot, { backgroundColor: Colors.primary }]} />
-              <Text variant="bodySmall" style={{ flex: 1 }}>{MISSION_INCOMING.pickup.name}</Text>
-              <Text variant="caption" color={Colors.success} style={{ fontFamily: Outfit.semibold }}>
-                Collecte ✓
-              </Text>
-            </View>
-            <View style={styles.routeLine} />
-            <View style={styles.routeRow}>
-              <View style={[styles.routeDot, { backgroundColor: Colors.error }]} />
-              <Text variant="bodySmall" style={{ flex: 1 }}>{DEST.name}</Text>
-              <Text variant="caption" color={Colors.textTertiary}>{DEST.detail}</Text>
-            </View>
-          </View>
 
-          <View style={styles.priceRow}>
-            <Text variant="bodySmall" color={Colors.textSecondary}>Montant estimé</Text>
-            <Text variant="heading2">
-              {MISSION_INCOMING.prixEstime.toLocaleString('fr-FR')} F CFA
-            </Text>
-          </View>
+        {/* ── Les deux contacts, à la forme du Client ────────────────────
+            Ils étaient deux `IconButton` flottants sur la carte, sans
+            libellé : deux ronds muets qu'il fallait deviner. Le Client les
+            rend en **`ActionTile` étiquetées, dans la feuille** — c'est sa
+            forme pour « appeler » et « chat », et il n'y a aucune raison que
+            l'autre bord de la même conversation ait une autre grammaire.
 
-          <View style={styles.actionsRow}>
-            <TouchableOpacity style={styles.callBtn} onPress={() => {}}>
-              <Icon name="phone" size={20} color={Colors.primary} />
-              <Text variant="caption" color={Colors.primary} style={{ fontFamily: Outfit.semibold, marginTop: 2 }}>
-                Appeler
+            Et ils mènent désormais quelque part : `mission/appel` et
+            `mission/chat` sont les écrans du Client, repris tels quels, rôles
+            inversés. L'appel reste masqué dans les deux sens. */}
+        <ActionTileRow>
+          <ActionTile icon="phone" label="Appeler" onPress={() => router.push({ pathname: '/mission/appel', params: { name: m.clientName } })} />
+          <ActionTile icon="chat" label="Chat" onPress={() => router.push({ pathname: '/mission/chat', params: { name: m.clientName } })} />
+          <ActionTile icon="share" label="Partager" onPress={partager} />
+          <ActionTile icon="sos" label="Urgence" danger onPress={() => setSosOuvert(true)} />
+        </ActionTileRow>
+
+        <SlideToConfirm label="Terminer la course" onConfirm={() => router.replace('/mission/complete')} />
+
+      </Sheet>
+      {sosOuvert && (
+        <BottomSheet title="Alerte SOS envoyée" onClose={() => setSosOuvert(false)}>
+          {(close) => (
+            <View style={styles.sos}>
+              <AlertBadge icon="sos" weight="fill" />
+              <Text variant="body" color={Colors.textSecondary} align="center" style={styles.sosTexte}>
+                Votre position et les détails de la course ont été transmis au
+                service de sécurité Fiw et à votre contact d'urgence. Un agent
+                vous rappelle immédiatement.
               </Text>
-            </TouchableOpacity>
-            <Button
-              label="Terminer la mission"
-              onPress={() => router.push('/mission/complete')}
-              style={styles.endBtn}
-            />
-          </View>
-        </View>
-      </SafeAreaView>
+              <Button label="J'ai compris" onPress={close} style={styles.sosCta} />
+            </View>
+          )}
+        </BottomSheet>
+      )}
+
+      <Toast message={toast.message} opacity={toast.opacity} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  overlay: { flex: 1 },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Spacing[4],
-    paddingTop: Spacing[2],
-  },
-  inProgressBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.pill,
-    paddingHorizontal: 14,
-    paddingVertical: Spacing[2],
-    gap: Spacing[2],
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.hairline,
-  },
-  pulseDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.success },
-  etaBadge: {
-    backgroundColor: Colors.primary,
-    borderRadius: Radii.pill,
-    paddingHorizontal: Spacing[4],
-    paddingVertical: Spacing[2],
-    alignItems: 'center',
-  },
-  bottomPanel: {
-    position: 'absolute',
-    bottom: 0, left: 0, right: 0,
-    padding: Spacing[6],
-    paddingBottom: 40,
-  },
-  routeSummary: {
+  page: { flex: 1, backgroundColor: Colors.bg },
+  flex1: { flex: 1 },
+  sos: { alignItems: 'center', gap: Spacing[3], paddingBottom: Spacing[4] },
+  sosTexte: { maxWidth: 300 },
+  sosCta: { alignSelf: 'stretch', marginTop: Spacing[2] },
+  sheet: { paddingHorizontal: Spacing[4], paddingTop: Spacing[4], gap: Spacing[1] },
+  itineraire: { marginTop: Spacing[3] },
+  prixRow: {
+    flexDirection: 'row', alignItems: 'center',
     backgroundColor: Colors.bg,
-    borderRadius: Radii.md,
-    padding: 14,
-    marginBottom: Spacing[4],
-    gap: 4,
+    borderRadius: Radii.lg,
+    paddingHorizontal: Spacing[4], paddingVertical: Spacing[3],
+    marginTop: Spacing[2], marginBottom: Spacing[4],
   },
-  routeRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  routeDot: { width: 10, height: 10, borderRadius: 5 },
-  routeLine: {
-    width: 2, height: 12,
-    backgroundColor: Colors.border,
-    marginLeft: 4, marginVertical: 2,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing[6],
-  },
-  actionsRow: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  callBtn: {
-    width: 56, height: 52,
-    borderRadius: Radii.md,
-    backgroundColor: Colors.primarySubtle,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 2,
-  },
-  endBtn: { flex: 1 },
 });

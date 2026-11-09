@@ -192,7 +192,7 @@ function StepRow({ label, done, active }: { label: string; done?: boolean; activ
         done && styles.stepDotDone,
         active && styles.stepDotActive,
       ]}>
-        {done && <Ionicons name="checkmark" size={12} color={Colors.white} />}
+        {done && <Ionicons name="checkmark" size={12} color={Colors.surface} />}
         {active && <View style={styles.stepDotInner} />}
       </View>
       <Text style={[
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   periodeLabel: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
-  periodeLabelActive: { color: Colors.white },
+  periodeLabelActive: { color: Colors.surface },
 
   // Métriques
   metricsRow: {
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   metricValue: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary, marginBottom: 4 },
-  metricValuePrimary: { color: Colors.white },
+  metricValuePrimary: { color: Colors.surface },
   metricLabel: { fontSize: 12, color: Colors.textSecondary },
   metricLabelPrimary: { color: 'rgba(255,255,255,0.75)' },
 
